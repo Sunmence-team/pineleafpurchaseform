@@ -5,12 +5,12 @@ import Dashboard from "./pages/Dashboard"
 import { Toaster } from "sonner"
 
 function App() {
-  
+
   return (
     <>
       <Toaster />
       <Routes>
-        <Route 
+        <Route
           index
           path="/"
           element={<Form />}
