@@ -5,5 +5,17 @@
   --color-pryClr: #E6FFF6;
   --color-secClr: #2F5318;
   --color-trdClr: #A5D6A7;
-  --color-tetClr: #F5DD00; 
+  --color-tetClr: #F5DD00;
+}
+
+.react-datepicker-wrapper {
+  width: 100% !important;
+}
+
+.react-datepicker__input-container {
+  width: 100% !important;
+}
+
+.react-datepicker__input-container input {
+  width: 100% !important;
 }

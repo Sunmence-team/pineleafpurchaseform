@@ -3,6 +3,8 @@ import Form from "./pages/Form"
 import Login from "./pages/Login"
 import Dashboard from "./pages/Dashboard"
 import { Toaster } from "sonner"
+import ViewClient from "./pages/View"
+import EditClient from "./pages/Edit"
 
 function App() {
 
@@ -22,6 +24,14 @@ function App() {
         <Route
           path="/dashboard"
           element={<Dashboard />}
+        />
+        <Route
+          path="/view-client/:id"
+          element={<ViewClient />}
+        />
+        <Route
+          path="//edit-client/:id"
+          element={<EditClient />}
         />
       </Routes>
     </>

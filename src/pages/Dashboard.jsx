@@ -1,437 +1,521 @@
-import React, { useState } from 'react';
-import { FaDownload, FaFilter } from 'react-icons/fa';
+import React, { useState, useEffect } from 'react';
+import { FaFilter, FaDownload, FaEye, FaEdit, FaTimes } from 'react-icons/fa';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
+import axios from 'axios';
+import { toast } from 'sonner';
+import { Link } from 'react-router-dom';
+import { format, parseISO } from 'date-fns';
 import assets from '../assets/assests';
 
-// Sample data array simulating form submissions
-const sampleData = [
-  {
-    image: 'image1.png',
-    title: 'Mr',
-    firstName: 'John',
-    middleName: 'A',
-    lastName: 'Doe',
-    address: '123 Main St, Lagos',
-    dateOfBirth: new Date('1990-05-15'),
-    nationality: 'Nigerian',
-    maritalStatus: 'Married',
-    gender: 'Male',
-    spouseTitle: 'Mrs',
-    spouseFirstName: 'Jane',
-    spouseMiddleName: 'B',
-    spouseLastName: 'Doe',
-    stateOfOrigin: 'Lagos',
-    lga: 'Ikeja',
-    occupation: 'Engineer',
-    countryOfResidence: 'Nigeria',
-    language: 'English',
-    email: 'john.doe@example.com',
-    mobileNumber: '08012345678',
-    telephoneNumber: '012345678',
-    nextOfKinFullName: 'Jane Doe',
-    nextOfKinAddress: '123 Main St, Lagos',
-    nextOfKinMobileNumber: '08087654321',
-    nextOfKinEmail: 'jane.doe@example.com',
-    clientDeclarationLandPrice: '5000000',
-    clientDeclarationNumberOfPlots: 2,
-    clientDeclarationSiteLocation: 'Lekki Phase 1',
-    clientDeclarationPlotNumber: 'A123',
-    clientDeclarationClientName: 'Mr John A Doe',
-    clientDeclarationSignature: 'data:image/png;base64,iVBORw0KGgo...',
-    clientDeclarationDate: new Date('2025-09-01'),
-    referralFullName: 'Michael Smith',
-    referralMobileNumber: '08055555555',
-    referralDate: new Date('2025-09-02'),
-    referralEmail: 'michael.smith@example.com',
-  },
-  {
-    image: 'image2.png',
-    title: 'Mrs',
-    firstName: 'Sarah',
-    middleName: '',
-    lastName: 'Johnson',
-    address: '456 Oak Ave, Abuja',
-    dateOfBirth: new Date('1985-08-22'),
-    nationality: 'Nigerian',
-    maritalStatus: 'Single',
-    gender: 'Female',
-    spouseTitle: '',
-    spouseFirstName: '',
-    spouseMiddleName: '',
-    spouseLastName: '',
-    stateOfOrigin: 'Abuja',
-    lga: 'Gwagwalada',
-    occupation: 'Teacher',
-    countryOfResidence: 'Nigeria',
-    language: 'English',
-    email: 'sarah.johnson@example.com',
-    mobileNumber: '08098765432',
-    telephoneNumber: '',
-    nextOfKinFullName: 'Peter Johnson',
-    nextOfKinAddress: '456 Oak Ave, Abuja',
-    nextOfKinMobileNumber: '08011122233',
-    nextOfKinEmail: 'peter.johnson@example.com',
-    clientDeclarationLandPrice: '3000000',
-    clientDeclarationNumberOfPlots: 1,
-    clientDeclarationSiteLocation: 'Gwarinpa',
-    clientDeclarationPlotNumber: 'B456',
-    clientDeclarationClientName: 'Mrs Sarah Johnson',
-    clientDeclarationSignature: 'data:image/png;base64,iVBORw0KGgo...',
-    clientDeclarationDate: new Date('2025-09-03'),
-    referralFullName: 'Emily Brown',
-    referralMobileNumber: '08044444444',
-    referralDate: new Date('2025-09-04'),
-    referralEmail: 'emily.brown@example.com',
-  },
-  // Additional entries for pagination testing
-  ...Array.from({ length: 19 }, (_, i) => ({
-    image: `image${i + 3}.png`,
-    title: i % 2 === 0 ? 'Mr' : 'Mrs',
-    firstName: `User${i + 3}`,
-    middleName: i % 2 === 0 ? `M${i + 3}` : '',
-    lastName: `Test${i + 3}`,
-    address: `${100 + i} Test St, Lagos`,
-    dateOfBirth: new Date(`199${i % 10}-0${(i % 9) + 1}-01`),
-    nationality: 'Nigerian',
-    maritalStatus: i % 2 === 0 ? 'Married' : 'Single',
-    gender: i % 2 === 0 ? 'Male' : 'Female',
-    spouseTitle: i % 2 === 0 ? 'Mrs' : '',
-    spouseFirstName: i % 2 === 0 ? `Spouse${i + 3}` : '',
-    spouseMiddleName: '',
-    spouseLastName: i % 2 === 0 ? `Test${i + 3}` : '',
-    stateOfOrigin: 'Lagos',
-    lga: 'Surulere',
-    occupation: 'Professional',
-    countryOfResidence: 'Nigeria',
-    language: 'English',
-    email: `user${i + 3}@example.com`,
-    mobileNumber: `080${1000000 + i}`,
-    telephoneNumber: '',
-    nextOfKinFullName: `Kin${i + 3}`,
-    nextOfKinAddress: `${100 + i} Kin St, Lagos`,
-    nextOfKinMobileNumber: `080${2000000 + i}`,
-    nextOfKinEmail: `kin${i + 3}@example.com`,
-    clientDeclarationLandPrice: `${2000000 + i * 100000}`,
-    clientDeclarationNumberOfPlots: i % 3 + 1,
-    clientDeclarationSiteLocation: `Location ${i + 3}`,
-    clientDeclarationPlotNumber: `P${i + 3}`,
-    clientDeclarationClientName: `${i % 2 === 0 ? 'Mr' : 'Mrs'} User${i + 3} Test${i + 3}`,
-    clientDeclarationSignature: 'data:image/png;base64,iVBORw0KGgo...',
-    clientDeclarationDate: new Date(`2025-09-${10 + i}`),
-    referralFullName: `Referrer${i + 3}`,
-    referralMobileNumber: `080${3000000 + i}`,
-    referralDate: new Date(`2025-09-${11 + i}`),
-    referralEmail: `referrer${i + 3}@example.com`,
-  })),
-];
-
-// Function to convert data to CSV and trigger download
-const downloadCSV = (data) => {
-  const headers = [
-    'Image',
-    'Title',
-    'First Name',
-    'Middle Name',
-    'Last Name',
-    'Address',
-    'Date of Birth',
-    'Nationality',
-    'Marital Status',
-    'Gender',
-    'Spouse Title',
-    'Spouse First Name',
-    'Spouse Middle Name',
-    'Spouse Last Name',
-    'State of Origin',
-    'LGA',
-    'Occupation',
-    'Country of Residence',
-    'Language',
-    'Email',
-    'Mobile Number',
-    'Telephone Number',
-    'Next of Kin Full Name',
-    'Next of Kin Address',
-    'Next of Kin Mobile Number',
-    'Next of Kin Email',
-    'Land Price',
-    'Number of Plots',
-    'Site Location',
-    'Plot Number',
-    'Client Declaration Name',
-    'Signature',
-    'Declaration Date',
-    'Referral Full Name',
-    'Referral Mobile Number',
-    'Referral Date',
-    'Referral Email',
-  ];
-
-  const rows = data.map(item => [
-    item.image || '',
-    item.title || '',
-    item.firstName || '',
-    item.middleName || '',
-    item.lastName || '',
-    item.address || '',
-    item.dateOfBirth ? item.dateOfBirth.toISOString().split('T')[0] : '',
-    item.nationality || '',
-    item.maritalStatus || '',
-    item.gender || '',
-    item.spouseTitle || '',
-    item.spouseFirstName || '',
-    item.spouseMiddleName || '',
-    item.spouseLastName || '',
-    item.stateOfOrigin || '',
-    item.lga || '',
-    item.occupation || '',
-    item.countryOfResidence || '',
-    item.language || '',
-    item.email || '',
-    item.mobileNumber || '',
-    item.telephoneNumber || '',
-    item.nextOfKinFullName || '',
-    item.nextOfKinAddress || '',
-    item.nextOfKinMobileNumber || '',
-    item.nextOfKinEmail || '',
-    item.clientDeclarationLandPrice || '',
-    item.clientDeclarationNumberOfPlots || '',
-    item.clientDeclarationSiteLocation || '',
-    item.clientDeclarationPlotNumber || '',
-    item.clientDeclarationClientName || '',
-    item.clientDeclarationSignature || '',
-    item.clientDeclarationDate ? item.clientDeclarationDate.toISOString().split('T')[0] : '',
-    item.referralFullName || '',
-    item.referralMobileNumber || '',
-    item.referralDate ? item.referralDate.toISOString().split('T')[0] : '',
-    item.referralEmail || '',
-  ].map(field => `"${field.toString().replace(/"/g, '""')}"`));
-
-  const csvContent = [
-    headers.join(','),
-    ...rows.map(row => row.join(','))
-  ].join('\n');
-
-  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-  const link = document.createElement('a');
-  link.href = URL.createObjectURL(blob);
-  link.download = 'client_data.csv';
-  link.click();
-  URL.revokeObjectURL(link.href);
-};
+const API_URL = import.meta.env.VITE_API_BASE_URL;
 
 const Dashboard = () => {
   const [currentPage, setCurrentPage] = useState(1);
-  const [filterModalOpen, setFilterModalOpen] = useState(false);
-  const [downloadModalOpen, setDownloadModalOpen] = useState(false);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalRecords, setTotalRecords] = useState(0);
+  const [allClients, setAllClients] = useState([]);
+  const [allApplications, setAllApplications] = useState([]);
+  const [filteredData, setFilteredData] = useState([]);
   const [filterDateFrom, setFilterDateFrom] = useState(null);
   const [filterDateTo, setFilterDateTo] = useState(null);
+  const [filterBranch, setFilterBranch] = useState('');
+  const [branchInput, setBranchInput] = useState('');
+  const [dateFromInput, setDateFromInput] = useState(null);
+  const [dateToInput, setDateToInput] = useState(null);
+  const [dateFilterModalOpen, setDateFilterModalOpen] = useState(false);
+  const [branchFilterModalOpen, setBranchFilterModalOpen] = useState(false);
+  const [downloadModalOpen, setDownloadModalOpen] = useState(false);
   const [downloadDateFrom, setDownloadDateFrom] = useState(null);
   const [downloadDateTo, setDownloadDateTo] = useState(null);
-  const [filteredData, setFilteredData] = useState(sampleData);
-  const recordsPerPage = 20;
 
-  // Pagination logic
-  const indexOfLastRecord = currentPage * recordsPerPage;
-  const indexOfFirstRecord = indexOfLastRecord - recordsPerPage;
-  const currentRecords = filteredData.slice(indexOfFirstRecord, indexOfLastRecord);
-  const totalPages = Math.ceil(filteredData.length / recordsPerPage);
+  const branchOptions = ['Lagos', 'Abuja', 'Port Harcourt', 'Enugu'];
+  const recordsPerPage = 10;
 
-  // Filter by date range
-  const applyDateFilter = () => {
-    if (!filterDateFrom || !filterDateTo) {
-      setFilteredData(sampleData);
-    } else {
-      const filtered = sampleData.filter(item => {
-        const declDate = item.clientDeclarationDate ? new Date(item.clientDeclarationDate) : null;
-        const refDate = item.referralDate ? new Date(item.referralDate) : null;
-        return (
-          (declDate && declDate >= filterDateFrom && declDate <= filterDateTo) ||
-          (refDate && refDate >= filterDateFrom && refDate <= filterDateTo)
+  // Fetch all clients for CSV download and filtering
+  useEffect(() => {
+    const fetchAllClients = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        if (!token) {
+          toast.error('Please log in to view the dashboard.');
+          window.location.href = '/login';
+          return;
+        }
+
+        let allData = [];
+        let page = 1;
+        let lastPage = 1;
+
+        do {
+          const payload = { page, per_page: 10 };
+          const response = await axios.post(
+            `${API_URL}/api/all_clients`,
+            payload,
+            {
+              headers: {
+                Authorization: `Bearer ${token}`,
+                'Content-Type': 'application/json',
+              },
+            }
+          );
+
+          let applications = [];
+          let meta = {};
+          if (response.data && Array.isArray(response.data.data)) {
+            applications = response.data.data;
+            meta = response.data.meta || {};
+          } else if (response.data && Array.isArray(response.data.applications)) {
+            applications = response.data.applications;
+            meta = response.data.meta || {};
+          } else if (response.data && Array.isArray(response.data.clients)) {
+            applications = response.data.clients;
+            meta = response.data.meta || {};
+          } else if (Array.isArray(response.data)) {
+            applications = response.data;
+          } else {
+            console.error('Unexpected response structure:', response.data);
+            throw new Error('Response data is not an array or does not contain an array of clients');
+          }
+
+          const mappedApplications = applications.map(item => ({
+            id: item.id || '',
+            client_name: item.client_name || '',
+            email: item.email || '',
+            mobile_number: item.mobile_number || '',
+            branches: item.branches || '',
+            created_at: item.created_at || '',
+            address: item.address || '',
+            country: item.country || '',
+            declaration_date: item.declaration_date || '',
+            declaration_name: item.declaration_name || '',
+            dob: item.dob || '',
+            first_name: item.first_name || '',
+            first_name_of_spouse: item.first_name_of_spouse || '',
+            gender: item.gender || '',
+            land_price: item.land_price || '',
+            language: item.language || '',
+            last_name: item.last_name || '',
+            last_name_of_spouse: item.last_name_of_spouse || '',
+            lga: item.lga || '',
+            marital_status: item.marital_status || '',
+            middle_name: item.middle_name || '',
+            middle_name_of_spouse: item.middle_name_of_spouse || '',
+            nationality: item.nationality || '',
+            next_of_kin_address: item.next_of_kin_address || '',
+            next_of_kin_email: item.next_of_kin_email || '',
+            next_of_kin_full_name: item.next_of_kin_full_name || '',
+            next_of_kin_mobile_number: item.next_of_kin_mobile_number || '',
+            number_of_plot: item.number_of_plot || '',
+            occupation: item.occupation || '',
+            personal_picture: item.personal_picture || '',
+            plot_number: item.plot_number || '',
+            referral_date: item.referral_date || '',
+            referral_email: item.referral_email || '',
+            referral_name: item.referral_name || '',
+            referral_number: item.referral_number || '',
+            signature: item.signature || '',
+            site_location: item.site_location || '',
+            state_of_origin: item.state_of_origin || '',
+            telephone_number: item.telephone_number || '',
+            title: item.title || '',
+            title_of_spouse: item.title_of_spouse || '',
+            updated_at: item.updated_at || '',
+          }));
+
+          allData = [...allData, ...mappedApplications];
+          lastPage = meta.last_page || 1;
+          page += 1;
+        } while (page <= lastPage);
+
+        setAllClients(allData);
+      } catch (err) {
+        console.error('Error fetching all clients:', err);
+        toast.error('Failed to fetch all clients for download: ' + (err.message || 'Unknown error'));
+        if (axios.isAxiosError(err) && err.response?.status === 401) {
+          localStorage.removeItem('token');
+          window.location.href = '/login';
+        }
+      }
+    };
+
+    fetchAllClients();
+  }, []);
+
+  // Fetch paginated applications for consistency
+  useEffect(() => {
+    const fetchApplications = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        if (!token) {
+          toast.error('Please log in to view the dashboard.');
+          window.location.href = '/login';
+          return;
+        }
+
+        const payload = { page: currentPage, per_page: 10 };
+        const response = await axios.post(
+          `${API_URL}/api/all_clients`,
+          payload,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+              'Content-Type': 'application/json',
+            },
+          }
         );
-      });
-      setFilteredData(filtered);
-      setCurrentPage(1); // Reset to first page after filtering
+
+        let applications = [];
+        let meta = {};
+        if (response.data && Array.isArray(response.data.data)) {
+          applications = response.data.data;
+          meta = response.data.meta || {};
+        } else if (response.data && Array.isArray(response.data.applications)) {
+          applications = response.data.applications;
+          meta = response.data.meta || {};
+        } else if (response.data && Array.isArray(response.data.clients)) {
+          applications = response.data.clients;
+          meta = response.data.meta || {};
+        } else if (Array.isArray(response.data)) {
+          applications = response.data;
+        } else {
+          console.error('Unexpected response structure:', response.data);
+          throw new Error('Response data is not an array or does not contain an array of clients');
+        }
+
+        const mappedApplications = applications.map(item => ({
+          id: item.id || '',
+          client_name: item.client_name || '',
+          email: item.email || '',
+          mobile_number: item.mobile_number || '',
+          branches: item.branches || '',
+          created_at: item.created_at || '',
+          address: item.address || '',
+          country: item.country || '',
+          declaration_date: item.declaration_date || '',
+          declaration_name: item.declaration_name || '',
+          dob: item.dob || '',
+          first_name: item.first_name || '',
+          first_name_of_spouse: item.first_name_of_spouse || '',
+          gender: item.gender || '',
+          land_price: item.land_price || '',
+          language: item.language || '',
+          last_name: item.last_name || '',
+          last_name_of_spouse: item.last_name_of_spouse || '',
+          lga: item.lga || '',
+          marital_status: item.marital_status || '',
+          middle_name: item.middle_name || '',
+          middle_name_of_spouse: item.middle_name_of_spouse || '',
+          nationality: item.nationality || '',
+          next_of_kin_address: item.next_of_kin_address || '',
+          next_of_kin_email: item.next_of_kin_email || '',
+          next_of_kin_full_name: item.next_of_kin_full_name || '',
+          next_of_kin_mobile_number: item.next_of_kin_mobile_number || '',
+          number_of_plot: item.number_of_plot || '',
+          occupation: item.occupation || '',
+          personal_picture: item.personal_picture || '',
+          plot_number: item.plot_number || '',
+          referral_date: item.referral_date || '',
+          referral_email: item.referral_email || '',
+          referral_name: item.referral_name || '',
+          referral_number: item.referral_number || '',
+          signature: item.signature || '',
+          site_location: item.site_location || '',
+            state_of_origin: item.state_of_origin || '',
+            telephone_number: item.telephone_number || '',
+            title: item.title || '',
+            title_of_spouse: item.title_of_spouse || '',
+            updated_at: item.updated_at || '',
+        }));
+
+        setAllApplications(mappedApplications);
+        setTotalPages(meta.last_page || 1);
+        setTotalRecords(meta.total || applications.length);
+      } catch (err) {
+        console.error('Error fetching applications:', err);
+        toast.error('Failed to fetch applications: ' + (err.message || 'Unknown error'));
+        if (axios.isAxiosError(err) && err.response?.status === 401) {
+          localStorage.removeItem('token');
+          window.location.href = '/login';
+        }
+      }
+    };
+
+    fetchApplications();
+  }, [currentPage]);
+
+  // Apply filters to allClients and paginate results
+  useEffect(() => {
+    let filtered = allClients;
+
+    if (filterBranch) {
+      filtered = filtered.filter(item =>
+        item.branches.toLowerCase() === filterBranch.toLowerCase()
+      );
     }
-    setFilterModalOpen(false);
+    if (filterDateFrom) {
+      filtered = filtered.filter(item =>
+        new Date(parseISO(item.created_at)) >= new Date(filterDateFrom)
+      );
+    }
+    if (filterDateTo) {
+      filtered = filtered.filter(item =>
+        new Date(parseISO(item.created_at)) <= new Date(filterDateTo)
+      );
+    }
+
+    setTotalRecords(filtered.length);
+    setTotalPages(Math.ceil(filtered.length / recordsPerPage));
+
+    const startIndex = (currentPage - 1) * recordsPerPage;
+    const paginatedData = filtered.slice(startIndex, startIndex + recordsPerPage);
+
+    setFilteredData(paginatedData);
+  }, [filterBranch, filterDateFrom, filterDateTo, allClients, currentPage]);
+
+  // Apply branch filter
+  const applyBranchFilter = () => {
+    if (branchInput && !branchOptions.includes(branchInput)) {
+      toast.error('Invalid branch selected.');
+      return;
+    }
+    setFilterBranch(branchInput);
+    setBranchFilterModalOpen(false);
+    setCurrentPage(1);
+    toast.success('Branch filter applied successfully!');
+  };
+
+  // Apply date filter
+  const applyDateFilter = () => {
+    setFilterDateFrom(dateFromInput);
+    setFilterDateTo(dateToInput);
+    setDateFilterModalOpen(false);
+    setCurrentPage(1);
+    toast.success('Date filter applied successfully!');
+  };
+
+  // Download CSV
+  const handleDownload = () => {
+    if (!downloadDateFrom || !downloadDateTo) {
+      toast.error("Please select a date range before downloading.");
+      return;
+    }
+
+    const filteredForDownload = allClients.filter(item => {
+      try {
+        const createdDate = item.created_at ? new Date(parseISO(item.created_at)) : null;
+        const startDate = new Date(downloadDateFrom);
+        const endDate = new Date(downloadDateTo);
+        return createdDate >= startDate && createdDate <= endDate;
+      } catch (error) {
+        console.error('Error parsing date for item:', item, error);
+        return false;
+      }
+    });
+
+    if (filteredForDownload.length === 0) {
+      toast.error("No records found for the selected date range.");
+      return;
+    }
+
+    const headers = [
+      'Client Name',
+      'State of Origin',
+      'LGA',
+      'Property Name',
+      'Number of Plot(s)',
+      'Plot No(s)',
+    ];
+
+    const rows = filteredForDownload.map(item => [
+      item.client_name || '',
+      item.state_of_origin || '',
+      item.lga || '',
+      item.site_location || '', // Assuming 'Property Name' maps to 'site_location'
+      item.number_of_plot || '',
+      item.plot_number || '',
+    ].map(field => `"${String(field).replace(/"/g, '""')}"`));
+
+    const csvContent = [headers, ...rows].map(row => row.join(',')).join('\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute(
+      'download',
+      `clients_${format(new Date(downloadDateFrom), 'yyyy-MM-dd')}_to_${format(
+        new Date(downloadDateTo),
+        'yyyy-MM-dd'
+      )}.csv`
+    );
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+
+    setDownloadModalOpen(false);
+    toast.success('CSV downloaded successfully!');
   };
 
   // Reset filter
   const resetFilter = () => {
-    setFilteredData(sampleData);
     setFilterDateFrom(null);
     setFilterDateTo(null);
+    setFilterBranch('');
+    setBranchInput('');
+    setDateFromInput(null);
+    setDateToInput(null);
     setCurrentPage(1);
-    setFilterModalOpen(false);
-  };
-
-  // Download CSV with date filter
-  const handleDownload = () => {
-    if (!downloadDateFrom || !downloadDateTo) {
-      downloadCSV(filteredData);
-    } else {
-      const filteredForDownload = filteredData.filter(item => {
-        const declDate = item.clientDeclarationDate ? new Date(item.clientDeclarationDate) : null;
-        const refDate = item.referralDate ? new Date(item.referralDate) : null;
-        return (
-          (declDate && declDate >= downloadDateFrom && declDate <= downloadDateTo) ||
-          (refDate && refDate >= downloadDateFrom && refDate <= downloadDateTo)
-        );
-      });
-      downloadCSV(filteredForDownload);
-    }
-    setDownloadModalOpen(false);
-    setDownloadDateFrom(null);
-    setDownloadDateTo(null);
+    setDateFilterModalOpen(false);
+    setBranchFilterModalOpen(false);
+    toast.success('Filters reset successfully!');
   };
 
   return (
-    <div className="w-full">
-      <div className=" mx-auto bg-white rounded-xl shadow-2xl p-6 md:p-12 transform transition-all duration-500 ease-in-out animate-fadeIn">
+    <div className="min-h-screen bg-gray-100 flex flex-col p-2 sm:p-4 md:p-5">
+      <div className="mx-auto bg-white rounded-2xl shadow-2xl p-2 sm:p-4 md:p-5 w-full py-8 transition-all duration-300">
         {/* Header */}
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6 m mb-4 md:mb-8 border-b border-gray-200 pb-3 md:pb-4">
-          {/* Left: Logo + Title */}
-          <div className="flex items-center gap-2 md:gap-4 w-full md:w-auto justify-center md:justify-start">
-            <img src={assets.logo} className="w-10 md:w-12" alt="Logo" />
-            <h1 className="text-2xl md:text-3xl font-extrabold text-secClr text-center md:text-left">
-              Client Management Dashboard
-            </h1>
+        <div className="flex flex-col items-center gap-4 md:flex-row md:items-center md:justify-between md:gap-4 mb-4 md:mb-6 border-b border-gray-200 pb-2 md:pb-4">
+          <div className="flex items-center gap-2 md:gap-3">
+            <img src={assets.logo} className="w-8 h-8 md:w-10 md:h-10" alt="Logo" />
+            <h1 className="text-lg md:text-2xl font-extrabold text-gray-900">Dashboard</h1>
           </div>
-
-          {/* Right: Buttons */}
-          <div className="flex flex-col md:flex-row gap-4 w-full md:w-auto">
+          <div className="flex gap-2 md:gap-3 w-full md:w-auto">
             <button
-              onClick={() => setFilterModalOpen(true)}
-              className="flex items-center justify-center w-full md:w-auto px-4 md:px-6 py-2 md:py-2.5 bg-[#2F5318] text-white font-semibold rounded-lg hover:bg-[#254015] transition duration-300 ease-in-out transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-green-500"
+              onClick={() => setBranchFilterModalOpen(true)}
+              className="flex-1 flex items-center justify-center p-3 bg-secClr text-white font-semibold rounded-lg hover:bg-secClr/90 transition duration-300 shadow-md"
             >
-              <FaFilter className="mr-2" />
-              Filter by Date
+              <FaFilter className="mr-1 w-4 h-4 md:w-5 md:h-5" />
+              Branch
+            </button>
+            <button
+              onClick={() => setDateFilterModalOpen(true)}
+              className="flex-1 flex items-center justify-center p-3 bg-secClr text-white font-semibold rounded-lg hover:bg-secClr/90 transition duration-300 shadow-md"
+            >
+              <FaFilter className="mr-1 w-4 h-4 md:w-5 md:h-5" />
+              Date
             </button>
             <button
               onClick={() => setDownloadModalOpen(true)}
-              className="flex items-center justify-center w-full md:w-auto px-4 md:px-6 py-2 md:py-2.5 bg-[#2F5318] text-white font-semibold rounded-lg hover:bg-[#254015] transition duration-300 ease-in-out transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-green-500"
+              className="flex-1 flex items-center justify-center p-3 bg-secClr text-white font-semibold rounded-lg hover:bg-secClr/90 transition duration-300 shadow-md"
             >
-              <FaDownload className="mr-2" />
-              Download CSV
+              <FaDownload className="mr-1 w-4 h-4 md:w-5 md:h-5" />
+              CSV
             </button>
           </div>
         </div>
 
+        {/* Client List (Cards on mobile, Table on md+) */}
+        <div className="space-y-2 md:space-y-0">
+          {/* Mobile: Card Layout */}
+          <div className="md:hidden space-y-4">
+            {filteredData.length === 0 ? (
+              <div className="p-3 text-center text-sm text-gray-600 bg-white rounded-lg shadow-sm border border-gray-200">
+                No records found
+              </div>
+            ) : (
+              filteredData.map((item, index) => (
+                <div
+                  key={item.id || index}
+                  className="bg-white rounded-lg shadow-sm border border-gray-200 p-3 hover:bg-gray-50 transition duration-200 overflow-hidden"
+                >
+                  <div className="flex justify-between items-start">
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-semibold text-gray-900 break-words">
+                        {(currentPage - 1) * recordsPerPage + index + 1}. {item.client_name}
+                      </p>
+                      <p className="text-xs text-gray-600 break-words">{item.email}</p>
+                      <p className="text-xs text-gray-600 break-words">{item.mobile_number}</p>
+                    </div>
+                    <div className="flex gap-2 flex-shrink-0">
+                      <Link
+                        to={`/view-client/${item.id}`}
+                        className="p-2 bg-secClr text-white rounded-md hover:bg-secClr/90"
+                        aria-label={`View ${item.client_name}`}
+                      >
+                        <FaEye className="w-4 h-4" />
+                      </Link>
+                      <Link
+                        to={`/edit-client/${item.id}`}
+                        className="p-2 bg-secClr text-white rounded-md hover:bg-secClr/90"
+                        aria-label={`Edit ${item.client_name}`}
+                      >
+                        <FaEdit className="w-4 h-4" />
+                      </Link>
+                    </div>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
 
-        {/* Table Container */}
-        <div className="overflow-x-auto border border-gray-200 rounded-lg">
-          <table className="w-full divide-y divide-gray-200">
-            <thead className="bg-gray-100">
-              <tr>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Image</th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Client Name</th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Email</th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Mobile</th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Address</th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">DOB</th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Nationality</th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Gender</th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Marital Status</th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Spouse Name</th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">State of Origin</th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">LGA</th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Occupation</th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Country</th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Language</th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Next of Kin</th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Kin Email</th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Kin Mobile</th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Land Price</th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Plots</th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Site Location</th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Plot Number</th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Signature</th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Declaration Date</th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Referral Name</th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Referral Email</th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Referral Mobile</th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Referral Date</th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {currentRecords.map((item, index) => (
-                <tr key={index} className="hover:bg-gray-50 transition duration-200">
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <img
-                      src={item.image || 'https://via.placeholder.com/50'}
-                      alt="Client"
-                      className="w-10 h-10 rounded-full object-cover border border-gray-200"
-                    />
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                    {`${item.title || ''} ${item.firstName} ${item.middleName || ''} ${item.lastName}`.trim()}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{item.email}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{item.mobileNumber}</td>
-                  <td className="px-6 py-4 text-sm text-gray-700">{item.address}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
-                    {item.dateOfBirth ? item.dateOfBirth.toISOString().split('T')[0] : ''}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{item.nationality}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{item.gender}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{item.maritalStatus}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
-                    {`${item.spouseTitle || ''} ${item.spouseFirstName || ''} ${item.spouseMiddleName || ''} ${item.spouseLastName || ''}`.trim()}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{item.stateOfOrigin}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{item.lga}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{item.occupation}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{item.countryOfResidence}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{item.language}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{item.nextOfKinFullName}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{item.nextOfKinEmail}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{item.nextOfKinMobileNumber}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{item.clientDeclarationLandPrice}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{item.clientDeclarationNumberOfPlots}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{item.clientDeclarationSiteLocation}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{item.clientDeclarationPlotNumber}</td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <img
-                      src={item.clientDeclarationSignature || 'https://via.placeholder.com/50'}
-                      alt="Signature"
-                      className="w-16 h-8 object-contain border border-gray-200"
-                    />
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
-                    {item.clientDeclarationDate ? item.clientDeclarationDate.toISOString().split('T')[0] : ''}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{item.referralFullName}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{item.referralEmail}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{item.referralMobileNumber}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
-                    {item.referralDate ? item.referralDate.toISOString().split('T')[0] : ''}
-                  </td>
+          {/* Desktop: Table Layout */}
+          <div className="hidden md:block relative overflow-x-auto border border-gray-200 rounded-xl shadow-sm">
+            <table className="w-full divide-y divide-gray-200 table-auto">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="p-2 md:p-5 text-left text-xs md:text-sm font-semibold text-gray-600 uppercase tracking-wider">S/N</th>
+                  <th className="p-2 md:p-5 text-left text-xs md:text-sm font-semibold text-gray-600 uppercase tracking-wider">Client Name</th>
+                  <th className="p-2 md:p-5 text-left text-xs md:text-sm font-semibold text-gray-600 uppercase tracking-wider">Email</th>
+                  <th className="p-2 md:p-5 text-left text-xs md:text-sm font-semibold text-gray-600 uppercase tracking-wider">Phone Number</th>
+                  <th className="p-2 md:p-5 text-left text-xs md:text-sm font-semibold text-gray-600 uppercase tracking-wider">Actions</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {filteredData.length === 0 ? (
+                  <tr>
+                    <td colSpan="5" className="p-2 md:p-5 text-center text-sm md:text-base text-gray-600">
+                      No records found
+                    </td>
+                  </tr>
+                ) : (
+                  filteredData.map((item, index) => (
+                    <tr key={item.id || index} className="hover:bg-secClr/10 transition duration-200">
+                      <td className="p-2 md:p-5 whitespace-nowrap text-sm md:text-base text-gray-700">
+                        {(currentPage - 1) * recordsPerPage + index + 1}
+                      </td>
+                      <td className="p-2 md:p-5 whitespace-nowrap text-sm md:text-base font-medium text-gray-900">{item.client_name}</td>
+                      <td className="p-2 md:p-5 whitespace-nowrap text-sm md:text-base text-gray-700">{item.email}</td>
+                      <td className="p-2 md:p-5 whitespace-nowrap text-sm md:text-base text-gray-700">{item.mobile_number}</td>
+                      <td className="p-2 md:p-5 whitespace-nowrap text-sm md:text-base text-gray-700">
+                        <div className="flex space-x-2 md:space-x-3">
+                          <Link to={`/view-client/${item.id}`} aria-label={`View ${item.client_name}`}>
+                            <FaEye className="text-secClr cursor-pointer w-4 h-4 md:w-5 md:h-5 hover:text-secClr/90" />
+                          </Link>
+                          <Link to={`/edit-client/${item.id}`} aria-label={`Edit ${item.client_name}`}>
+                            <FaEdit className="text-secClr cursor-pointer w-4 h-4 md:w-5 md:h-5 hover:text-secClr/90" />
+                          </Link>
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
         </div>
 
         {/* Pagination */}
-        <div className="mt-6 sm:mt-8 flex flex-col sm:flex-row justify-between items-center">
-          <div className="text-sm text-gray-600 mb-4 sm:mb-0">
-            Showing {indexOfFirstRecord + 1} to {Math.min(indexOfLastRecord, filteredData.length)} of {filteredData.length} records
+        <div className="mt-4 md:mt-6 flex flex-col md:flex-row justify-between items-center gap-2 md:gap-4">
+          <div className="text-sm md:text-base text-gray-600">
+            Showing {filteredData.length} of {totalRecords} records
           </div>
-          <div className="flex space-x-2">
+          <div className="flex flex-wrap gap-1 md:gap-2">
             <button
               onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
               disabled={currentPage === 1}
-              className="px-3 py-2 sm:px-4 sm:py-2 bg-gray-200 text-gray-800 font-semibold rounded-lg hover:bg-gray-300 transition duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="px-3 py-2 md:px-4 md:py-2 bg-gray-200 text-gray-800 font-semibold rounded-lg hover:bg-gray-300 transition duration-300 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
+              aria-label="Previous page"
             >
-              Previous
+              Prev
             </button>
             {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
               <button
                 key={page}
                 onClick={() => setCurrentPage(page)}
-                className={`px-3 py-2 sm:px-4 sm:py-2 rounded-lg font-semibold transition duration-300 ${currentPage === page ? 'bg-[#2F5318] text-white' : 'bg-gray-200 text-gray-800 hover:bg-gray-300'
-                  }`}
+                className={`px-3 py-2 md:px-4 md:py-2 rounded-lg font-semibold transition duration-300 shadow-sm ${currentPage === page ? 'bg-secClr text-white' : 'bg-gray-200 text-gray-800 hover:bg-gray-300'}`}
+                aria-label={`Page ${page}`}
               >
                 {page}
               </button>
@@ -439,103 +523,182 @@ const Dashboard = () => {
             <button
               onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
               disabled={currentPage === totalPages}
-              className="px-3 py-2 sm:px-4 sm:py-2 bg-gray-200 text-gray-800 font-semibold rounded-lg hover:bg-gray-300 transition duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="px-3 py-2 md:px-4 md:py-2 bg-gray-200 text-gray-800 font-semibold rounded-lg hover:bg-gray-300 transition duration-300 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
+              aria-label="Next page"
             >
               Next
             </button>
           </div>
         </div>
+
+        {/* Branch Filter Modal */}
+        {branchFilterModalOpen && (
+          <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-2 sm:p-4">
+            <div className="bg-white rounded-2xl p-4 sm:p-6 w-full max-w-md shadow-2xl max-h-[calc(100vh-2rem)] overflow-y-auto">
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-lg md:text-xl font-bold text-gray-900">Filter by Branch</h3>
+                <button
+                  onClick={() => setBranchFilterModalOpen(false)}
+                  className="p-2 text-gray-600 hover:text-gray-900"
+                  aria-label="Close branch filter modal"
+                >
+                  <FaTimes className="w-5 h-5" />
+                </button>
+              </div>
+              <div className="flex flex-col gap-3 md:gap-4 mb-6">
+                <div>
+                  <label className="block text-sm md:text-base font-medium text-gray-700 mb-1 md:mb-2">Branch</label>
+                  <select
+                    value={branchInput}
+                    onChange={e => setBranchInput(e.target.value)}
+                    className="w-full px-3 py-2 md:px-4 md:py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-secClr text-sm md:text-base bg-gray-50"
+                    aria-label="Select branch"
+                  >
+                    <option value="">Select Branch</option>
+                    {branchOptions.map((branch) => (
+                      <option key={branch} value={branch}>
+                        {branch}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+              <div className="flex justify-end gap-2 md:gap-3">
+                <button
+                  onClick={resetFilter}
+                  className="px-3 py-2 md:px-4 md:py-2 bg-gray-200 text-gray-800 font-semibold rounded-lg hover:bg-gray-300 transition duration-300 shadow-md w-full md:w-auto"
+                  aria-label="Reset branch filter"
+                >
+                  Reset
+                </button>
+                <button
+                  onClick={applyBranchFilter}
+                  className="px-3 py-2 md:px-4 md:py-2 bg-secClr text-white font-semibold rounded-lg hover:bg-secClr/90 transition duration-300 shadow-md w-full md:w-auto"
+                  aria-label="Apply branch filter"
+                >
+                  Apply
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Date Filter Modal */}
+        {dateFilterModalOpen && (
+          <div className="fixed inset-0 bg-black/90 flex items-center justify-center z-50 p-2 sm:p-4">
+            <div className="bg-white rounded-2xl p-4 sm:p-6 w-full max-w-md shadow-2xl max-h-[calc(100vh-2rem)] overflow-y-auto">
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-lg md:text-xl font-bold text-gray-900">Filter by Date</h3>
+                <button
+                  onClick={() => setDateFilterModalOpen(false)}
+                  className="p-2 text-gray-600 hover:text-gray-900"
+                  aria-label="Close date filter modal"
+                >
+                  <FaTimes className="w-5 h-5" />
+                </button>
+              </div>
+              <div className="flex flex-col gap-3 md:gap-4 mb-6">
+                <div>
+                  <label className="block text-sm md:text-base font-medium text-gray-700 mb-1 md:mb-2">Date From</label>
+                  <DatePicker
+                    selected={dateFromInput}
+                    onChange={date => setDateFromInput(date)}
+                    dateFormat="dd-MM-yyyy"
+                    placeholderText="Select start date"
+                    className="w-full px-3 py-2 md:px-4 md:py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-secClr text-sm md:text-base bg-gray-50"
+                    aria-label="Select start date"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm md:text-base font-medium text-gray-700 mb-1 md:mb-2">Date To</label>
+                  <DatePicker
+                    selected={dateToInput}
+                    onChange={date => setDateToInput(date)}
+                    dateFormat="dd-MM-yyyy"
+                    placeholderText="Select end date"
+                    className="w-full px-3 py-2 md:px-4 md:py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-secClr text-sm md:text-base bg-gray-50"
+                    aria-label="Select end date"
+                  />
+                </div>
+              </div>
+              <div className="flex justify-end gap-2 md:gap-3">
+                <button
+                  onClick={resetFilter}
+                  className="px-3 py-2 md:px-4 md:py-2 bg-gray-200 text-gray-800 font-semibold rounded-lg hover:bg-gray-300 transition duration-300 shadow-md w-full md:w-auto"
+                  aria-label="Reset date filter"
+                >
+                  Reset
+                </button>
+                <button
+                  onClick={applyDateFilter}
+                  className="px-3 py-2 md:px-4 md:py-2 bg-secClr text-white font-semibold rounded-lg hover:bg-secClr/90 transition duration-300 shadow-md w-full md:w-auto"
+                  aria-label="Apply date filter"
+                >
+                  Apply
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Download Modal */}
+        {downloadModalOpen && (
+          <div className="fixed inset-0 bg-black/90 flex items-center justify-center z-50 p-2 sm:p-4">
+            <div className="bg-white rounded-2xl p-4 sm:p-6 w-full max-w-md shadow-2xl max-h-[calc(100vh-2rem)] overflow-y-auto">
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-lg md:text-xl font-bold text-gray-900">Download CSV</h3>
+                <button
+                  onClick={() => setDownloadModalOpen(false)}
+                  className="p-2 text-gray-600 hover:text-gray-900"
+                  aria-label="Close download modal"
+                >
+                  <FaTimes className="w-5 h-5" />
+                </button>
+              </div>
+              <div className="flex flex-col gap-3 md:gap-4 mb-6">
+                <div>
+                  <label className="block text-sm md:text-base font-medium text-gray-700 mb-1 md:mb-2">Date From</label>
+                  <DatePicker
+                    selected={downloadDateFrom}
+                    onChange={date => setDownloadDateFrom(date)}
+                    dateFormat="dd-MM-yyyy"
+                    placeholderText="Select start date"
+                    className="w-full px-3 py-2 md:px-4 md:py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-secClr text-sm md:text-base bg-gray-50"
+                    aria-label="Select download start date"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm md:text-base font-medium text-gray-700 mb-1 md:mb-2">Date To</label>
+                  <DatePicker
+                    selected={downloadDateTo}
+                    onChange={date => setDownloadDateTo(date)}
+                    dateFormat="dd-MM-yyyy"
+                    placeholderText="Select end date"
+                    className="w-full px-3 py-2 md:px-4 md:py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-secClr text-sm md:text-base bg-gray-50"
+                    aria-label="Select download end date"
+                  />
+                </div>
+              </div>
+              <div className="flex justify-end gap-2 md:gap-3">
+                <button
+                  onClick={() => setDownloadModalOpen(false)}
+                  className="px-3 py-2 md:px-4 md:py-2 bg-gray-200 text-gray-800 font-semibold rounded-lg hover:bg-gray-300 transition duration-300 shadow-md w-full md:w-auto"
+                  aria-label="Cancel download"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleDownload}
+                  className="px-3 py-2 md:px-4 md:py-2 bg-secClr text-white font-semibold rounded-lg hover:bg-secClr/90 transition duration-300 shadow-md w-full md:w-auto"
+                  aria-label="Download CSV"
+                >
+                  Download
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
-
-      {/* Filter Modal */}
-      {filterModalOpen && (
-        <div className="fixed inset-0 bg-black/90 p-4 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg px-6 py-6 w-full md:w-[40%] transform transition-all duration-300 animate-fadeIn">
-            <h3 className="text-lg sm:text-xl font-bold text-gray-800 mb-4">Filter by Date</h3>
-            <div className="flex gap-5 mb-6">
-              <div className="flex-1">
-                <label className="block text-sm font-medium text-gray-700 mb-2">Date From</label>
-                <DatePicker
-                  selected={filterDateFrom}
-                  onChange={date => setFilterDateFrom(date)}
-                  dateFormat="dd-MM-yyyy"
-                  placeholderText="Select start date"
-                  className="w-full px-3 sm:px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#2F5318]"
-                />
-              </div>
-              <div className="flex-1">
-                <label className="block text-sm font-medium text-gray-700 mb-2">Date To</label>
-                <DatePicker
-                  selected={filterDateTo}
-                  onChange={date => setFilterDateTo(date)}
-                  dateFormat="dd-MM-yyyy"
-                  placeholderText="Select end date"
-                  className="w-full px-3 sm:px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#2F5318]"
-                />
-              </div>
-            </div>
-            <div className="flex justify-end space-x-3 sm:space-x-4">
-              <button
-                onClick={resetFilter}
-                className="px-3 sm:px-4 py-2 bg-gray-300 text-gray-800 font-semibold rounded-lg hover:bg-gray-400 transition duration-300"
-              >
-                Reset
-              </button>
-              <button
-                onClick={applyDateFilter}
-                className="px-3 sm:px-4 py-2 bg-[#2F5318] text-white font-semibold rounded-lg hover:bg-[#254015] transition duration-300"
-              >
-                Apply Filter
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Download Modal */}
-      {downloadModalOpen && (
-        <div className="fixed inset-0 bg-black/90 p-4 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg px-6 py-6 w-full md:w-[40%] transform transition-all duration-300 animate-fadeIn">
-            <h3 className="text-lg sm:text-xl font-bold text-gray-800 mb-4">Download CSV by Date</h3>
-            <div className="flex gap-5 mb-6">
-              <div className="flex-1">
-                <label className="block text-sm font-medium text-gray-700 mb-2">Date From</label>
-                <DatePicker
-                  selected={downloadDateFrom}
-                  onChange={date => setDownloadDateFrom(date)}
-                  dateFormat="dd-MM-yyyy"
-                  placeholderText="Select start date"
-                  className="w-full px-3 sm:px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#2F5318]"
-                />
-              </div>
-              <div className="flex-1">
-                <label className="block text-sm font-medium text-gray-700 mb-2">Date To</label>
-                <DatePicker
-                  selected={downloadDateTo}
-                  onChange={date => setDownloadDateTo(date)}
-                  dateFormat="dd-MM-yyyy"
-                  placeholderText="Select end date"
-                  className="w-full px-3 sm:px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#2F5318]"
-                />
-              </div>
-            </div>
-            <div className="flex justify-end space-x-3 sm:space-x-4">
-              <button
-                onClick={() => setDownloadModalOpen(false)}
-                className="px-3 sm:px-4 py-2 bg-gray-300 text-gray-800 font-semibold rounded-lg hover:bg-gray-400 transition duration-300"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleDownload}
-                className="px-3 sm:px-4 py-2 bg-[#2F5318] text-white font-semibold rounded-lg hover:bg-[#254015] transition duration-300"
-              >
-                Download
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 };
