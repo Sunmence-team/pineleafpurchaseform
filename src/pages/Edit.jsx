@@ -13,28 +13,6 @@ const EditClient = () => {
   const navigate = useNavigate();
   const [formData, setFormData] = useState(null);
 
-  // Convert base64 string to File object for PNG
-  const base64ToFile = (base64, filename) => {
-    try {
-      if (!base64 || !base64.includes('base64,')) {
-        console.warn(`Invalid base64 string for ${filename}`);
-        return '';
-      }
-      const arr = base64.split(',');
-      const mime = arr[0].match(/:(.*?);/)[1];
-      const bstr = atob(arr[1]);
-      let n = bstr.length;
-      const u8arr = new Uint8Array(n);
-      while (n--) {
-        u8arr[n] = bstr.charCodeAt(n);
-      }
-      return new File([u8arr], filename, { type: mime });
-    } catch (err) {
-      console.error(`Error converting base64 to file for ${filename}:`, err);
-      return '';
-    }
-  };
-
   useEffect(() => {
     const fetchClient = async () => {
       try {
@@ -62,7 +40,6 @@ const EditClient = () => {
         }
 
         setFormData({
-          image: application.personal_picture ? `${API_URL}/${application.personal_picture}` : '',
           client_name: application.client_name || '',
           firstName: application.first_name || '',
           middleName: application.middle_name || '',
@@ -92,7 +69,6 @@ const EditClient = () => {
           clientDeclarationSiteLocation: application.site_location || '',
           clientDeclarationPlotNumber: application.plot_number || '',
           branches: application.branches || '',
-          clientDeclarationSignature: application.signature ? `${API_URL}/${application.signature}` : '',
           clientDeclarationDate: application.declaration_date ? new Date(application.declaration_date) : null,
           clientDeclarationClientName: application.declaration_name || '',
           referralFullName: application.referral_name || '',
@@ -118,11 +94,6 @@ const EditClient = () => {
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
-  };
-
-  const handleFileChange = (e) => {
-    const { name, files } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: files[0] }));
   };
 
   const handleDateChange = (name, date) => {
@@ -181,7 +152,6 @@ const EditClient = () => {
       }
 
       const formDataToSend = new FormData();
-      formDataToSend.append('personal_picture', formData.image instanceof File ? formData.image : base64ToFile(formData.image, 'personal_picture.png') || '');
       formDataToSend.append('client_name', formData.clientDeclarationClientName || '');
       formDataToSend.append('first_name', formData.firstName || '');
       formDataToSend.append('middle_name', formData.middleName || '');
@@ -213,7 +183,6 @@ const EditClient = () => {
       formDataToSend.append('site_location', formData.clientDeclarationSiteLocation || '');
       formDataToSend.append('plot_number', formData.clientDeclarationPlotNumber || '');
       formDataToSend.append('branches', formData.branches || '');
-      formDataToSend.append('signature', formData.clientDeclarationSignature instanceof File ? formData.clientDeclarationSignature : base64ToFile(formData.clientDeclarationSignature, 'signature.png') || '');
       formDataToSend.append('declaration_date', formData.clientDeclarationDate ? format(new Date(formData.clientDeclarationDate), 'yyyy-MM-dd') : '');
       formDataToSend.append('declaration_name', formData.clientDeclarationClientName || '');
       formDataToSend.append('referral_name', formData.referralFullName || '');
@@ -294,62 +263,46 @@ const EditClient = () => {
           {/* Profile */}
           <div className="border-b border-gray-200 pb-4 md:pb-6">
             <h3 className="text-lg md:text-xl font-semibold text-gray-900 mb-4 md:mb-6">Profile</h3>
-            <div className="flex flex-col md:flex-row gap-4 md:gap-8 items-start md:items-center">
+            <div className="space-y-4 w-full">
               <div>
-                <img
-                  src={formData.image || 'https://via.placeholder.com/150'}
-                  alt="Client"
-                  className="w-24 h-24 md:w-32 md:h-32 rounded-xl object-cover border-2 border-gray-100 shadow-sm"
-                />
+                <label className="block text-base font-medium text-gray-700">Client Name</label>
                 <input
-                  type="file"
-                  name="image"
-                  accept="image/*"
-                  onChange={handleFileChange}
-                  className="mt-4 block w-full text-base file:bg-secClr text-white file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-base file:font-semibold hover:file:bg-secClr/80"
+                  type="text"
+                  name="clientDeclarationClientName"
+                  value={formData.clientDeclarationClientName}
+                  onChange={handleInputChange}
+                  className="mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-secClr focus:ring-secClr text-base p-2"
                 />
               </div>
-              <div className="space-y-4 w-full">
-                <div>
-                  <label className="block text-base font-medium text-gray-700">Client Name</label>
-                  <input
-                    type="text"
-                    name="clientDeclarationClientName"
-                    value={formData.clientDeclarationClientName}
-                    onChange={handleInputChange}
-                    className="mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-secClr focus:ring-secClr text-base p-2"
-                  />
-                </div>
-                <div>
-                  <label className="block text-base font-medium text-gray-700">Email</label>
-                  <input
-                    type="email"
-                    name="email"
-                    value={formData.email}
-                    onChange={handleInputChange}
-                    className="mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-secClr focus:ring-secClr text-base p-2"
-                  />
-                </div>
-                <div>
-                  <label className="block text-base font-medium text-gray-700">Mobile Number</label>
-                  <input
-                    type="text"
-                    name="mobileNumber"
-                    value={formData.mobileNumber}
-                    onChange={handleInputChange}
-                    className="mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-secClr focus:ring-secClr text-base p-2"
-                  />
-                </div>
-                <div>
-                  <label className="block text-base font-medium text-gray-700">Nationality</label>
-                  <input
-                    type="text"
-                    name="nationality"
-                    value={formData.nationality}
-                    onChange={handleInputChange}
-                    className="mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-secClr focus:ring-secClr text-base p-2"
-                  />
-                </div>
+              <div>
+                <label className="block text-base font-medium text-gray-700">Email</label>
+                <input
+                  type="email"
+                  name="email"
+                  value={formData.email}
+                  onChange={handleInputChange}
+                  className="mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-secClr focus:ring-secClr text-base p-2"
+                />
+              </div>
+              <div>
+                <label className="block text-base font-medium text-gray-700">Mobile Number</label>
+                <input
+                  type="text"
+                  name="mobileNumber"
+                  value={formData.mobileNumber}
+                  onChange={handleInputChange}
+                  className="mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-secClr focus:ring-secClr text-base p-2"
+                />
+              </div>
+              <div>
+                <label className="block text-base font-medium text-gray-700">Nationality</label>
+                <input
+                  type="text"
+                  name="nationality"
+                  value={formData.nationality}
+                  onChange={handleInputChange}
+                  className="mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-secClr focus:ring-secClr text-base p-2"
+                />
               </div>
             </div>
           </div>
@@ -685,21 +638,6 @@ const EditClient = () => {
                     className="mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-secClr focus:ring-secClr text-base p-2"
                   />
                 </div>
-              </div>
-              <div className="w-full md:w-1/2">
-                <label className="block text-base font-medium text-gray-700 mb-2">Signature</label>
-                <img
-                  src={formData.clientDeclarationSignature || 'https://via.placeholder.com/150'}
-                  alt="Signature"
-                  className="w-40 h-24 md:w-56 md:h-36 object-contain border-2 border-gray-100 rounded-lg shadow-sm mb-4"
-                />
-                <input
-                  type="file"
-                  name="clientDeclarationSignature"
-                  accept="image/*"
-                  onChange={handleFileChange}
-                  className="block w-full text-base file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-base file:font-semibold file:bg-secClr text-white hover:file:bg-secClr/80"
-                />
               </div>
             </div>
           </div>

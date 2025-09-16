@@ -8,6 +8,7 @@ import { useReactToPrint } from "react-to-print";
 import assets from "../assets/assests";
 
 const API_URL = import.meta.env.VITE_API_BASE_URL;
+const STORAGE_URL = "https://forms.pineleafestates.com/back/storage/app/public";
 
 const ViewClient = () => {
   const { id } = useParams();
@@ -39,12 +40,13 @@ const ViewClient = () => {
         const application = response.data.data;
         if (!application) throw new Error("No client data found");
 
+        console.log("Raw API response:", application);
+
         const clientData = {
           id: application.id,
           personal_picture: application.personal_picture
-            ? `${API_URL}/${application.personal_picture.replace(/^\//, "")}`
+            ? `${STORAGE_URL}/${application.personal_picture.replace(/^public\//, "")}`
             : "https://via.placeholder.com/150",
-
           client_name: application.client_name || "",
           first_name: application.first_name || "",
           middle_name: application.middle_name || "",
@@ -75,7 +77,7 @@ const ViewClient = () => {
           plot_number: application.plot_number || "",
           branches: application.branches || "",
           signature: application.signature
-            ? `${API_URL}/${application.signature}`
+            ? `${STORAGE_URL}/${application.signature.replace(/^public\//, "")}`
             : "https://via.placeholder.com/150",
           declaration_date: application.declaration_date
             ? new Date(application.declaration_date)
@@ -89,19 +91,10 @@ const ViewClient = () => {
           referral_email: application.referral_email || "",
         };
 
-        console.log("Image URL:", `${API_URL.replace(/\/$/, "")}/${application.personal_picture.replace(/^\//, "")}`);
-        console.log("Full API Response:", response.data);
-
-        // If you want just the application object
-        console.log("Application Object:", response.data.data);
-        console.log("Profile URL:", clientData.personal_picture);
-console.log("Signature URL:", clientData.signature);
-
-
-console.log("Image URL:", `${API_URL}/personal_pictures/${application.personal_picture.split('/').pop()}`);
-console.log("Signature URL:", `${API_URL}/signatures/${application.signature.split('/').pop()}`);
-
-
+        console.log("Raw personal_picture:", application.personal_picture);
+        console.log("Built Profile URL:", clientData.personal_picture);
+        console.log("Raw signature:", application.signature);
+        console.log("Built Signature URL:", clientData.signature);
 
         setClient(clientData);
       } catch (err) {
@@ -208,7 +201,7 @@ console.log("Signature URL:", `${API_URL}/signatures/${application.signature.spl
 
           {/* Personal Info */}
           <div>
-            <h3 className="text-lg md:text-2xl font-semibold text-secClr border-b border-gray-200  py-3 mb-6">
+            <h3 className="text-lg md:text-2xl font-semibold text-scClr border-b border-gray-200 py-3 mb-6">
               Personal Information
             </h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
@@ -231,7 +224,7 @@ console.log("Signature URL:", `${API_URL}/signatures/${application.signature.spl
 
           {/* Spouse Info */}
           <div>
-            <h3 className="text-lg md:text-2xl font-semibold text-secClr border-b border-gray-200  py-3 mb-6">
+            <h3 className="text-lg md:text-2xl font-semibold text-secClr border-b border-gray-200 py-3 mb-6">
               Spouse Information
             </h3>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6">
@@ -243,7 +236,7 @@ console.log("Signature URL:", `${API_URL}/signatures/${application.signature.spl
 
           {/* Contact Info */}
           <div>
-            <h3 className="text-lg md:text-2xl font-semibold text-secClr border-b border-gray-200  py-3 mb-6">
+            <h3 className="text-lg md:text-2xl font-semibold text-secClr border-b border-gray-200 py-3 mb-6">
               Contact Information
             </h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
@@ -255,7 +248,7 @@ console.log("Signature URL:", `${API_URL}/signatures/${application.signature.spl
 
           {/* Next of Kin */}
           <div>
-            <h3 className="text-lg md:text-2xl font-semibold text-secClr border-b border-gray-200  py-3 mb-6">
+            <h3 className="text-lg md:text-2xl font-semibold text-secClr border-b border-gray-200 py-3 mb-6">
               Next of Kin
             </h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
@@ -268,7 +261,7 @@ console.log("Signature URL:", `${API_URL}/signatures/${application.signature.spl
 
           {/* Land Details */}
           <div>
-            <h3 className="text-lg md:text-2xl font-semibold text-secClr border-b border-gray-200  py-3 mb-6">
+            <h3 className="text-lg md:text-2xl font-semibold text-secClr border-b border-gray-200 py-3 mb-6">
               Land Details
             </h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
@@ -282,7 +275,7 @@ console.log("Signature URL:", `${API_URL}/signatures/${application.signature.spl
 
           {/* Declaration */}
           <div>
-            <h3 className="text-lg md:text-2xl font-semibold text-secClr border-b border-gray-200  py-3 mb-6">
+            <h3 className="text-lg md:text-2xl font-semibold text-secClr border-b border-gray-200 py-3 mb-6">
               Declaration
             </h3>
             <div className="flex flex-col sm:flex-row justify-between gap-4 sm:gap-6">
@@ -308,7 +301,7 @@ console.log("Signature URL:", `${API_URL}/signatures/${application.signature.spl
 
           {/* Referral */}
           <div>
-            <h3 className="text-lg md:text-2xl font-semibold text-secClr border-b border-gray-200  py-3 mb-6">
+            <h3 className="text-lg md:text-2xl font-semibold text-secClr border-b border-gray-200 py-3 mb-6">
               Referral
             </h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
