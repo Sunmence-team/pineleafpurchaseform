@@ -1,16 +1,138 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Formik, Form, Field, ErrorMessage } from 'formik';
 import * as Yup from 'yup';
+import { getCountryCallingCode, isValidPhoneNumber } from 'libphonenumber-js';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 import { BiBriefcase, BiEnvelope, BiGlobe } from 'react-icons/bi';
 import { FaUser, FaAddressCard, FaCalendarAlt, FaFlag, FaVenusMars, FaMapMarkerAlt, FaLanguage, FaPhoneAlt } from 'react-icons/fa';
 import { MdTitle } from 'react-icons/md';
+import { toast } from 'sonner';
 
 const Section1 = ({ formData, setFormData, nextSection }) => {
-  const [imagePreview, setImagePreview] = useState(formData.image || null);
+  const [imagePreview, setImagePreview] = useState(formData.image ? URL.createObjectURL(formData.image) : null);
+  const [countries, setCountries] = useState([]);
+  const [states, setStates] = useState([]);
+  const [lgas, setLgas] = useState([]);
+  const [loading, setLoading] = useState({
+    countries: false,
+    states: false,
+    lgas: false,
+  });
+  const [error, setError] = useState(null);
+  const [countryCodeMap, setCountryCodeMap] = useState({});
 
   const inputClass = "mt-1 block w-full rounded-md border border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm py-3 px-4 pl-10 bg-white";
+
+  // Fetch countries and ISO codes on component mount
+  useEffect(() => {
+    const fetchCountries = async () => {
+      setLoading((prev) => ({ ...prev, countries: true }));
+      setError(null);
+      try {
+        const response = await fetch('https://countriesnow.space/api/v0.1/countries');
+        const result = await response.json();
+        if (result.error) throw new Error(result.msg);
+
+        const countryMap = {};
+        const countryList = result.data
+          .map((c) => ({ name: c.country, isoCode: c.iso2 }))
+          .sort((a, b) => a.name.localeCompare(b.name));
+
+        countryList.forEach((c) => {
+          countryMap[c.name] = c.isoCode;
+        });
+
+        setCountries(countryList.map((c) => c.name));
+        setCountryCodeMap(countryMap);
+        // toast.success('Countries loaded successfully!');
+      } catch (err) {
+        console.error('Error fetching countries:', err);
+        setError('Failed to load countries. Please try again later.');
+        toast.error('Failed to load countries.');
+      } finally {
+        setLoading((prev) => ({ ...prev, countries: false }));
+      }
+    };
+    fetchCountries();
+  }, []);
+
+  // Fetch states when countryOfResidence changes
+  useEffect(() => {
+    if (formData.countryOfResidence) {
+      const fetchStates = async () => {
+        setLoading((prev) => ({ ...prev, states: true }));
+        setError(null);
+        try {
+          const response = await fetch('https://countriesnow.space/api/v0.1/countries/states', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ country: formData.countryOfResidence }),
+          });
+          const result = await response.json();
+          if (result.error) throw new Error(result.msg);
+
+          const stateList = result.data?.states?.map((s) => s.name) || [];
+          setStates(stateList.sort());
+          setLgas([]);
+        } catch (err) {
+          console.error('Error fetching states:', err);
+          setError('Failed to load states for selected country.');
+          toast.error('Failed to load states. Please select a valid country.');
+          setStates([]);
+          setLgas([]);
+        } finally {
+          setLoading((prev) => ({ ...prev, states: false }));
+        }
+      };
+      fetchStates();
+    } else {
+      setStates([]);
+      setLgas([]);
+    }
+  }, [formData.countryOfResidence]);
+
+  // Fetch LGAs when stateOfOrigin changes
+  useEffect(() => {
+    if (formData.stateOfOrigin && formData.countryOfResidence) {
+      const fetchLgas = async () => {
+        setLoading((prev) => ({ ...prev, lgas: true }));
+        setError(null);
+        try {
+          const response = await fetch('https://countriesnow.space/api/v0.1/countries/state/cities', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              country: formData.countryOfResidence,
+              state: formData.stateOfOrigin,
+            }),
+          });
+          const result = await response.json();
+          if (result.error) throw new Error(result.msg);
+
+          setLgas(result.data.sort());
+        } catch (err) {
+          console.error('Error fetching LGAs:', err);
+          setError('Failed to load local governments for selected state.');
+          toast.error('Failed to load local governments. Please select a valid state.');
+          setLgas([]);
+        } finally {
+          setLoading((prev) => ({ ...prev, lgas: false }));
+        }
+      };
+      fetchLgas();
+    } else {
+      setLgas([]);
+    }
+  }, [formData.stateOfOrigin, formData.countryOfResidence]);
+
+  // Get dynamic placeholder for mobile number
+  const getMobilePlaceholder = () => {
+    const country = formData.countryOfResidence;
+    if (!country || !countryCodeMap[country]) return 'Enter phone number';
+    const countryCode = getCountryCallingCode(countryCodeMap[country]);
+    return `+${countryCode} XXXXXXXXXX`;
+  };
 
   const validationSchema = Yup.object({
     image: Yup.mixed()
@@ -44,13 +166,21 @@ const Section1 = ({ formData, setFormData, nextSection }) => {
     spouseLastName: Yup.string().when('maritalStatus', (maritalStatus, schema) => {
       return maritalStatus === 'Married' ? schema.required('Spouse last name is required') : schema.nullable();
     }),
-    stateOfOrigin: Yup.string().nullable(),
-    lga: Yup.string().nullable(),
+    stateOfOrigin: Yup.string().required('State of origin is required'),
+    lga: Yup.string().required('Local government (LGA) is required'),
     occupation: Yup.string().nullable(),
-    countryOfResidence: Yup.string().nullable(),
+    countryOfResidence: Yup.string().required('Country of residence is required'),
     language: Yup.string().nullable(),
     email: Yup.string().email('Invalid email address').required('Email is required'),
-    mobileNumber: Yup.string().required('Mobile number is required'),
+    mobileNumber: Yup.string()
+      .required('Mobile number is required')
+      .test('valid-phone', 'Must be a valid phone number for the selected country', function (value) {
+        const { countryOfResidence } = this.parent;
+        if (!countryOfResidence || !value) return false;
+        const isoCode = countryCodeMap[countryOfResidence];
+        if (!isoCode) return false;
+        return isValidPhoneNumber(value, isoCode);
+      }),
     telephoneNumber: Yup.string().nullable(),
   });
 
@@ -65,6 +195,7 @@ const Section1 = ({ formData, setFormData, nextSection }) => {
     >
       {({ setFieldValue, values }) => (
         <Form className="space-y-6">
+          {error && <div className="text-red-500 text-sm mb-4">{error}</div>}
           <p className="font-semibold text-xl md:text-2xl text-center">Section 1: Client's Details</p>
           <div className="w-full">
             <label htmlFor="image" className="block text-sm font-medium text-black/70">Upload Image</label>
@@ -99,7 +230,7 @@ const Section1 = ({ formData, setFormData, nextSection }) => {
                           setImagePreview(null);
                         }
                       }}
-                      accept="image/*"
+                      accept="image/png,image/jpeg,image/gif"
                     />
                   </label>
                 </div>
@@ -138,12 +269,12 @@ const Section1 = ({ formData, setFormData, nextSection }) => {
                             reader.onloadend = () => {
                               setImagePreview(reader.result);
                             };
-                            readAsDataURL(file);
+                            reader.readAsDataURL(file);
                           } else {
                             setImagePreview(null);
                           }
                         }}
-                        accept="image/*"
+                        accept="image/png,image/jpeg,image/gif"
                       />
                     </label>
                   </div>
@@ -169,10 +300,16 @@ const Section1 = ({ formData, setFormData, nextSection }) => {
                   name="title"
                   className={inputClass}
                 >
-                  <option value="">Select</option>
-                  <option value="Mr">Mr</option>
-                  <option value="Mrs">Mrs</option>
-                  <option value="Miss">Miss</option>
+                  {[
+                    { value: '', label: 'Select', disabled: true, key: 'title-placeholder' },
+                    { value: 'Mr', label: 'Mr', key: 'title-mr' },
+                    { value: 'Mrs', label: 'Mrs', key: 'title-mrs' },
+                    { value: 'Miss', label: 'Miss', key: 'title-miss' },
+                  ].map(({ key, value, label, disabled }) => (
+                    <option key={key} value={value} disabled={disabled}>
+                      {label}
+                    </option>
+                  ))}
                 </Field>
                 <ErrorMessage name="title" component="div" className="text-xs text-red-500 mt-1" />
               </div>
@@ -317,10 +454,16 @@ const Section1 = ({ formData, setFormData, nextSection }) => {
                       name="spouseTitle"
                       className={inputClass}
                     >
-                      <option value="">Select</option>
-                      <option value="Mr">Mr</option>
-                      <option value="Mrs">Mrs</option>
-                      <option value="Miss">Miss</option>
+                      {[
+                        { value: '', label: 'Select', disabled: true, key: 'spouse-title-placeholder' },
+                        { value: 'Mr', label: 'Mr', key: 'spouse-title-mr' },
+                        { value: 'Mrs', label: 'Mrs', key: 'spouse-title-mrs' },
+                        { value: 'Miss', label: 'Miss', key: 'spouse-title-miss' },
+                      ].map(({ key, value, label, disabled }) => (
+                        <option key={key} value={value} disabled={disabled}>
+                          {label}
+                        </option>
+                      ))}
                     </Field>
                     <ErrorMessage name="spouseTitle" component="div" className="text-xs text-red-500 mt-1" />
                   </div>
@@ -370,34 +513,110 @@ const Section1 = ({ formData, setFormData, nextSection }) => {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="relative">
+              <label htmlFor="countryOfResidence" className="block text-sm font-medium text-black/70">Country of Residence</label>
+              <div className="relative">
+                <BiGlobe className="absolute top-1/2 transform -translate-y-1/2 left-3 text-secClr" />
+                <Field
+                  as="select"
+                  name="countryOfResidence"
+                  id="countryOfResidence"
+                  className={inputClass}
+                  onChange={(e) => {
+                    setFieldValue('countryOfResidence', e.target.value);
+                    setFieldValue('stateOfOrigin', '');
+                    setFieldValue('lga', '');
+                    setFieldValue('mobileNumber', '');
+                    setFormData({ ...formData, countryOfResidence: e.target.value, stateOfOrigin: '', lga: '', mobileNumber: '' });
+                  }}
+                >
+                  {[
+                    { value: '', label: loading.countries ? 'Loading countries...' : 'Select Country', disabled: true, key: 'country-placeholder' },
+                    ...countries.map((country) => ({ value: country, label: country, key: country })),
+                  ].map(({ key, value, label, disabled }) => (
+                    <option key={key} value={value} disabled={disabled}>
+                      {label}
+                    </option>
+                  ))}
+                </Field>
+                <ErrorMessage name="countryOfResidence" component="div" className="text-xs text-red-500 mt-1" />
+              </div>
+            </div>
+            <div className="relative">
               <label htmlFor="stateOfOrigin" className="block text-sm font-medium text-black/70">State of Origin</label>
               <div className="relative">
                 <FaMapMarkerAlt className="absolute top-1/2 transform -translate-y-1/2 left-3 text-secClr" />
                 <Field
-                  type="text"
+                  as="select"
                   name="stateOfOrigin"
                   id="stateOfOrigin"
                   className={inputClass}
-                />
+                  onChange={(e) => {
+                    setFieldValue('stateOfOrigin', e.target.value);
+                    setFieldValue('lga', '');
+                    setFormData({ ...formData, stateOfOrigin: e.target.value, lga: '' });
+                  }}
+                  disabled={!formData.countryOfResidence || loading.states}
+                >
+                  {[
+                    {
+                      value: '',
+                      label: loading.states
+                        ? 'Loading states...'
+                        : !formData.countryOfResidence
+                        ? 'Select country first'
+                        : states.length === 0
+                        ? 'No states available'
+                        : 'Select State',
+                      disabled: true,
+                      key: 'state-placeholder',
+                    },
+                    ...states.map((state) => ({ value: state, label: state, key: state })),
+                  ].map(({ key, value, label, disabled }) => (
+                    <option key={key} value={value} disabled={disabled}>
+                      {label}
+                    </option>
+                  ))}
+                </Field>
                 <ErrorMessage name="stateOfOrigin" component="div" className="text-xs text-red-500 mt-1" />
-              </div>
-            </div>
-            <div className="relative">
-              <label htmlFor="lga" className="block text-sm font-medium text-black/70">Local Government (LGA)</label>
-              <div className="relative">
-                <FaMapMarkerAlt className="absolute top-1/2 transform -translate-y-1/2 left-3 text-secClr" />
-                <Field
-                  type="text"
-                  name="lga"
-                  id="lga"
-                  className={inputClass}
-                />
-                <ErrorMessage name="lga" component="div" className="text-xs text-red-500 mt-1" />
               </div>
             </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="relative">
+              <label htmlFor="lga" className="block text-sm font-medium text-black/70">Local Government (LGA)</label>
+              <div className="relative">
+                <FaMapMarkerAlt className="absolute top-1/2 transform -translate-y-1/2 left-3 text-secClr" />
+                <Field
+                  as="select"
+                  name="lga"
+                  id="lga"
+                  className={inputClass}
+                  disabled={!formData.stateOfOrigin || loading.lgas}
+                >
+                  {[
+                    {
+                      value: '',
+                      label: loading.lgas
+                        ? 'Loading LGAs...'
+                        : !formData.stateOfOrigin
+                        ? 'Select state first'
+                        : lgas.length === 0
+                        ? 'No LGAs available'
+                        : 'Select LGA',
+                      disabled: true,
+                      key: 'lga-placeholder',
+                    },
+                    ...lgas.map((lga) => ({ value: lga, label: lga, key: lga })),
+                  ].map(({ key, value, label, disabled }) => (
+                    <option key={key} value={value} disabled={disabled}>
+                      {label}
+                    </option>
+                  ))}
+                </Field>
+                <ErrorMessage name="lga" component="div" className="text-xs text-red-500 mt-1" />
+              </div>
+            </div>
             <div className="relative">
               <label htmlFor="occupation" className="block text-sm font-medium text-black/70">Occupation</label>
               <div className="relative">
@@ -409,19 +628,6 @@ const Section1 = ({ formData, setFormData, nextSection }) => {
                   className={inputClass}
                 />
                 <ErrorMessage name="occupation" component="div" className="text-xs text-red-500 mt-1" />
-              </div>
-            </div>
-            <div className="relative">
-              <label htmlFor="countryOfResidence" className="block text-sm font-medium text-black/70">Country of Residence</label>
-              <div className="relative">
-                <BiGlobe className="absolute top-1/2 transform -translate-y-1/2 left-3 text-secClr" />
-                <Field
-                  type="text"
-                  name="countryOfResidence"
-                  id="countryOfResidence"
-                  className={inputClass}
-                />
-                <ErrorMessage name="countryOfResidence" component="div" className="text-xs text-red-500 mt-1" />
               </div>
             </div>
           </div>
@@ -465,6 +671,7 @@ const Section1 = ({ formData, setFormData, nextSection }) => {
                   name="mobileNumber"
                   id="mobileNumber"
                   className={inputClass}
+                  placeholder={getMobilePlaceholder()}
                 />
                 <ErrorMessage name="mobileNumber" component="div" className="text-xs text-red-500 mt-1" />
               </div>
