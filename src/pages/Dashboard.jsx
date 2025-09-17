@@ -36,7 +36,7 @@ const Dashboard = () => {
   const [downloadTimeTo, setDownloadTimeTo] = useState(null);
   const [loading, setLoading] = useState(false);
 
-  const branchOptions = ['Lagos', 'Abuja', 'Port Harcourt', 'Enugu'];
+  const branchOptions =  ['HQ - Onitsha', 'Mgbuka', '⁠Awka', 'Asaba', 'Owerri', 'Porthacourt', '⁠Lagos Ajah', '⁠Lagos Apapa', '⁠Enugwukwu'];
   const recordsPerPage = 10;
 
   // Prevent background scrolling when modals are open
