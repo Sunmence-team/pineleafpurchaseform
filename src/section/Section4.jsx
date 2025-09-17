@@ -58,14 +58,6 @@ const Section4 = ({ formData, setFormData, prevSection, onSubmit }) => {
       onSubmit={async (values, { setSubmitting }) => {
         const toastId = toast.loading('Submitting application...');
         try {
-          const token = localStorage.getItem('token');
-          if (!token) {
-            toast.error('Please log in to submit the application.', { id: toastId });
-            setSubmitting(false);
-            window.location.href = '/login';
-            return;
-          }
-
           const requiredFields = [
             'personal_picture',
             'first_name',
@@ -211,7 +203,6 @@ const Section4 = ({ formData, setFormData, prevSection, onSubmit }) => {
           const response = await axios.post(`${API_URL}/api/clients`, formDataToSend, {
             headers: {
               'Content-Type': 'multipart/form-data',
-              Authorization: `Bearer ${token}`,
             },
           });
 
@@ -235,7 +226,7 @@ const Section4 = ({ formData, setFormData, prevSection, onSubmit }) => {
               spouseTitle: '',
               spouseFirstName: '',
               spouseMiddleName: '',
-              spouseLastName: '',
+              lastNameOfSpouse: '',
               stateOfOrigin: '',
               lga: '',
               occupation: '',
@@ -271,10 +262,6 @@ const Section4 = ({ formData, setFormData, prevSection, onSubmit }) => {
               toast.error('Network error: Unable to connect to the server.', { id: toastId });
             } else if (err.response?.status === 400) {
               toast.error(err.response.data.message || 'Invalid data provided.', { id: toastId });
-            } else if (err.response?.status === 401) {
-              toast.error('Unauthorized. Please log in again.', { id: toastId });
-              localStorage.removeItem('token');
-              window.location.href = '/login';
             } else if (err.response?.status === 422) {
               const errors = err.response.data.errors || {};
               const errorMessages = Object.values(errors).flat().join('; ');
