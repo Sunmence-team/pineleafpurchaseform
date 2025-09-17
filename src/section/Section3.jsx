@@ -41,6 +41,13 @@ const Section3 = ({ formData, setFormData, prevSection, nextSection }) => {
 
   const branchOptions = ['Lagos', 'Abuja', 'Port Harcourt', 'Enugu'];
 
+  const clearSignature = (setFieldValue) => {
+    const canvas = canvasRef.current;
+    const ctx = canvas.getContext('2d');
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    setFieldValue('clientDeclarationSignature', '');
+  };
+
   return (
     <Formik
       initialValues={{
@@ -313,10 +320,19 @@ const Section3 = ({ formData, setFormData, prevSection, nextSection }) => {
                   );
                 }}
               ></canvas>
+              <div className="mt-2">
+                <button
+                  type="button"
+                  onClick={() => clearSignature(setFieldValue)}
+                  className="px-4 py-2 bg-secClr text-white font-semibold rounded-lg hover:bg-secClr transition duration-300"
+                >
+                  Clear Signature
+                </button>
+              </div>
               <ErrorMessage
                 name="clientDeclarationSignature"
                 component="div"
-                className="text-xs sm:text-sm text-red-500 mt-1"
+                className="text-xs sm:text-sm text-secClr mt-1"
               />
             </div>
           </div>
@@ -333,7 +349,7 @@ const Section3 = ({ formData, setFormData, prevSection, nextSection }) => {
               <DatePicker
                 selected={values.clientDeclarationDate}
                 onChange={(date) => setFieldValue('clientDeclarationDate', date)}
-                dateFormat="dd-MM-yyyy"
+                dateFormat="dd-MM-YYYY"
                 placeholderText="DD-MM-YYYY"
                 className={`${inputClass} w-full`}
                 wrapperClassName="w-full"
