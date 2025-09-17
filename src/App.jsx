@@ -30,7 +30,7 @@ function App() {
           element={<ViewClient />}
         />
         <Route
-          path="//edit-client/:id"
+          path="/edit-client/:id"
           element={<EditClient />}
         />
       </Routes>
