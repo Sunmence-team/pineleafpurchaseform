@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { FaFilter, FaDownload, FaEye, FaEdit, FaTimes } from 'react-icons/fa';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
@@ -6,6 +6,8 @@ import axios from 'axios';
 import { toast } from 'sonner';
 import { Link } from 'react-router-dom';
 import { format, parseISO } from 'date-fns';
+import html2canvas from 'html2canvas';
+import jsPDF from 'jspdf';
 import assets from '../assets/assests';
 
 const API_URL = import.meta.env.VITE_API_BASE_URL;
@@ -35,8 +37,10 @@ const Dashboard = () => {
   const [downloadDateTo, setDownloadDateTo] = useState(null);
   const [downloadTimeTo, setDownloadTimeTo] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [filteredDataForPrint, setFilteredDataForPrint] = useState([]);
+  const componentRef = useRef();
 
-  const branchOptions = ['Lagos', 'Abuja', 'Port Harcourt', 'Enugu'];
+  const branchOptions = ['HQ - Onitsha', 'Mgbuka', 'Awka', 'Asaba', 'Owerri', 'Porthacourt', 'Lagos Ajah', 'Lagos Apapa', 'Enugwukwu'];
   const recordsPerPage = 10;
 
   // Prevent background scrolling when modals are open
@@ -51,7 +55,7 @@ const Dashboard = () => {
     };
   }, [dateFilterModalOpen, branchFilterModalOpen, downloadModalOpen]);
 
-  // Fetch all clients for CSV download and filtering
+  // Fetch all clients for CSV and PDF download and filtering
   useEffect(() => {
     const fetchAllClients = async () => {
       const toastId = toast.loading('Loading all clients...');
@@ -303,7 +307,7 @@ const Dashboard = () => {
       });
     }
 
-    // Sort filtered data by created_at in descending order (latest to oldest)
+    // Sort filtered data by created_at in descending order
     filtered = filtered.sort((a, b) => {
       const dateA = a.created_at ? new Date(parseISO(a.created_at)) : new Date(0);
       const dateB = b.created_at ? new Date(parseISO(b.created_at)) : new Date(0);
@@ -347,7 +351,7 @@ const Dashboard = () => {
   };
 
   // Download CSV
-  const handleDownload = () => {
+  const handleDownloadCSV = () => {
     if (!downloadDateFrom || !downloadTimeFrom || !downloadDateTo || !downloadTimeTo) {
       toast.error("Please provide both date and time for downloading.");
       return;
@@ -390,6 +394,7 @@ const Dashboard = () => {
       'Property Name',
       'Number of Plot(s)',
       'Plot No(s)',
+      'Land Price',
     ];
 
     const rows = sortedForDownload.map(item => [
@@ -399,6 +404,7 @@ const Dashboard = () => {
       item.site_location || '',
       item.number_of_plot || '',
       item.plot_number || '',
+      item.land_price || '',
     ].map(field => `"${String(field).replace(/"/g, '""')}"`));
 
     const csvContent = [headers, ...rows].map(row => row.join(',')).join('\n');
@@ -421,6 +427,97 @@ const Dashboard = () => {
 
     setDownloadModalOpen(false);
     toast.success('CSV downloaded successfully!');
+  };
+
+  // Download PDF using jsPDF and html2canvas
+  const handleDownloadPDF = async () => {
+    if (!downloadDateFrom || !downloadTimeFrom || !downloadDateTo || !downloadTimeTo) {
+      toast.error("Please provide both date and time for downloading.");
+      return;
+    }
+
+    const filterFrom = new Date(downloadDateFrom);
+    const [fromHours, fromMinutes] = downloadTimeFrom.split(':').map(Number);
+    filterFrom.setHours(fromHours, fromMinutes);
+
+    const filterTo = new Date(downloadDateTo);
+    const [toHours, toMinutes] = downloadTimeTo.split(':').map(Number);
+    filterTo.setHours(toHours, toMinutes);
+
+    const filteredForDownload = allClients.filter(item => {
+      try {
+        const createdDate = item.created_at ? new Date(parseISO(item.created_at)) : null;
+        return createdDate && createdDate >= filterFrom && createdDate <= filterTo;
+      } catch (error) {
+        console.error('Error parsing date for item:', item, error);
+        return false;
+      }
+    });
+
+    if (filteredForDownload.length === 0) {
+      toast.error("No records found for the selected date and time range.");
+      return;
+    }
+
+    // Sort filtered data for PDF by created_at in descending order
+    const sortedForDownload = filteredForDownload.sort((a, b) => {
+      const dateA = a.created_at ? new Date(parseISO(a.created_at)) : new Date(0);
+      const dateB = b.created_at ? new Date(parseISO(b.created_at)) : new Date(0);
+      return dateB - dateA;
+    });
+
+    // Set filtered data for print and wait for DOM update
+    setFilteredDataForPrint(sortedForDownload);
+
+    // Add a slight delay to ensure React renders the updated DOM
+    await new Promise(resolve => setTimeout(resolve, 100));
+
+    try {
+      const element = componentRef.current;
+      if (!element) {
+        throw new Error('Print component reference is not available');
+      }
+
+      const canvas = await html2canvas(element, {
+        scale: 2,
+        useCORS: true,
+        logging: false,
+        windowWidth: 794, // A4 width in pixels at 96 DPI
+      });
+
+      const imgData = canvas.toDataURL('image/png');
+      const pdf = new jsPDF({
+        orientation: 'portrait',
+        unit: 'mm',
+        format: 'a4',
+      });
+
+      const imgWidth = 190; // A4 width (210mm) - margins (10mm each side)
+      const pageHeight = 297; // A4 height in mm
+      const imgHeight = (canvas.height * imgWidth) / canvas.width;
+      let heightLeft = imgHeight;
+      let position = 10; // Top margin
+
+      // Add first page
+      pdf.addImage(imgData, 'PNG', 10, position, imgWidth, imgHeight);
+      heightLeft -= pageHeight - 20; // Subtract page height minus margins
+
+      // Add additional pages if content overflows
+      while (heightLeft > 0) {
+        position = heightLeft - imgHeight + 10;
+        pdf.addPage();
+        pdf.addImage(imgData, 'PNG', 10, position, imgWidth, imgHeight);
+        heightLeft -= pageHeight - 20;
+      }
+
+      pdf.save(`clients_${format(new Date(), 'yyyy-MM-dd_HH-mm')}.pdf`);
+      setDownloadModalOpen(false);
+      setFilteredDataForPrint([]);
+      toast.success('PDF downloaded successfully!');
+    } catch (error) {
+      console.error('Error generating PDF:', error);
+      toast.error('Failed to generate PDF: ' + (error.message || 'Unknown error'));
+    }
   };
 
   // Reset filter
@@ -477,7 +574,7 @@ const Dashboard = () => {
                   className="flex-1 flex items-center justify-center p-3 bg-secClr text-white font-semibold rounded-lg hover:bg-secClr/90 transition duration-300 shadow-md"
                 >
                   <FaDownload className="mr-1 w-4 h-4 md:w-5 md:h-5" />
-                  CSV
+                  Download
                 </button>
               </div>
             </div>
@@ -508,14 +605,14 @@ const Dashboard = () => {
                           <Link
                             to={`/view-client/${item.id}`}
                             className="p-2 bg-secClr text-white rounded-md hover:bg-secClr/90"
-                            aria-label={`View ${item.client_name}`}
+                            aria-label={`View ${item.client_name || 'Client'}`}
                           >
                             <FaEye className="w-4 h-4" />
                           </Link>
                           <Link
                             to={`/edit-client/${item.id}`}
                             className="p-2 bg-secClr text-white rounded-md hover:bg-secClr/90"
-                            aria-label={`Edit ${item.client_name}`}
+                            aria-label={`Edit ${item.client_name || 'Client'}`}
                           >
                             <FaEdit className="w-4 h-4" />
                           </Link>
@@ -556,10 +653,10 @@ const Dashboard = () => {
                           <td className="p-2 md:p-5 whitespace-nowrap text-sm md:text-base text-gray-700">{item.mobile_number}</td>
                           <td className="p-2 md:p-5 whitespace-nowrap text-sm md:text-base text-gray-700">
                             <div className="flex space-x-2 md:space-x-3">
-                              <Link to={`/view-client/${item.id}`} aria-label={`View ${item.client_name}`}>
+                              <Link to={`/view-client/${item.id}`} aria-label={`View ${item.client_name || 'Client'}`}>
                                 <FaEye className="text-secClr cursor-pointer w-4 h-4 md:w-5 md:h-5 hover:text-secClr/90" />
                               </Link>
-                              <Link to={`/edit-client/${item.id}`} aria-label={`Edit ${item.client_name}`}>
+                              <Link to={`/edit-client/${item.id}`} aria-label={`Edit ${item.client_name || 'Client'}`}>
                                 <FaEdit className="text-secClr cursor-pointer w-4 h-4 md:w-5 md:h-5 hover:text-secClr/90" />
                               </Link>
                             </div>
@@ -604,6 +701,46 @@ const Dashboard = () => {
                 >
                   Next
                 </button>
+              </div>
+            </div>
+
+            {/* Hidden Print Section for PDF */}
+            <div style={{ position: 'absolute', top: '-9999px', left: '-9999px' }}>
+              <div ref={componentRef} style={{ padding: '20mm', width: '190mm', fontFamily: 'Arial, sans-serif' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '10mm' }}>
+                  <img src={assets.logo} style={{ width: '30mm', height: '30mm', marginRight: '5mm' }} alt="Logo" />
+                  <h2 style={{ fontSize: '18px', textAlign: 'center' }}>
+                    Client Records
+                    {downloadDateFrom && downloadTimeFrom && downloadDateTo && downloadTimeTo &&
+                      ` (${format(new Date(downloadDateFrom), 'dd/MM/yyyy')} ${downloadTimeFrom} - ${format(new Date(downloadDateTo), 'dd/MM/yyyy')} ${downloadTimeTo})`}
+                  </h2>
+                </div>
+                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px' }}>
+                  <thead>
+                    <tr>
+                      <th style={{ border: '1px solid #ddd', padding: '8px', backgroundColor: '#f2f2f2', fontWeight: 'bold', textAlign: 'left' }}>Client Name</th>
+                      <th style={{ border: '1px solid #ddd', padding: '8px', backgroundColor: '#f2f2f2', fontWeight: 'bold', textAlign: 'left' }}>State of Origin</th>
+                      <th style={{ border: '1px solid #ddd', padding: '8px', backgroundColor: '#f2f2f2', fontWeight: 'bold', textAlign: 'left' }}>LGA</th>
+                      <th style={{ border: '1px solid #ddd', padding: '8px', backgroundColor: '#f2f2f2', fontWeight: 'bold', textAlign: 'left' }}>Property Name</th>
+                      <th style={{ border: '1px solid #ddd', padding: '8px', backgroundColor: '#f2f2f2', fontWeight: 'bold', textAlign: 'left' }}>Number of Plot(s)</th>
+                      <th style={{ border: '1px solid #ddd', padding: '8px', backgroundColor: '#f2f2f2', fontWeight: 'bold', textAlign: 'left' }}>Plot No(s)</th>
+                      <th style={{ border: '1px solid #ddd', padding: '8px', backgroundColor: '#f2f2f2', fontWeight: 'bold', textAlign: 'left' }}>Land Price</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredDataForPrint.map((item, index) => (
+                      <tr key={item.id || index}>
+                        <td style={{ border: '1px solid #ddd', padding: '8px' }}>{item.client_name || 'N/A'}</td>
+                        <td style={{ border: '1px solid #ddd', padding: '8px' }}>{item.state_of_origin || 'N/A'}</td>
+                        <td style={{ border: '1px solid #ddd', padding: '8px' }}>{item.lga || 'N/A'}</td>
+                        <td style={{ border: '1px solid #ddd', padding: '8px' }}>{item.site_location || 'N/A'}</td>
+                        <td style={{ border: '1px solid #ddd', padding: '8px' }}>{item.number_of_plot || 'N/A'}</td>
+                        <td style={{ border: '1px solid #ddd', padding: '8px' }}>{item.plot_number || 'N/A'}</td>
+                        <td style={{ border: '1px solid #ddd', padding: '8px' }}>{item.land_price || 'N/A'}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
             </div>
           </>
@@ -744,7 +881,7 @@ const Dashboard = () => {
           <div className="fixed inset-0 bg-black/90 flex items-center justify-center z-50 p-2 sm:p-4">
             <div className="bg-white rounded-2xl p-4 sm:p-6 w-full max-w-md shadow-2xl max-h-[calc(100vh-2rem)] overflow-y-auto">
               <div className="flex justify-between items-center mb-4">
-                <h3 className="text-lg md:text-xl font-bold text-gray-900">Download CSV</h3>
+                <h3 className="text-lg md:text-xl font-bold text-gray-900">Download Options</h3>
                 <button
                   onClick={() => setDownloadModalOpen(false)}
                   className="p-2 text-gray-600 hover:text-gray-900"
@@ -806,11 +943,18 @@ const Dashboard = () => {
                   Cancel
                 </button>
                 <button
-                  onClick={handleDownload}
+                  onClick={handleDownloadCSV}
                   className="px-3 py-2 md:px-4 md:py-2 bg-secClr text-white font-semibold rounded-lg hover:bg-secClr/90 transition duration-300 shadow-md w-full md:w-auto"
                   aria-label="Download CSV"
                 >
-                  Download
+                  Download as CSV
+                </button>
+                <button
+                  onClick={handleDownloadPDF}
+                  className="px-3 py-2 md:px-4 md:py-2 bg-secClr text-white font-semibold rounded-lg hover:bg-secClr/90 transition duration-300 shadow-md w-full md:w-auto"
+                  aria-label="Download PDF"
+                >
+                  Download PDF
                 </button>
               </div>
             </div>

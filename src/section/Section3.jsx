@@ -39,7 +39,7 @@ const Section3 = ({ formData, setFormData, prevSection, nextSection }) => {
 
   const fullName = `${formData.title ? formData.title + ' ' : ''}${formData.firstName || ''} ${formData.middleName || ''} ${formData.lastName || ''}`.trim();
 
-  const branchOptions = ['Lagos', 'Abuja', 'Port Harcourt', 'Enugu'];
+  const branchOptions = ['HQ - Onitsha', 'Mgbuka', '⁠Awka', 'Asaba', 'Owerri', 'Porthacourt', '⁠Lagos Ajah', '⁠Lagos Apapa', '⁠Enugwukwu'];
 
   const clearSignature = (setFieldValue) => {
     const canvas = canvasRef.current;
