@@ -40,7 +40,18 @@ const Dashboard = () => {
   const [filteredDataForPrint, setFilteredDataForPrint] = useState([]);
   const componentRef = useRef();
 
-  const branchOptions = ['HQ - Onitsha', 'Mgbuka', 'Awka', 'Asaba', 'Owerri', 'Porthacourt', 'Lagos Ajah', 'Lagos Apapa', 'Enugwukwu'];
+  // Standardized branch options
+  const branchOptions = [
+    'HQ - Onitsha',
+    'Mgbuka',
+    'Awka',
+    'Asaba',
+    'Owerri',
+    'Port Harcourt',
+    'Lagos Ajah',
+    'Lagos Apapa',
+    'Enugwu-Ukwu',
+  ];
   const recordsPerPage = 10;
 
   // Prevent background scrolling when modals are open
@@ -158,7 +169,7 @@ const Dashboard = () => {
         toast.success('All clients loaded successfully!', { id: toastId });
       } catch (err) {
         console.error('Error fetching all clients:', err);
-        toast.error('Failed to fetch all clients for download: ' + (err.message || 'Unknown error'), { id: toastId });
+        toast.error('Failed to fetch all clients: ' + (err.message || 'Unknown error'), { id: toastId });
         if (axios.isAxiosError(err) && err.response?.status === 401) {
           localStorage.removeItem('token');
           window.location.href = '/login';
@@ -171,7 +182,7 @@ const Dashboard = () => {
     fetchAllClients();
   }, []);
 
-  // Fetch paginated applications for consistency
+  // Fetch paginated applications for display
   useEffect(() => {
     const fetchApplications = async () => {
       const toastId = toast.loading('Loading applications...');
@@ -185,7 +196,7 @@ const Dashboard = () => {
           return;
         }
 
-        const payload = { page: currentPage, per_page: 10 };
+        const payload = { page: currentPage, per_page: recordsPerPage };
         const response = await axios.post(
           `${API_URL}/api/all_clients`,
           payload,
@@ -281,17 +292,20 @@ const Dashboard = () => {
 
   // Apply filters to allClients and paginate results
   useEffect(() => {
-    let filtered = allClients;
+    let filtered = [...allClients];
 
+    // Apply branch filter
     if (filterBranch) {
       filtered = filtered.filter(item =>
-        item.branches.toLowerCase() === filterBranch.toLowerCase()
+        item.branches && item.branches.toLowerCase().trim() === filterBranch.toLowerCase().trim()
       );
     }
+
+    // Apply date and time filters
     if (filterDateFrom && filterTimeFrom) {
       const filterFrom = new Date(filterDateFrom);
       const [hours, minutes] = filterTimeFrom.split(':').map(Number);
-      filterFrom.setHours(hours, minutes);
+      filterFrom.setHours(hours, minutes, 0, 0);
       filtered = filtered.filter(item => {
         const createdAt = item.created_at ? new Date(parseISO(item.created_at)) : null;
         return createdAt && createdAt >= filterFrom;
@@ -300,33 +314,35 @@ const Dashboard = () => {
     if (filterDateTo && filterTimeTo) {
       const filterTo = new Date(filterDateTo);
       const [hours, minutes] = filterTimeTo.split(':').map(Number);
-      filterTo.setHours(hours, minutes);
+      filterTo.setHours(hours, minutes, 59, 999);
       filtered = filtered.filter(item => {
         const createdAt = item.created_at ? new Date(parseISO(item.created_at)) : null;
         return createdAt && createdAt <= filterTo;
       });
     }
 
-    // Sort filtered data by created_at in descending order
+    // Sort by created_at in descending order
     filtered = filtered.sort((a, b) => {
       const dateA = a.created_at ? new Date(parseISO(a.created_at)) : new Date(0);
       const dateB = b.created_at ? new Date(parseISO(b.created_at)) : new Date(0);
       return dateB - dateA;
     });
 
+    // Update total records and pages
     setTotalRecords(filtered.length);
     setTotalPages(Math.ceil(filtered.length / recordsPerPage));
 
+    // Paginate the filtered data
     const startIndex = (currentPage - 1) * recordsPerPage;
     const paginatedData = filtered.slice(startIndex, startIndex + recordsPerPage);
 
     setFilteredData(paginatedData);
-  }, [filterBranch, filterDateFrom, filterTimeFrom, filterDateTo, filterTimeTo, allClients, currentPage]);
+  }, [allClients, filterBranch, filterDateFrom, filterTimeFrom, filterDateTo, filterTimeTo, currentPage]);
 
   // Apply branch filter
   const applyBranchFilter = () => {
     if (branchInput && !branchOptions.includes(branchInput)) {
-      toast.error('Invalid branch selected.');
+      toast.error('Please select a valid branch.');
       return;
     }
     setFilterBranch(branchInput);
@@ -350,20 +366,38 @@ const Dashboard = () => {
     toast.success('Date and time filter applied successfully!');
   };
 
+  // Reset all filters
+  const resetFilter = () => {
+    setFilterDateFrom(null);
+    setFilterTimeFrom(null);
+    setFilterDateTo(null);
+    setFilterTimeTo(null);
+    setFilterBranch('');
+    setBranchInput('');
+    setDateFromInput(null);
+    setTimeFromInput(null);
+    setDateToInput(null);
+    setTimeToInput(null);
+    setCurrentPage(1);
+    setDateFilterModalOpen(false);
+    setBranchFilterModalOpen(false);
+    toast.success('Filters reset successfully!');
+  };
+
   // Download CSV
   const handleDownloadCSV = () => {
     if (!downloadDateFrom || !downloadTimeFrom || !downloadDateTo || !downloadTimeTo) {
-      toast.error("Please provide both date and time for downloading.");
+      toast.error('Please provide both date and time for downloading.');
       return;
     }
 
     const filterFrom = new Date(downloadDateFrom);
     const [fromHours, fromMinutes] = downloadTimeFrom.split(':').map(Number);
-    filterFrom.setHours(fromHours, fromMinutes);
+    filterFrom.setHours(fromHours, fromMinutes, 0, 0);
 
     const filterTo = new Date(downloadDateTo);
     const [toHours, toMinutes] = downloadTimeTo.split(':').map(Number);
-    filterTo.setHours(toHours, toMinutes);
+    filterTo.setHours(toHours, toMinutes, 59, 999);
 
     const filteredForDownload = allClients.filter(item => {
       try {
@@ -376,7 +410,7 @@ const Dashboard = () => {
     });
 
     if (filteredForDownload.length === 0) {
-      toast.error("No records found for the selected date and time range.");
+      toast.error('No records found for the selected date and time range.');
       return;
     }
 
@@ -429,20 +463,20 @@ const Dashboard = () => {
     toast.success('CSV downloaded successfully!');
   };
 
-  // Download PDF using jsPDF and html2canvas
+  // Download PDF
   const handleDownloadPDF = async () => {
     if (!downloadDateFrom || !downloadTimeFrom || !downloadDateTo || !downloadTimeTo) {
-      toast.error("Please provide both date and time for downloading.");
+      toast.error('Please provide both date and time for downloading.');
       return;
     }
 
     const filterFrom = new Date(downloadDateFrom);
     const [fromHours, fromMinutes] = downloadTimeFrom.split(':').map(Number);
-    filterFrom.setHours(fromHours, fromMinutes);
+    filterFrom.setHours(fromHours, fromMinutes, 0, 0);
 
     const filterTo = new Date(downloadDateTo);
     const [toHours, toMinutes] = downloadTimeTo.split(':').map(Number);
-    filterTo.setHours(toHours, toMinutes);
+    filterTo.setHours(toHours, toMinutes, 59, 999);
 
     const filteredForDownload = allClients.filter(item => {
       try {
@@ -455,7 +489,7 @@ const Dashboard = () => {
     });
 
     if (filteredForDownload.length === 0) {
-      toast.error("No records found for the selected date and time range.");
+      toast.error('No records found for the selected date and time range.');
       return;
     }
 
@@ -518,24 +552,6 @@ const Dashboard = () => {
       console.error('Error generating PDF:', error);
       toast.error('Failed to generate PDF: ' + (error.message || 'Unknown error'));
     }
-  };
-
-  // Reset filter
-  const resetFilter = () => {
-    setFilterDateFrom(null);
-    setFilterTimeFrom(null);
-    setFilterDateTo(null);
-    setFilterTimeTo(null);
-    setFilterBranch('');
-    setBranchInput('');
-    setDateFromInput(null);
-    setTimeFromInput(null);
-    setDateToInput(null);
-    setTimeToInput(null);
-    setCurrentPage(1);
-    setDateFilterModalOpen(false);
-    setBranchFilterModalOpen(false);
-    toast.success('Filters reset successfully!');
   };
 
   return (
@@ -800,7 +816,7 @@ const Dashboard = () => {
 
         {/* Date and Time Filter Modal */}
         {dateFilterModalOpen && (
-          <div className="fixed inset-0 bg-black/90 flex items-center justify-center z-50 p-2 sm:p-4">
+          <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-2 sm:p-4">
             <div className="bg-white rounded-2xl p-4 sm:p-6 w-full max-w-md shadow-2xl max-h-[calc(100vh-2rem)] overflow-y-auto">
               <div className="flex justify-between items-center mb-4">
                 <h3 className="text-lg md:text-xl font-bold text-gray-900">Filter by Date and Time</h3>
@@ -878,7 +894,7 @@ const Dashboard = () => {
 
         {/* Download Modal */}
         {downloadModalOpen && (
-          <div className="fixed inset-0 bg-black/90 flex items-center justify-center z-50 p-2 sm:p-4">
+          <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-2 sm:p-4">
             <div className="bg-white rounded-2xl p-4 sm:p-6 w-full max-w-md shadow-2xl max-h-[calc(100vh-2rem)] overflow-y-auto">
               <div className="flex justify-between items-center mb-4">
                 <h3 className="text-lg md:text-xl font-bold text-gray-900">Download Options</h3>

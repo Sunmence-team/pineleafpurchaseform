@@ -14,6 +14,19 @@ const Section3 = ({ formData, setFormData, prevSection, nextSection }) => {
   const inputClass =
     'mt-1 block w-full rounded-md border border-gray-300 shadow-sm focus:border-secClr focus:ring-secClr text-sm sm:text-base py-2 sm:py-3 px-4 sm:px-10 bg-white';
 
+  // Standardized branch options
+  const branchOptions = [
+    'HQ - Onitsha',
+    'Mgbuka',
+    'Awka',
+    'Asaba',
+    'Owerri',
+    'Port Harcourt',
+    'Lagos Ajah',
+    'Lagos Apapa',
+    'Enugwu-Ukwu',
+  ];
+
   const validationSchema = Yup.object({
     clientDeclarationLandPrice: Yup.string().required('Land price is required'),
     clientDeclarationNumberOfPlots: Yup.number()
@@ -28,7 +41,7 @@ const Section3 = ({ formData, setFormData, prevSection, nextSection }) => {
         return (
           value &&
           value !==
-          'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAjAAAAJYCAYAAACado6zAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAADPSURBVHhe7dAxAQAwDMCw/f8vfwBkyS8O...'
+            'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAjAAAAJYCAYAAACado6zAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAADPSURBVHhe7dAxAQAwDMCw/f8vfwBkyS8O...'
         );
       }),
     clientDeclarationDate: Yup.date()
@@ -38,8 +51,6 @@ const Section3 = ({ formData, setFormData, prevSection, nextSection }) => {
   });
 
   const fullName = `${formData.title ? formData.title + ' ' : ''}${formData.firstName || ''} ${formData.middleName || ''} ${formData.lastName || ''}`.trim();
-
-  const branchOptions = ['HQ - Onitsha', 'Mgbuka', '⁠Awka', 'Asaba', 'Owerri', 'Porthacourt', '⁠Lagos Ajah', '⁠Lagos Apapa', '⁠Enugwukwu'];
 
   const clearSignature = (setFieldValue) => {
     const canvas = canvasRef.current;
@@ -332,7 +343,7 @@ const Section3 = ({ formData, setFormData, prevSection, nextSection }) => {
               <ErrorMessage
                 name="clientDeclarationSignature"
                 component="div"
-                className="text-xs sm:text-sm text-secClr mt-1"
+                className="text-xs sm:text-sm text-red-500 mt-1"
               />
             </div>
           </div>
