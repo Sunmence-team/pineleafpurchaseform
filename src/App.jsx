@@ -5,6 +5,7 @@ import Dashboard from "./pages/Dashboard"
 import { Toaster } from "sonner"
 import ViewClient from "./pages/View"
 import EditClient from "./pages/Edit"
+import Success from "./pages/Success"
 
 function App() {
 
@@ -20,6 +21,10 @@ function App() {
         <Route
           path="/login"
           element={<Login />}
+        />
+        <Route
+          path="/success"
+          element={<Success />}
         />
         <Route
           path="/dashboard"
