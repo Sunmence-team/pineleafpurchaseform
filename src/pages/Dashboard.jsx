@@ -554,6 +554,23 @@ const Dashboard = () => {
     }
   };
 
+  // Calculate pagination numbers to display (previous, current, next)
+  const getPageNumbers = () => {
+    const pages = [];
+    if (totalPages <= 3) {
+      for (let i = 1; i <= totalPages; i++) {
+        pages.push(i);
+      }
+    } else if (currentPage === 1) {
+      pages.push(1, 2, 3);
+    } else if (currentPage === totalPages) {
+      pages.push(totalPages - 2, totalPages - 1, totalPages);
+    } else {
+      pages.push(currentPage - 1, currentPage, currentPage + 1);
+    }
+    return pages;
+  };
+
   return (
     <div className="min-h-screen bg-gray-100 flex flex-col p-2 sm:p-4 md:p-5">
       <div className="mx-auto bg-white rounded-2xl shadow-2xl p-2 sm:p-4 md:p-5 w-full py-8 transition-all duration-300">
@@ -699,7 +716,7 @@ const Dashboard = () => {
                 >
                   Prev
                 </button>
-                {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
+                {getPageNumbers().map(page => (
                   <button
                     key={page}
                     onClick={() => setCurrentPage(page)}
