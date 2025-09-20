@@ -8,14 +8,15 @@ import { FaUser, FaCalendarAlt, FaPhoneAlt } from 'react-icons/fa';
 import axios from 'axios';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
+import { useNavigate } from 'react-router-dom';
 
 const API_URL = import.meta.env.VITE_API_BASE_URL;
 
 const Section4 = ({ formData, setFormData, prevSection, onSubmit }) => {
+  const navigate = useNavigate();
   const inputClass =
     'mt-1 block w-full rounded-md border border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm py-3 px-4 pl-10 bg-white';
 
-  // Convert base64 string to File object for PNG
   const base64ToFile = (base64, filename) => {
     try {
       if (!base64 || !base64.includes('base64,')) {
@@ -88,7 +89,6 @@ const Section4 = ({ formData, setFormData, prevSection, onSubmit }) => {
             'referral_email',
           ];
 
-          // Early validation for required fields
           const missingFields = requiredFields.filter((field) => {
             const value =
               field === 'personal_picture' ? formData.image :
@@ -129,7 +129,6 @@ const Section4 = ({ formData, setFormData, prevSection, onSubmit }) => {
 
           const formDataToSend = new FormData();
 
-          // Section 1 fields
           formDataToSend.append('personal_picture', formData.image || '');
           formDataToSend.append('title', formData.title || '');
           formDataToSend.append('first_name', formData.firstName || '');
@@ -155,14 +154,10 @@ const Section4 = ({ formData, setFormData, prevSection, onSubmit }) => {
           formDataToSend.append('email', formData.email || '');
           formDataToSend.append('mobile_number', formData.mobileNumber || '');
           formDataToSend.append('telephone_number', formData.telephoneNumber || '');
-
-          // Section 2 fields
           formDataToSend.append('next_of_kin_full_name', formData.nextOfKinFullName || '');
           formDataToSend.append('next_of_kin_address', formData.nextOfKinAddress || '');
           formDataToSend.append('next_of_kin_mobile_number', formData.nextOfKinMobileNumber || '');
           formDataToSend.append('next_of_kin_email', formData.nextOfKinEmail || '');
-
-          // Section 3 fields
           formDataToSend.append('land_price', formData.clientDeclarationLandPrice || '');
           formDataToSend.append('number_of_plot', formData.clientDeclarationNumberOfPlots || '');
           formDataToSend.append('site_location', formData.clientDeclarationSiteLocation || '');
@@ -184,8 +179,6 @@ const Section4 = ({ formData, setFormData, prevSection, onSubmit }) => {
           );
           formDataToSend.append('declaration_name', formData.clientDeclarationClientName || '');
           formDataToSend.append('client_name', formData.clientDeclarationClientName || '');
-
-          // Section 4 fields
           formDataToSend.append('referral_name', values.referralFullName || '');
           formDataToSend.append('referral_number', values.referralMobileNumber || '');
           formDataToSend.append(
@@ -194,7 +187,6 @@ const Section4 = ({ formData, setFormData, prevSection, onSubmit }) => {
           );
           formDataToSend.append('referral_email', values.referralEmail || '');
 
-          // Log FormData for debugging
           console.log('FormData being sent to POST /api/clients:');
           for (let [key, value] of formDataToSend.entries()) {
             console.log(`${key}:`, value instanceof File ? value.name : value);
@@ -253,7 +245,16 @@ const Section4 = ({ formData, setFormData, prevSection, onSubmit }) => {
               referralEmail: '',
             });
 
-            onSubmit();
+            console.log('Navigating to /success');
+            navigate('/success'); // Navigate to Success page
+
+            // Delay onSubmit to ensure navigation completes
+            if (onSubmit) {
+              setTimeout(() => {
+                console.log('Calling onSubmit prop');
+                onSubmit();
+              }, 100);
+            }
           }
         } catch (err) {
           console.error('Error submitting form:', err);

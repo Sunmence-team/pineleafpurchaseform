@@ -10,6 +10,7 @@ import { MdOutlineSignLanguage } from 'react-icons/md';
 const Section3 = ({ formData, setFormData, prevSection, nextSection }) => {
   const canvasRef = useRef(null);
   const isDrawing = useRef(false);
+  const lastTouch = useRef({ x: 0, y: 0 });
 
   const inputClass =
     'mt-1 block w-full rounded-md border border-gray-300 shadow-sm focus:border-secClr focus:ring-secClr text-sm sm:text-base py-2 sm:py-3 px-4 sm:px-10 bg-white';
@@ -57,6 +58,25 @@ const Section3 = ({ formData, setFormData, prevSection, nextSection }) => {
     const ctx = canvas.getContext('2d');
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     setFieldValue('clientDeclarationSignature', '');
+  };
+
+  // Helper function to get canvas coordinates from touch or mouse events
+  const getCanvasCoordinates = (event, canvas) => {
+    const rect = canvas.getBoundingClientRect();
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
+    let x, y;
+
+    if (event.type.startsWith('touch')) {
+      const touch = event.touches[0] || event.changedTouches[0];
+      x = (touch.clientX - rect.left) * scaleX;
+      y = (touch.clientY - rect.top) * scaleY;
+    } else {
+      x = (event.clientX - rect.left) * scaleX;
+      y = (event.clientY - rect.top) * scaleY;
+    }
+
+    return { x, y };
   };
 
   return (
@@ -252,84 +272,86 @@ const Section3 = ({ formData, setFormData, prevSection, nextSection }) => {
                 height="150"
                 className="block w-full h-32 sm:h-40 rounded-md border border-gray-300 shadow-sm bg-white"
                 onMouseDown={(e) => {
+                  e.preventDefault();
                   isDrawing.current = true;
-                  const ctx = canvasRef.current.getContext('2d');
+                  const canvas = canvasRef.current;
+                  const ctx = canvas.getContext('2d');
                   ctx.lineWidth = 2;
                   ctx.lineCap = 'round';
                   ctx.strokeStyle = '#000000';
-                  const rect = canvasRef.current.getBoundingClientRect();
-                  const x = e.clientX - rect.left;
-                  const y = e.clientY - rect.top;
+                  const { x, y } = getCanvasCoordinates(e, canvas);
                   ctx.beginPath();
                   ctx.moveTo(x, y);
+                  lastTouch.current = { x, y };
                 }}
                 onMouseMove={(e) => {
                   if (!isDrawing.current) return;
-                  const ctx = canvasRef.current.getContext('2d');
-                  const rect = canvasRef.current.getBoundingClientRect();
-                  const x = e.clientX - rect.left;
-                  const y = e.clientY - rect.top;
+                  e.preventDefault();
+                  const canvas = canvasRef.current;
+                  const ctx = canvas.getContext('2d');
+                  const { x, y } = getCanvasCoordinates(e, canvas);
                   ctx.lineTo(x, y);
                   ctx.stroke();
+                  lastTouch.current = { x, y };
                 }}
                 onMouseUp={() => {
                   isDrawing.current = false;
-                  const ctx = canvasRef.current.getContext('2d');
+                  const canvas = canvasRef.current;
+                  const ctx = canvas.getContext('2d');
                   ctx.closePath();
-                  setFieldValue(
-                    'clientDeclarationSignature',
-                    canvasRef.current.toDataURL()
-                  );
+                  setFieldValue('clientDeclarationSignature', canvas.toDataURL());
                 }}
                 onMouseOut={() => {
                   isDrawing.current = false;
-                  const ctx = canvasRef.current.getContext('2d');
+                  const canvas = canvasRef.current;
+                  const ctx = canvas.getContext('2d');
                   ctx.closePath();
-                  setFieldValue(
-                    'clientDeclarationSignature',
-                    canvasRef.current.toDataURL()
-                  );
+                  setFieldValue('clientDeclarationSignature', canvas.toDataURL());
                 }}
                 onTouchStart={(e) => {
                   e.preventDefault();
-                  const touch = e.touches[0];
-                  const ctx = canvasRef.current.getContext('2d');
-                  const rect = canvasRef.current.getBoundingClientRect();
-                  const x = touch.clientX - rect.left;
-                  const y = touch.clientY - rect.top;
+                  e.stopPropagation();
+                  isDrawing.current = true;
+                  const canvas = canvasRef.current;
+                  const ctx = canvas.getContext('2d');
+                  ctx.lineWidth = 2;
+                  ctx.lineCap = 'round';
+                  ctx.strokeStyle = '#000000';
+                  const { x, y } = getCanvasCoordinates(e, canvas);
                   ctx.beginPath();
                   ctx.moveTo(x, y);
-                  isDrawing.current = true;
+                  lastTouch.current = { x, y };
                 }}
                 onTouchMove={(e) => {
                   e.preventDefault();
+                  e.stopPropagation();
                   if (!isDrawing.current) return;
-                  const touch = e.touches[0];
-                  const ctx = canvasRef.current.getContext('2d');
-                  const rect = canvasRef.current.getBoundingClientRect();
-                  const x = touch.clientX - rect.left;
-                  const y = touch.clientY - rect.top;
+                  const canvas = canvasRef.current;
+                  const ctx = canvas.getContext('2d');
+                  const { x, y } = getCanvasCoordinates(e, canvas);
                   ctx.lineTo(x, y);
                   ctx.stroke();
+                  lastTouch.current = { x, y };
                 }}
-                onTouchEnd={() => {
+                onTouchEnd={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
                   isDrawing.current = false;
-                  const ctx = canvasRef.current.getContext('2d');
+                  const canvas = canvasRef.current;
+                  const ctx = canvas.getContext('2d');
                   ctx.closePath();
-                  setFieldValue(
-                    'clientDeclarationSignature',
-                    canvasRef.current.toDataURL()
-                  );
+                  setFieldValue('clientDeclarationSignature', canvas.toDataURL());
                 }}
-                onTouchCancel={() => {
+                onTouchCancel={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
                   isDrawing.current = false;
-                  const ctx = canvasRef.current.getContext('2d');
+                  const canvas = canvasRef.current;
+                  const ctx = canvas.getContext('2d');
                   ctx.closePath();
-                  setFieldValue(
-                    'clientDeclarationSignature',
-                    canvasRef.current.toDataURL()
-                  );
+                  setFieldValue('clientDeclarationSignature', canvas.toDataURL());
                 }}
+                style={{ touchAction: 'none' }} // Prevent default touch actions like scrolling
               ></canvas>
               <div className="mt-2">
                 <button

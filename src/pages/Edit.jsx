@@ -19,11 +19,9 @@ const EditClient = () => {
   const navigate = useNavigate();
   const [countries, setCountries] = useState([]);
   const [states, setStates] = useState([]);
-  const [lgas, setLgas] = useState([]);
   const [loading, setLoading] = useState({
     countries: false,
     states: false,
-    lgas: false,
   });
   const [error, setError] = useState(null);
   const [countryCodeMap, setCountryCodeMap] = useState({});
@@ -52,7 +50,6 @@ const EditClient = () => {
 
         setCountries(countryList.map((c) => c.name));
         setCountryCodeMap(countryMap);
-        // toast.success('Countries loaded successfully!');
       } catch (err) {
         console.error('Error fetching countries:', err);
         setError('Failed to load countries. Please try again later.');
@@ -81,13 +78,11 @@ const EditClient = () => {
 
           const stateList = result.data?.states?.map((s) => s.name) || [];
           setStates(stateList.sort());
-          setLgas([]);
         } catch (err) {
           console.error('Error fetching states:', err);
           setError('Failed to load states for selected country.');
           toast.error('Failed to load states. Please select a valid country.');
           setStates([]);
-          setLgas([]);
         } finally {
           setLoading((prev) => ({ ...prev, states: false }));
         }
@@ -95,43 +90,8 @@ const EditClient = () => {
       fetchStates();
     } else {
       setStates([]);
-      setLgas([]);
     }
   }, [formData?.countryOfResidence, formData]);
-
-  // Fetch LGAs when formData, countryOfResidence, and stateOfOrigin are available
-  useEffect(() => {
-    if (formData && formData.countryOfResidence && formData.stateOfOrigin) {
-      const fetchLgas = async () => {
-        setLoading((prev) => ({ ...prev, lgas: true }));
-        setError(null);
-        try {
-          const response = await fetch('https://countriesnow.space/api/v0.1/countries/state/cities', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              country: formData.countryOfResidence,
-              state: formData.stateOfOrigin,
-            }),
-          });
-          const result = await response.json();
-          if (result.error) throw new Error(result.msg);
-
-          setLgas(result.data.sort());
-        } catch (err) {
-          console.error('Error fetching LGAs:', err);
-          setError('Failed to load local governments for selected state.');
-          toast.error('Failed to load local governments. Please select a valid state.');
-          setLgas([]);
-        } finally {
-          setLoading((prev) => ({ ...prev, lgas: false }));
-        }
-      };
-      fetchLgas();
-    } else {
-      setLgas([]);
-    }
-  }, [formData?.stateOfOrigin, formData?.countryOfResidence, formData]);
 
   // Fetch client data
   useEffect(() => {
@@ -372,6 +332,7 @@ const EditClient = () => {
               formDataToSend.append('plot_number', values.clientDeclarationPlotNumber || '');
               formDataToSend.append('branches', values.branches || '');
               formDataToSend.append('declaration_date', values.clientDeclarationDate ? format(new Date(values.clientDeclarationDate), 'yyyy-MM-dd') : '');
+              formDataToSend.append('client_name', values.clientDeclarationClientName || '');
               formDataToSend.append('declaration_name', values.clientDeclarationClientName || '');
               formDataToSend.append('referral_name', values.referralFullName || '');
               formDataToSend.append('referral_number', values.referralMobileNumber || '');
@@ -649,10 +610,10 @@ const EditClient = () => {
                             label: loading.states
                               ? 'Loading states...'
                               : !values.countryOfResidence
-                              ? 'Select country first'
-                              : states.length === 0
-                              ? 'No states available'
-                              : 'Select State',
+                                ? 'Select country first'
+                                : states.length === 0
+                                  ? 'No states available'
+                                  : 'Select State',
                             disabled: true,
                             key: 'state-placeholder',
                           },
@@ -671,31 +632,10 @@ const EditClient = () => {
                     <div className="relative">
                       <FaMapMarkerAlt className="absolute top-1/2 transform -translate-y-1/2 left-3 text-secClr" />
                       <Field
-                        as="select"
+                        type="text"
                         name="lga"
                         className={`${inputClass} ${errors.lga && touched.lga ? 'border-red-500' : ''}`}
-                        disabled={!values.stateOfOrigin || loading.lgas}
-                      >
-                        {[
-                          {
-                            value: '',
-                            label: loading.lgas
-                              ? 'Loading LGAs...'
-                              : !values.stateOfOrigin
-                              ? 'Select state first'
-                              : lgas.length === 0
-                              ? 'No LGAs available'
-                              : 'Select LGA',
-                            disabled: true,
-                            key: 'lga-placeholder',
-                          },
-                          ...lgas.map((lga) => ({ value: lga, label: lga, key: lga })),
-                        ].map(({ key, value, label, disabled }) => (
-                          <option key={key} value={value} disabled={disabled}>
-                            {label}
-                          </option>
-                        ))}
-                      </Field>
+                      />
                       <ErrorMessage name="lga" component="div" className="text-xs text-red-500 mt-1" />
                     </div>
                   </div>
@@ -1035,7 +975,7 @@ const EditClient = () => {
                 <button
                   type="submit"
                   className="bg-secClr text-white px-6 py-3 rounded-md hover:bg-secClrHover transition-colors duration-200"
-                  disabled={loading.countries || loading.states || loading.lgas}
+                  disabled={loading.countries || loading.states}
                 >
                   Update Client
                 </button>
