@@ -650,47 +650,54 @@ const Dashboard = () => {
               </div>
 
               {/* Search + Buttons */}
-              <div className="flex flex-col md:flex-row gap-2 md:gap-3 w-full md:w-[65%]">
-                {/* Search */}
-                <div className="relative flex-1">
-                  <input
-                    type="text"
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    placeholder="Search clients..."
-                    className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-secClr text-sm md:text-base"
-                    aria-label="Search clients"
-                  />
-                  <FaSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4 md:w-5 md:h-5" />
-                </div>
+             <div className="flex flex-col md:flex-row gap-2 md:gap-3 w-full md:w-[65%]">
+  {/* Search */}
+  <div className="relative flex-1">
+    <input
+      type="text"
+      value={searchQuery}
+      onChange={(e) => setSearchQuery(e.target.value)}
+      placeholder="Search clients..."
+      className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-secClr text-sm md:text-base"
+      aria-label="Search clients"
+    />
+    <FaSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4 md:w-5 md:h-5" />
+  </div>
 
-                {/* Branch Button */}
-                <button
-                  onClick={() => setBranchFilterModalOpen(true)}
-                  className="flex items-center justify-center px-4 py-2.5 text-sm bg-secClr text-white font-semibold rounded-lg hover:bg-secClr/90 transition duration-300 shadow-sm"
-                >
-                  <FaFilter className="mr-2 w-4 h-4" />
-                  Branch
-                </button>
+  {/* Buttons wrapper */}
+  <div className="flex flex-col md:flex-row gap-2 md:gap-3 w-full md:w-auto">
+    {/* Branch + Filter row (sm only) */}
+    <div className="flex flex-row gap-2 md:gap-3 w-full md:w-auto">
+      {/* Branch Button */}
+      <button
+        onClick={() => setBranchFilterModalOpen(true)}
+        className="flex items-center justify-center flex-1 px-4 py-2.5 text-sm bg-secClr text-white font-semibold rounded-lg hover:bg-secClr/90 transition duration-300 shadow-sm"
+      >
+        <FaFilter className="mr-2 w-4 h-4" />
+        Branch
+      </button>
 
-                {/* Filter Button */}
-                <button
-                  onClick={() => setDateFilterModalOpen(true)}
-                  className="flex items-center justify-center px-4 py-2.5 text-sm bg-secClr text-white font-semibold rounded-lg hover:bg-secClr/90 transition duration-300 shadow-sm"
-                >
-                  <FaFilter className="mr-2 w-4 h-4" />
-                  Filter
-                </button>
+      {/* Filter Button */}
+      <button
+        onClick={() => setDateFilterModalOpen(true)}
+        className="flex items-center justify-center flex-1 px-4 py-2.5 text-sm bg-secClr text-white font-semibold rounded-lg hover:bg-secClr/90 transition duration-300 shadow-sm"
+      >
+        <FaFilter className="mr-2 w-4 h-4" />
+        Filter
+      </button>
+    </div>
 
-                {/* Download Button */}
-                <button
-                  onClick={() => setDownloadModalOpen(true)}
-                  className="flex items-center justify-center px-4 py-2.5 text-sm bg-secClr text-white font-semibold rounded-lg hover:bg-secClr/90 transition duration-300 shadow-sm"
-                >
-                  <FaDownload className="mr-2 w-4 h-4" />
-                  Download
-                </button>
-              </div>
+    {/* Download Button (goes under on sm, inline on md) */}
+    <button
+      onClick={() => setDownloadModalOpen(true)}
+      className="flex items-center justify-center px-4 py-2.5 text-sm bg-secClr text-white font-semibold rounded-lg hover:bg-secClr/90 transition duration-300 shadow-sm w-full md:w-auto"
+    >
+      <FaDownload className="mr-2 w-4 h-4" />
+      Download
+    </button>
+  </div>
+</div>
+
             </div>
 
 
