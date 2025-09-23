@@ -121,7 +121,6 @@ const EditClient = () => {
         }
 
         setFormData({
-          client_name: application.client_name || '',
           firstName: application.first_name || '',
           middleName: application.middle_name || '',
           lastName: application.last_name || '',
@@ -151,7 +150,6 @@ const EditClient = () => {
           clientDeclarationPlotNumber: application.plot_number || '',
           branches: application.branches || '',
           clientDeclarationDate: application.declaration_date ? new Date(application.declaration_date) : null,
-          clientDeclarationClientName: application.declaration_name || '',
           referralFullName: application.referral_name || '',
           referralMobileNumber: application.referral_number || '',
           referralDate: application.referral_date ? new Date(application.referral_date) : null,
@@ -181,7 +179,6 @@ const EditClient = () => {
   };
 
   const validationSchema = Yup.object({
-    client_name: Yup.string().required('Client name is required'),
     firstName: Yup.string().required('First name is required'),
     middleName: Yup.string().nullable(),
     lastName: Yup.string().required('Last name is required'),
@@ -237,7 +234,6 @@ const EditClient = () => {
       .required('Declaration date is required')
       .nullable()
       .typeError('Invalid date format, use DD-MM-YYYY'),
-    clientDeclarationClientName: Yup.string().required('Declaration client name is required'),
     referralFullName: Yup.string().nullable(),
     referralMobileNumber: Yup.string().when('referralFullName', (referralFullName, schema) => {
       return referralFullName ? schema
@@ -299,8 +295,11 @@ const EditClient = () => {
                 return;
               }
 
+              // Construct client_name from firstName, middleName, and lastName
+              const clientNameParts = [values.firstName, values.middleName, values.lastName].filter(part => part).join(' ').trim();
+              
               const formDataToSend = new FormData();
-              formDataToSend.append('client_name', values.client_name || '');
+              formDataToSend.append('client_name', clientNameParts || '');
               formDataToSend.append('first_name', values.firstName || '');
               formDataToSend.append('middle_name', values.middleName || '');
               formDataToSend.append('last_name', values.lastName || '');
@@ -332,8 +331,7 @@ const EditClient = () => {
               formDataToSend.append('plot_number', values.clientDeclarationPlotNumber || '');
               formDataToSend.append('branches', values.branches || '');
               formDataToSend.append('declaration_date', values.clientDeclarationDate ? format(new Date(values.clientDeclarationDate), 'yyyy-MM-dd') : '');
-              formDataToSend.append('client_name', values.clientDeclarationClientName || '');
-              formDataToSend.append('declaration_name', values.clientDeclarationClientName || '');
+              formDataToSend.append('declaration_name', clientNameParts || '');
               formDataToSend.append('referral_name', values.referralFullName || '');
               formDataToSend.append('referral_number', values.referralMobileNumber || '');
               formDataToSend.append('referral_date', values.referralDate ? format(new Date(values.referralDate), 'yyyy-MM-dd') : '');
@@ -386,62 +384,6 @@ const EditClient = () => {
           {({ setFieldValue, values, errors, touched }) => (
             <Form className="space-y-6 md:space-y-10">
               {error && <div className="text-red-500 text-sm mb-4">{error}</div>}
-
-              {/* Profile */}
-              <div className="border-b border-gray-200 pb-4 md:pb-6">
-                <h3 className="text-lg md:text-xl font-semibold text-gray-900 mb-4 md:mb-6">Profile</h3>
-                <div className="space-y-4 w-full">
-                  <div className="relative">
-                    <label className="block text-base font-medium text-gray-700">Client Name</label>
-                    <div className="relative">
-                      <FaUser className="absolute top-1/2 transform -translate-y-1/2 left-3 text-secClr" />
-                      <Field
-                        type="text"
-                        name="clientDeclarationClientName"
-                        className={`${inputClass} ${errors.clientDeclarationClientName && touched.clientDeclarationClientName ? 'border-red-500' : ''}`}
-                      />
-                      <ErrorMessage name="clientDeclarationClientName" component="div" className="text-xs text-red-500 mt-1" />
-                    </div>
-                  </div>
-                  <div className="relative">
-                    <label className="block text-base font-medium text-gray-700">Email</label>
-                    <div className="relative">
-                      <FaEnvelope className="absolute top-1/2 transform -translate-y-1/2 left-3 text-secClr" />
-                      <Field
-                        type="email"
-                        name="email"
-                        className={`${inputClass} ${errors.email && touched.email ? 'border-red-500' : ''}`}
-                      />
-                      <ErrorMessage name="email" component="div" className="text-xs text-red-500 mt-1" />
-                    </div>
-                  </div>
-                  <div className="relative">
-                    <label className="block text-base font-medium text-gray-700">Mobile Number</label>
-                    <div className="relative">
-                      <FaPhoneAlt className="absolute top-1/2 transform -translate-y-1/2 left-3 text-secClr" />
-                      <Field
-                        type="tel"
-                        name="mobileNumber"
-                        className={`${inputClass} ${errors.mobileNumber && touched.mobileNumber ? 'border-red-500' : ''}`}
-                        placeholder={getMobilePlaceholder()}
-                      />
-                      <ErrorMessage name="mobileNumber" component="div" className="text-xs text-red-500 mt-1" />
-                    </div>
-                  </div>
-                  <div className="relative">
-                    <label className="block text-base font-medium text-gray-700">Nationality</label>
-                    <div className="relative">
-                      <FaFlag className="absolute top-1/2 transform -translate-y-1/2 left-3 text-secClr" />
-                      <Field
-                        type="text"
-                        name="nationality"
-                        className={`${inputClass} ${errors.nationality && touched.nationality ? 'border-red-500' : ''}`}
-                      />
-                      <ErrorMessage name="nationality" component="div" className="text-xs text-red-500 mt-1" />
-                    </div>
-                  </div>
-                </div>
-              </div>
 
               {/* Personal Information */}
               <div className="border-b border-gray-200 pb-4 md:pb-6">
