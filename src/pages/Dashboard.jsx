@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { FaFilter, FaDownload, FaEye, FaEdit, FaTimes } from 'react-icons/fa';
+import { FaFilter, FaDownload, FaEye, FaEdit, FaTimes, FaSearch } from 'react-icons/fa';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 import axios from 'axios';
@@ -9,6 +9,8 @@ import { format, parseISO } from 'date-fns';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
 import assets from '../assets/assests';
+import logo from '../assets/logo.png';
+import autoTable from 'jspdf-autotable';
 
 const API_URL = import.meta.env.VITE_API_BASE_URL;
 
@@ -38,9 +40,10 @@ const Dashboard = () => {
   const [downloadTimeTo, setDownloadTimeTo] = useState(null);
   const [loading, setLoading] = useState(false);
   const [filteredDataForPrint, setFilteredDataForPrint] = useState([]);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('');
   const componentRef = useRef();
 
-  // Standardized branch options
   const branchOptions = [
     'HQ - Onitsha',
     'Mgbuka',
@@ -53,6 +56,18 @@ const Dashboard = () => {
     'Enugwu-Ukwu',
   ];
   const recordsPerPage = 10;
+
+  // Debounce search query
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedSearchQuery(searchQuery);
+      setCurrentPage(1); // Reset to first page on new search
+    }, 1000); // 500ms delay
+
+    return () => {
+      clearTimeout(handler);
+    };
+  }, [searchQuery]);
 
   // Prevent background scrolling when modals are open
   useEffect(() => {
@@ -182,7 +197,7 @@ const Dashboard = () => {
     fetchAllClients();
   }, []);
 
-  // Fetch paginated applications for display
+  // Fetch paginated applications or search results
   useEffect(() => {
     const fetchApplications = async () => {
       const toastId = toast.loading('Loading applications...');
@@ -196,17 +211,34 @@ const Dashboard = () => {
           return;
         }
 
-        const payload = { page: currentPage, per_page: recordsPerPage };
-        const response = await axios.post(
-          `${API_URL}/api/all_clients`,
-          payload,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-              'Content-Type': 'application/json',
-            },
-          }
-        );
+        let response;
+        if (debouncedSearchQuery.trim()) {
+          response = await axios.get(
+            `${API_URL}/api/applications/search?query=${encodeURIComponent(debouncedSearchQuery)}`,
+            {
+              headers: {
+                Authorization: `Bearer ${token}`,
+                'Content-Type': 'application/json',
+              },
+              params: {
+                page: currentPage,
+                per_page: recordsPerPage,
+              },
+            }
+          );
+        } else {
+          const payload = { page: currentPage, per_page: recordsPerPage };
+          response = await axios.post(
+            `${API_URL}/api/all_clients`,
+            payload,
+            {
+              headers: {
+                Authorization: `Bearer ${token}`,
+                'Content-Type': 'application/json',
+              },
+            }
+          );
+        }
 
         let applications = [];
         let meta = {};
@@ -288,7 +320,7 @@ const Dashboard = () => {
     };
 
     fetchApplications();
-  }, [currentPage]);
+  }, [currentPage, debouncedSearchQuery]);
 
   // Apply filters to allClients and paginate results
   useEffect(() => {
@@ -336,8 +368,8 @@ const Dashboard = () => {
     const startIndex = (currentPage - 1) * recordsPerPage;
     const paginatedData = filtered.slice(startIndex, startIndex + recordsPerPage);
 
-    setFilteredData(paginatedData);
-  }, [allClients, filterBranch, filterDateFrom, filterTimeFrom, filterDateTo, filterTimeTo, currentPage]);
+    setFilteredData(debouncedSearchQuery.trim() ? allApplications : paginatedData);
+  }, [allClients, allApplications, filterBranch, filterDateFrom, filterTimeFrom, filterDateTo, filterTimeTo, currentPage, debouncedSearchQuery]);
 
   // Apply branch filter
   const applyBranchFilter = () => {
@@ -378,6 +410,8 @@ const Dashboard = () => {
     setTimeFromInput(null);
     setDateToInput(null);
     setTimeToInput(null);
+    setSearchQuery('');
+    setDebouncedSearchQuery('');
     setCurrentPage(1);
     setDateFilterModalOpen(false);
     setBranchFilterModalOpen(false);
@@ -414,7 +448,6 @@ const Dashboard = () => {
       return;
     }
 
-    // Sort filtered data for CSV by created_at in descending order
     const sortedForDownload = filteredForDownload.sort((a, b) => {
       const dateA = a.created_at ? new Date(parseISO(a.created_at)) : new Date(0);
       const dateB = b.created_at ? new Date(parseISO(b.created_at)) : new Date(0);
@@ -466,95 +499,116 @@ const Dashboard = () => {
   // Download PDF
   const handleDownloadPDF = async () => {
     if (!downloadDateFrom || !downloadTimeFrom || !downloadDateTo || !downloadTimeTo) {
-      toast.error('Please provide both date and time for downloading.');
+      toast.error("Please provide both date and time for downloading.");
       return;
     }
 
     const filterFrom = new Date(downloadDateFrom);
-    const [fromHours, fromMinutes] = downloadTimeFrom.split(':').map(Number);
+    const [fromHours, fromMinutes] = downloadTimeFrom.split(":").map(Number);
     filterFrom.setHours(fromHours, fromMinutes, 0, 0);
 
     const filterTo = new Date(downloadDateTo);
-    const [toHours, toMinutes] = downloadTimeTo.split(':').map(Number);
+    const [toHours, toMinutes] = downloadTimeTo.split(":").map(Number);
     filterTo.setHours(toHours, toMinutes, 59, 999);
 
-    const filteredForDownload = allClients.filter(item => {
+    const filteredForDownload = allClients.filter((item) => {
       try {
         const createdDate = item.created_at ? new Date(parseISO(item.created_at)) : null;
         return createdDate && createdDate >= filterFrom && createdDate <= filterTo;
       } catch (error) {
-        console.error('Error parsing date for item:', item, error);
+        console.error("Error parsing date for item:", item, error);
         return false;
       }
     });
 
     if (filteredForDownload.length === 0) {
-      toast.error('No records found for the selected date and time range.');
+      toast.error("No records found for the selected date and time range.");
       return;
     }
 
-    // Sort filtered data for PDF by created_at in descending order
     const sortedForDownload = filteredForDownload.sort((a, b) => {
       const dateA = a.created_at ? new Date(parseISO(a.created_at)) : new Date(0);
       const dateB = b.created_at ? new Date(parseISO(b.created_at)) : new Date(0);
       return dateB - dateA;
     });
 
-    // Set filtered data for print and wait for DOM update
-    setFilteredDataForPrint(sortedForDownload);
-
-    // Add a slight delay to ensure React renders the updated DOM
-    await new Promise(resolve => setTimeout(resolve, 100));
-
     try {
-      const element = componentRef.current;
-      if (!element) {
-        throw new Error('Print component reference is not available');
-      }
-
-      const canvas = await html2canvas(element, {
-        scale: 2,
-        useCORS: true,
-        logging: false,
-        windowWidth: 794, // A4 width in pixels at 96 DPI
-      });
-
-      const imgData = canvas.toDataURL('image/png');
       const pdf = new jsPDF({
-        orientation: 'portrait',
-        unit: 'mm',
-        format: 'a4',
+        orientation: "portrait",
+        unit: "mm",
+        format: "a4",
       });
 
-      const imgWidth = 190; // A4 width (210mm) - margins (10mm each side)
-      const pageHeight = 297; // A4 height in mm
-      const imgHeight = (canvas.height * imgWidth) / canvas.width;
-      let heightLeft = imgHeight;
-      let position = 10; // Top margin
+      const pageWidth = pdf.internal.pageSize.getWidth();
+      const margin = 15;
+      let yPosition = margin;
 
-      // Add first page
-      pdf.addImage(imgData, 'PNG', 10, position, imgWidth, imgHeight);
-      heightLeft -= pageHeight - 20; // Subtract page height minus margins
+      pdf.addImage(logo, "PNG", margin, yPosition, 30, 30);
+      yPosition += 35;
 
-      // Add additional pages if content overflows
-      while (heightLeft > 0) {
-        position = heightLeft - imgHeight + 10;
-        pdf.addPage();
-        pdf.addImage(imgData, 'PNG', 10, position, imgWidth, imgHeight);
-        heightLeft -= pageHeight - 20;
-      }
+      pdf.setFontSize(18);
+      pdf.text("Client Records", pageWidth / 2, yPosition, { align: "center" });
+      yPosition += 10;
 
-      pdf.save(`clients_${format(new Date(), 'yyyy-MM-dd_HH-mm')}.pdf`);
+      pdf.setFontSize(12);
+      pdf.text(
+        `(${format(new Date(downloadDateFrom), "dd/MM/yyyy")} ${downloadTimeFrom} - ${format(
+          new Date(downloadDateTo),
+          "dd/MM/yyyy"
+        )} ${downloadTimeTo})`,
+        pageWidth / 2,
+        yPosition,
+        { align: "center" }
+      );
+      yPosition += 15;
+
+      const tableHead = [
+        ["S/N", "Client Name", "State of Origin", "LGA", "Property Name", "No. of Plot(s)", "Plot No(s)", "Land Price"],
+      ];
+
+      const tableBody = sortedForDownload.map((item, index) => [
+        index + 1,
+        item.client_name || "N/A",
+        item.state_of_origin || "N/A",
+        item.lga || "N/A",
+        item.site_location || "N/A",
+        item.number_of_plot || "N/A",
+        item.plot_number || "N/A",
+        item.land_price || "N/A",
+      ]);
+
+      autoTable(pdf, {
+        startY: yPosition,
+        head: tableHead,
+        body: tableBody,
+        theme: "grid",
+        styles: {
+          fontSize: 9,
+          cellPadding: 3,
+          halign: "center",
+          valign: "middle",
+        },
+        headStyles: {
+          fillColor: [47, 83, 24],
+          textColor: [255, 255, 255],
+          fontStyle: "bold",
+        },
+        alternateRowStyles: {
+          fillColor: [245, 245, 245],
+        },
+        margin: { left: margin, right: margin },
+      });
+
+      pdf.save(`clients_${format(new Date(), "yyyy-MM-dd_HH-mm")}.pdf`);
       setDownloadModalOpen(false);
-      setFilteredDataForPrint([]);
-      toast.success('PDF downloaded successfully!');
+      toast.success("PDF downloaded successfully!");
     } catch (error) {
-      console.error('Error generating PDF:', error);
-      toast.error('Failed to generate PDF: ' + (error.message || 'Unknown error'));
+      console.error("Error generating PDF:", error);
+      toast.error("Failed to generate PDF: " + (error.message || "Unknown error"));
     }
   };
 
-  // Calculate pagination numbers to display (previous, current, next)
+  // Calculate pagination numbers to display
   const getPageNumbers = () => {
     const pages = [];
     if (totalPages <= 3) {
@@ -582,35 +636,70 @@ const Dashboard = () => {
         {!loading && (
           <>
             {/* Header */}
-            <div className="flex flex-col items-center gap-4 md:flex-row md:items-center md:justify-between md:gap-4 mb-4 md:mb-6 border-b border-gray-200 pb-2 md:pb-4">
+            <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between mb-4 md:mb-6 border-b border-gray-200 pb-2 md:pb-4">
+              {/* Logo + Title */}
               <div className="flex items-center gap-2 md:gap-3">
-                <img src={assets.logo} className="w-8 h-8 md:w-10 md:h-10" alt="Logo" />
-                <h1 className="text-lg md:text-2xl font-extrabold text-gray-900">Dashboard</h1>
+                <img
+                  src={assets.logo}
+                  className="w-8 h-8 md:w-10 md:h-10"
+                  alt="Logo"
+                />
+                <h1 className="text-lg md:text-2xl font-extrabold text-gray-900">
+                  Dashboard
+                </h1>
               </div>
-              <div className="flex gap-2 md:gap-3 w-full md:w-[40%]">
-                <button
-                  onClick={() => setBranchFilterModalOpen(true)}
-                  className="flex-1 flex items-center justify-center p-3 bg-secClr text-white font-semibold rounded-lg hover:bg-secClr/90 transition duration-300 shadow-md"
-                >
-                  <FaFilter className="mr-1 w-4 h-4 md:w-5 md:h-5" />
-                  Branch
-                </button>
-                <button
-                  onClick={() => setDateFilterModalOpen(true)}
-                  className="flex-1 flex items-center justify-center p-3 bg-secClr text-white font-semibold rounded-lg hover:bg-secClr/90 transition duration-300 shadow-md"
-                >
-                  <FaFilter className="mr-1 w-4 h-4 md:w-5 md:h-5" />
-                  Filter
-                </button>
-                <button
-                  onClick={() => setDownloadModalOpen(true)}
-                  className="flex-1 flex items-center justify-center p-3 bg-secClr text-white font-semibold rounded-lg hover:bg-secClr/90 transition duration-300 shadow-md"
-                >
-                  <FaDownload className="mr-1 w-4 h-4 md:w-5 md:h-5" />
-                  Download
-                </button>
-              </div>
+
+              {/* Search + Buttons */}
+             <div className="flex flex-col md:flex-row gap-2 md:gap-3 w-full md:w-[65%]">
+  {/* Search */}
+  <div className="relative flex-1">
+    <input
+      type="text"
+      value={searchQuery}
+      onChange={(e) => setSearchQuery(e.target.value)}
+      placeholder="Search clients..."
+      className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-secClr text-sm md:text-base"
+      aria-label="Search clients"
+    />
+    <FaSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4 md:w-5 md:h-5" />
+  </div>
+
+  {/* Buttons wrapper */}
+  <div className="flex flex-col md:flex-row gap-2 md:gap-3 w-full md:w-auto">
+    {/* Branch + Filter row (sm only) */}
+    <div className="flex flex-row gap-2 md:gap-3 w-full md:w-auto">
+      {/* Branch Button */}
+      <button
+        onClick={() => setBranchFilterModalOpen(true)}
+        className="flex items-center justify-center flex-1 px-4 py-2.5 text-sm bg-secClr text-white font-semibold rounded-lg hover:bg-secClr/90 transition duration-300 shadow-sm"
+      >
+        <FaFilter className="mr-2 w-4 h-4" />
+        Branch
+      </button>
+
+      {/* Filter Button */}
+      <button
+        onClick={() => setDateFilterModalOpen(true)}
+        className="flex items-center justify-center flex-1 px-4 py-2.5 text-sm bg-secClr text-white font-semibold rounded-lg hover:bg-secClr/90 transition duration-300 shadow-sm"
+      >
+        <FaFilter className="mr-2 w-4 h-4" />
+        Filter
+      </button>
+    </div>
+
+    {/* Download Button (goes under on sm, inline on md) */}
+    <button
+      onClick={() => setDownloadModalOpen(true)}
+      className="flex items-center justify-center px-4 py-2.5 text-sm bg-secClr text-white font-semibold rounded-lg hover:bg-secClr/90 transition duration-300 shadow-sm w-full md:w-auto"
+    >
+      <FaDownload className="mr-2 w-4 h-4" />
+      Download
+    </button>
+  </div>
+</div>
+
             </div>
+
 
             {/* Client List (Cards on mobile, Table on md+) */}
             <div className="space-y-2 md:space-y-0">
