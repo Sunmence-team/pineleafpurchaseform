@@ -9,6 +9,11 @@ import { format, parseISO } from 'date-fns';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
 import assets from '../assets/assests';
+import logo from '../assets/logo.png'; // Adjust the path to your logo if necessary
+
+// import { jsPDF } from "jspdf";
+import autoTable from "jspdf-autotable";
+
 
 const API_URL = import.meta.env.VITE_API_BASE_URL;
 
@@ -464,95 +469,123 @@ const Dashboard = () => {
   };
 
   // Download PDF
-  const handleDownloadPDF = async () => {
-    if (!downloadDateFrom || !downloadTimeFrom || !downloadDateTo || !downloadTimeTo) {
-      toast.error('Please provide both date and time for downloading.');
-      return;
-    }
+const handleDownloadPDF = async () => {
+  if (!downloadDateFrom || !downloadTimeFrom || !downloadDateTo || !downloadTimeTo) {
+    toast.error("Please provide both date and time for downloading.");
+    return;
+  }
 
-    const filterFrom = new Date(downloadDateFrom);
-    const [fromHours, fromMinutes] = downloadTimeFrom.split(':').map(Number);
-    filterFrom.setHours(fromHours, fromMinutes, 0, 0);
+  const filterFrom = new Date(downloadDateFrom);
+  const [fromHours, fromMinutes] = downloadTimeFrom.split(":").map(Number);
+  filterFrom.setHours(fromHours, fromMinutes, 0, 0);
 
-    const filterTo = new Date(downloadDateTo);
-    const [toHours, toMinutes] = downloadTimeTo.split(':').map(Number);
-    filterTo.setHours(toHours, toMinutes, 59, 999);
+  const filterTo = new Date(downloadDateTo);
+  const [toHours, toMinutes] = downloadTimeTo.split(":").map(Number);
+  filterTo.setHours(toHours, toMinutes, 59, 999);
 
-    const filteredForDownload = allClients.filter(item => {
-      try {
-        const createdDate = item.created_at ? new Date(parseISO(item.created_at)) : null;
-        return createdDate && createdDate >= filterFrom && createdDate <= filterTo;
-      } catch (error) {
-        console.error('Error parsing date for item:', item, error);
-        return false;
-      }
-    });
-
-    if (filteredForDownload.length === 0) {
-      toast.error('No records found for the selected date and time range.');
-      return;
-    }
-
-    // Sort filtered data for PDF by created_at in descending order
-    const sortedForDownload = filteredForDownload.sort((a, b) => {
-      const dateA = a.created_at ? new Date(parseISO(a.created_at)) : new Date(0);
-      const dateB = b.created_at ? new Date(parseISO(b.created_at)) : new Date(0);
-      return dateB - dateA;
-    });
-
-    // Set filtered data for print and wait for DOM update
-    setFilteredDataForPrint(sortedForDownload);
-
-    // Add a slight delay to ensure React renders the updated DOM
-    await new Promise(resolve => setTimeout(resolve, 100));
-
+  const filteredForDownload = allClients.filter((item) => {
     try {
-      const element = componentRef.current;
-      if (!element) {
-        throw new Error('Print component reference is not available');
-      }
-
-      const canvas = await html2canvas(element, {
-        scale: 2,
-        useCORS: true,
-        logging: false,
-        windowWidth: 794, // A4 width in pixels at 96 DPI
-      });
-
-      const imgData = canvas.toDataURL('image/png');
-      const pdf = new jsPDF({
-        orientation: 'portrait',
-        unit: 'mm',
-        format: 'a4',
-      });
-
-      const imgWidth = 190; // A4 width (210mm) - margins (10mm each side)
-      const pageHeight = 297; // A4 height in mm
-      const imgHeight = (canvas.height * imgWidth) / canvas.width;
-      let heightLeft = imgHeight;
-      let position = 10; // Top margin
-
-      // Add first page
-      pdf.addImage(imgData, 'PNG', 10, position, imgWidth, imgHeight);
-      heightLeft -= pageHeight - 20; // Subtract page height minus margins
-
-      // Add additional pages if content overflows
-      while (heightLeft > 0) {
-        position = heightLeft - imgHeight + 10;
-        pdf.addPage();
-        pdf.addImage(imgData, 'PNG', 10, position, imgWidth, imgHeight);
-        heightLeft -= pageHeight - 20;
-      }
-
-      pdf.save(`clients_${format(new Date(), 'yyyy-MM-dd_HH-mm')}.pdf`);
-      setDownloadModalOpen(false);
-      setFilteredDataForPrint([]);
-      toast.success('PDF downloaded successfully!');
+      const createdDate = item.created_at ? new Date(parseISO(item.created_at)) : null;
+      return createdDate && createdDate >= filterFrom && createdDate <= filterTo;
     } catch (error) {
-      console.error('Error generating PDF:', error);
-      toast.error('Failed to generate PDF: ' + (error.message || 'Unknown error'));
+      console.error("Error parsing date for item:", item, error);
+      return false;
     }
-  };
+  });
+
+  if (filteredForDownload.length === 0) {
+    toast.error("No records found for the selected date and time range.");
+    return;
+  }
+
+  // Sort data
+  const sortedForDownload = filteredForDownload.sort((a, b) => {
+    const dateA = a.created_at ? new Date(parseISO(a.created_at)) : new Date(0);
+    const dateB = b.created_at ? new Date(parseISO(b.created_at)) : new Date(0);
+    return dateB - dateA;
+  });
+
+  try {
+    const pdf = new jsPDF({
+      orientation: "portrait",
+      unit: "mm",
+      format: "a4",
+    });
+
+    const pageWidth = pdf.internal.pageSize.getWidth();
+    const margin = 15;
+    let yPosition = margin;
+
+    // Add logo
+    pdf.addImage(logo, "PNG", margin, yPosition, 30, 30);
+    yPosition += 35;
+
+    // Add Title
+    pdf.setFontSize(18);
+    pdf.text("Client Records", pageWidth / 2, yPosition, { align: "center" });
+    yPosition += 10;
+
+    // Add Date Range
+    pdf.setFontSize(12);
+    pdf.text(
+      `(${format(new Date(downloadDateFrom), "dd/MM/yyyy")} ${downloadTimeFrom} - ${format(
+        new Date(downloadDateTo),
+        "dd/MM/yyyy"
+      )} ${downloadTimeTo})`,
+      pageWidth / 2,
+      yPosition,
+      { align: "center" }
+    );
+    yPosition += 15;
+
+    // Prepare table data
+    const tableHead = [
+      ["S/N", "Client Name", "State of Origin", "LGA", "Property Name", "No. of Plot(s)", "Plot No(s)", "Land Price"],
+    ];
+
+    const tableBody = sortedForDownload.map((item, index) => [
+      index + 1,
+      item.client_name || "N/A",
+      item.state_of_origin || "N/A",
+      item.lga || "N/A",
+      item.site_location || "N/A",
+      item.number_of_plot || "N/A",
+      item.plot_number || "N/A",
+      item.land_price || "N/A",
+    ]);
+
+    // Draw neat table with autoTable
+    autoTable(pdf, {
+      startY: yPosition,
+      head: tableHead,
+      body: tableBody,
+      theme: "grid",
+      styles: {
+        fontSize: 9,
+        cellPadding: 3,
+        halign: "center",
+        valign: "middle",
+      },
+      headStyles: {
+        fillColor: [47, 83, 24], 
+        textColor: [255, 255, 255],
+        fontStyle: "bold",
+      },
+      alternateRowStyles: {
+        fillColor: [245, 245, 245], // light gray alternate rows
+      },
+      margin: { left: margin, right: margin },
+    });
+
+    // Save PDF
+    pdf.save(`clients_${format(new Date(), "yyyy-MM-dd_HH-mm")}.pdf`);
+    setDownloadModalOpen(false);
+    toast.success("PDF downloaded successfully!");
+  } catch (error) {
+    console.error("Error generating PDF:", error);
+    toast.error("Failed to generate PDF: " + (error.message || "Unknown error"));
+  }
+};
 
   // Calculate pagination numbers to display (previous, current, next)
   const getPageNumbers = () => {
@@ -683,7 +716,7 @@ const Dashboard = () => {
                           </td>
                           <td className="p-2 md:p-5 whitespace-nowrap text-sm md:text-base font-medium text-gray-900">{item.client_name}</td>
                           <td className="p-2 md:p-5 whitespace-nowrap text-sm md:text-base text-gray-700">{item.email}</td>
-                          <td className="p-2 md:p-5 whitespace-nowrap text-sm md:text-base text-gray-700">{item.mobile_number}</td>
+                          <td className="p-2 md:p-5 whitespace.nowrap text-sm md:text-base text-gray-700">{item.mobile_number}</td>
                           <td className="p-2 md:p-5 whitespace-nowrap text-sm md:text-base text-gray-700">
                             <div className="flex space-x-2 md:space-x-3">
                               <Link to={`/view-client/${item.id}`} aria-label={`View ${item.client_name || 'Client'}`}>
