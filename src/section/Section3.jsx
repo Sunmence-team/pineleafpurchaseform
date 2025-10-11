@@ -26,6 +26,10 @@ const Section3 = ({ formData, setFormData, prevSection, nextSection }) => {
     'Lagos Ajah',
     'Lagos Apapa',
     'Enugwu-Ukwu',
+    'Abuja',
+    'Abia',
+    'Nnewi',
+    'Enugu',
   ];
 
   const validationSchema = Yup.object({

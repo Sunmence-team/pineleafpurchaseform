@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { FaFilter, FaDownload, FaEye, FaEdit, FaTimes, FaSearch } from 'react-icons/fa';
+import { FaFilter, FaDownload, FaEye, FaEdit, FaTimes, FaSearch, FaTrashAlt } from 'react-icons/fa';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 import axios from 'axios';
@@ -39,6 +39,7 @@ const Dashboard = () => {
   const [downloadDateTo, setDownloadDateTo] = useState(null);
   const [downloadTimeTo, setDownloadTimeTo] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
   const [filteredDataForPrint, setFilteredDataForPrint] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('');
@@ -54,6 +55,10 @@ const Dashboard = () => {
     'Lagos Ajah',
     'Lagos Apapa',
     'Enugwu-Ukwu',
+    'Abuja',
+    'Abia',
+    'Nnewi',
+    'Enugu',
   ];
   const recordsPerPage = 10;
 
@@ -198,127 +203,126 @@ const Dashboard = () => {
   }, []);
 
   // Fetch paginated applications or search results
-  useEffect(() => {
-    const fetchApplications = async () => {
-      const toastId = toast.loading('Loading applications...');
-      setLoading(true);
-      try {
-        const token = localStorage.getItem('token');
-        if (!token) {
-          toast.error('Please log in to view the dashboard.', { id: toastId });
-          window.location.href = '/login';
-          setLoading(false);
-          return;
-        }
-
-        let response;
-        if (debouncedSearchQuery.trim()) {
-          response = await axios.get(
-            `${API_URL}/api/applications/search?query=${encodeURIComponent(debouncedSearchQuery)}`,
-            {
-              headers: {
-                Authorization: `Bearer ${token}`,
-                'Content-Type': 'application/json',
-              },
-              params: {
-                page: currentPage,
-                per_page: recordsPerPage,
-              },
-            }
-          );
-        } else {
-          const payload = { page: currentPage, per_page: recordsPerPage };
-          response = await axios.post(
-            `${API_URL}/api/all_clients`,
-            payload,
-            {
-              headers: {
-                Authorization: `Bearer ${token}`,
-                'Content-Type': 'application/json',
-              },
-            }
-          );
-        }
-
-        let applications = [];
-        let meta = {};
-        if (response.data && Array.isArray(response.data.data)) {
-          applications = response.data.data;
-          meta = response.data.meta || {};
-        } else if (response.data && Array.isArray(response.data.applications)) {
-          applications = response.data.applications;
-          meta = response.data.meta || {};
-        } else if (response.data && Array.isArray(response.data.clients)) {
-          applications = response.data.clients;
-          meta = response.data.meta || {};
-        } else if (Array.isArray(response.data)) {
-          applications = response.data;
-        } else {
-          console.error('Unexpected response structure:', response.data);
-          throw new Error('Response data is not an array or does not contain an array of clients');
-        }
-
-        const mappedApplications = applications.map(item => ({
-          id: item.id || '',
-          client_name: item.client_name || '',
-          email: item.email || '',
-          mobile_number: item.mobile_number || '',
-          branches: item.branches || '',
-          created_at: item.created_at || '',
-          address: item.address || '',
-          country: item.country || '',
-          declaration_date: item.declaration_date || '',
-          declaration_name: item.declaration_name || '',
-          dob: item.dob || '',
-          first_name: item.first_name || '',
-          first_name_of_spouse: item.first_name_of_spouse || '',
-          gender: item.gender || '',
-          land_price: item.land_price || '',
-          language: item.language || '',
-          last_name: item.last_name || '',
-          last_name_of_spouse: item.last_name_of_spouse || '',
-          lga: item.lga || '',
-          marital_status: item.marital_status || '',
-          middle_name: item.middle_name || '',
-          middle_name_of_spouse: item.middle_name_of_spouse || '',
-          nationality: item.nationality || '',
-          next_of_kin_address: item.next_of_kin_address || '',
-          next_of_kin_email: item.next_of_kin_email || '',
-          next_of_kin_full_name: item.next_of_kin_full_name || '',
-          next_of_kin_mobile_number: item.next_of_kin_mobile_number || '',
-          number_of_plot: item.number_of_plot || '',
-          occupation: item.occupation || '',
-          personal_picture: item.personal_picture || '',
-          plot_number: item.plot_number || '',
-          referral_date: item.referral_date || '',
-          referral_email: item.referral_email || '',
-          referral_name: item.referral_name || '',
-          referral_number: item.referral_number || '',
-          signature: item.signature || '',
-          site_location: item.site_location || '',
-          state_of_origin: item.state_of_origin || '',
-          telephone_number: item.telephone_number || '',
-          title: item.title || '',
-          title_of_spouse: item.title_of_spouse || '',
-          updated_at: item.updated_at || '',
-        }));
-
-        setAllApplications(mappedApplications);
-        setTotalPages(meta.last_page || 1);
-        setTotalRecords(meta.total || applications.length);
-        toast.success('Applications loaded successfully!', { id: toastId });
-      } catch (err) {
-        console.error('Error fetching applications:', err);
-        toast.error('Failed to fetch applications: ' + (err.message || 'Unknown error'), { id: toastId });
-        if (axios.isAxiosError(err) && err.response?.status === 401) {
-          localStorage.removeItem('token');
-          window.location.href = '/login';
-        }
-      } finally {
+  const fetchApplications = async () => {
+    const toastId = toast.loading('Loading applications...');
+    setLoading(true);
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        toast.error('Please log in to view the dashboard.', { id: toastId });
+        window.location.href = '/login';
         setLoading(false);
+        return;
       }
-    };
 
+      let response;
+      if (debouncedSearchQuery.trim()) {
+        response = await axios.get(
+          `${API_URL}/api/applications/search?query=${encodeURIComponent(debouncedSearchQuery)}`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+              'Content-Type': 'application/json',
+            },
+            params: {
+              page: currentPage,
+              per_page: recordsPerPage,
+            },
+          }
+        );
+      } else {
+        const payload = { page: currentPage, per_page: recordsPerPage };
+        response = await axios.post(
+          `${API_URL}/api/all_clients`,
+          payload,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+              'Content-Type': 'application/json',
+            },
+          }
+        );
+      }
+
+      let applications = [];
+      let meta = {};
+      if (response.data && Array.isArray(response.data.data)) {
+        applications = response.data.data;
+        meta = response.data.meta || {};
+      } else if (response.data && Array.isArray(response.data.applications)) {
+        applications = response.data.applications;
+        meta = response.data.meta || {};
+      } else if (response.data && Array.isArray(response.data.clients)) {
+        applications = response.data.clients;
+        meta = response.data.meta || {};
+      } else if (Array.isArray(response.data)) {
+        applications = response.data;
+      } else {
+        console.error('Unexpected response structure:', response.data);
+        throw new Error('Response data is not an array or does not contain an array of clients');
+      }
+
+      const mappedApplications = applications.map(item => ({
+        id: item.id || '',
+        client_name: item.client_name || '',
+        email: item.email || '',
+        mobile_number: item.mobile_number || '',
+        branches: item.branches || '',
+        created_at: item.created_at || '',
+        address: item.address || '',
+        country: item.country || '',
+        declaration_date: item.declaration_date || '',
+        declaration_name: item.declaration_name || '',
+        dob: item.dob || '',
+        first_name: item.first_name || '',
+        first_name_of_spouse: item.first_name_of_spouse || '',
+        gender: item.gender || '',
+        land_price: item.land_price || '',
+        language: item.language || '',
+        last_name: item.last_name || '',
+        last_name_of_spouse: item.last_name_of_spouse || '',
+        lga: item.lga || '',
+        marital_status: item.marital_status || '',
+        middle_name: item.middle_name || '',
+        middle_name_of_spouse: item.middle_name_of_spouse || '',
+        nationality: item.nationality || '',
+        next_of_kin_address: item.next_of_kin_address || '',
+        next_of_kin_email: item.next_of_kin_email || '',
+        next_of_kin_full_name: item.next_of_kin_full_name || '',
+        next_of_kin_mobile_number: item.next_of_kin_mobile_number || '',
+        number_of_plot: item.number_of_plot || '',
+        occupation: item.occupation || '',
+        personal_picture: item.personal_picture || '',
+        plot_number: item.plot_number || '',
+        referral_date: item.referral_date || '',
+        referral_email: item.referral_email || '',
+        referral_name: item.referral_name || '',
+        referral_number: item.referral_number || '',
+        signature: item.signature || '',
+        site_location: item.site_location || '',
+        state_of_origin: item.state_of_origin || '',
+        telephone_number: item.telephone_number || '',
+        title: item.title || '',
+        title_of_spouse: item.title_of_spouse || '',
+        updated_at: item.updated_at || '',
+      }));
+
+      setAllApplications(mappedApplications);
+      setTotalPages(meta.last_page || 1);
+      setTotalRecords(meta.total || applications.length);
+      toast.success('Applications loaded successfully!', { id: toastId });
+    } catch (err) {
+      console.error('Error fetching applications:', err);
+      toast.error('Failed to fetch applications: ' + (err.message || 'Unknown error'), { id: toastId });
+      if (axios.isAxiosError(err) && err.response?.status === 401) {
+        localStorage.removeItem('token');
+        window.location.href = '/login';
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+  useEffect(() => {
     fetchApplications();
   }, [currentPage, debouncedSearchQuery]);
 
@@ -462,6 +466,7 @@ const Dashboard = () => {
       'Number of Plot(s)',
       'Plot No(s)',
       'Land Price',
+      'Branch',
     ];
 
     const rows = sortedForDownload.map(item => [
@@ -472,6 +477,7 @@ const Dashboard = () => {
       item.number_of_plot || '',
       item.plot_number || '',
       item.land_price || '',
+      item.branches || '',
     ].map(field => `"${String(field).replace(/"/g, '""')}"`));
 
     const csvContent = [headers, ...rows].map(row => row.join(',')).join('\n');
@@ -563,7 +569,7 @@ const Dashboard = () => {
       yPosition += 15;
 
       const tableHead = [
-        ["S/N", "Client Name", "State of Origin", "LGA", "Property Name", "No. of Plot(s)", "Plot No(s)", "Land Price"],
+        ["S/N", "Client Name", "State of Origin", "LGA", "Property Name", "No. of Plot(s)", "Plot No(s)", "Land Price", "Branch"],
       ];
 
       const tableBody = sortedForDownload.map((item, index) => [
@@ -575,6 +581,7 @@ const Dashboard = () => {
         item.number_of_plot || "N/A",
         item.plot_number || "N/A",
         item.land_price || "N/A",
+        item.branches || "N/A",
       ]);
 
       autoTable(pdf, {
@@ -625,6 +632,53 @@ const Dashboard = () => {
     return pages;
   };
 
+  const handleDelete = async (id) => {
+    if (!id) return;
+
+    const toastId = toast.loading('Deleting entry...');
+    setIsDeleting(true);
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        toast.error('Please log in to perform this action.', { id: toastId });
+        window.location.href = '/login';
+        setIsDeleting(false);
+        return;
+      }
+
+      const response = await axios.delete(`${API_URL}/api/applications/${id}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (response.status === 200 || response.status === 204) {
+        toast.success('Client entry deleted successfully!', { id: toastId });
+        
+        setAllClients(prevClients => prevClients.filter(client => client.id !== id));
+
+        if (filteredData.length === 1 && currentPage > 1) {
+          setCurrentPage(currentPage - 1);
+        } else {
+          fetchApplications();
+        }
+      } else {
+        toast.error(`Failed to delete client. Status: ${response.status}`, { id: toastId });
+      }
+
+    } catch (err) {
+      console.error('Error deleting client:', err);
+      toast.error('Failed to delete client: ' + (err.response?.data?.message || err.message || 'Unknown error'), { id: toastId });
+      if (axios.isAxiosError(err) && err.response?.status === 401) {
+        localStorage.removeItem('token');
+        window.location.href = '/login';
+      }
+    } finally {
+      setIsDeleting(false);
+    }
+  }
+
   return (
     <div className="min-h-screen bg-gray-100 flex flex-col p-2 sm:p-4 md:p-5">
       <div className="mx-auto bg-white rounded-2xl shadow-2xl p-2 sm:p-4 md:p-5 w-full py-8 transition-all duration-300">
@@ -650,53 +704,53 @@ const Dashboard = () => {
               </div>
 
               {/* Search + Buttons */}
-             <div className="flex flex-col md:flex-row gap-2 md:gap-3 w-full md:w-[65%]">
-  {/* Search */}
-  <div className="relative flex-1">
-    <input
-      type="text"
-      value={searchQuery}
-      onChange={(e) => setSearchQuery(e.target.value)}
-      placeholder="Search clients..."
-      className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-secClr text-sm md:text-base"
-      aria-label="Search clients"
-    />
-    <FaSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4 md:w-5 md:h-5" />
-  </div>
+              <div className="flex flex-col md:flex-row gap-2 md:gap-3 w-full md:w-[65%]">
+                {/* Search */}
+                <div className="relative flex-1">
+                  <input
+                    type="text"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    placeholder="Search clients..."
+                    className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-secClr text-sm md:text-base"
+                    aria-label="Search clients"
+                  />
+                  <FaSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4 md:w-5 md:h-5" />
+                </div>
 
-  {/* Buttons wrapper */}
-  <div className="flex flex-col md:flex-row gap-2 md:gap-3 w-full md:w-auto">
-    {/* Branch + Filter row (sm only) */}
-    <div className="flex flex-row gap-2 md:gap-3 w-full md:w-auto">
-      {/* Branch Button */}
-      <button
-        onClick={() => setBranchFilterModalOpen(true)}
-        className="flex items-center justify-center flex-1 px-4 py-2.5 text-sm bg-secClr text-white font-semibold rounded-lg hover:bg-secClr/90 transition duration-300 shadow-sm"
-      >
-        <FaFilter className="mr-2 w-4 h-4" />
-        Branch
-      </button>
+                {/* Buttons wrapper */}
+                <div className="flex flex-col md:flex-row gap-2 md:gap-3 w-full md:w-auto">
+                  {/* Branch + Filter row (sm only) */}
+                  <div className="flex flex-row gap-2 md:gap-3 w-full md:w-auto">
+                    {/* Branch Button */}
+                    <button
+                      onClick={() => setBranchFilterModalOpen(true)}
+                      className="flex items-center justify-center flex-1 px-4 py-2.5 text-sm bg-secClr text-white font-semibold rounded-lg hover:bg-secClr/90 transition duration-300 shadow-sm"
+                    >
+                      <FaFilter className="mr-2 w-4 h-4" />
+                      Branch
+                    </button>
 
-      {/* Filter Button */}
-      <button
-        onClick={() => setDateFilterModalOpen(true)}
-        className="flex items-center justify-center flex-1 px-4 py-2.5 text-sm bg-secClr text-white font-semibold rounded-lg hover:bg-secClr/90 transition duration-300 shadow-sm"
-      >
-        <FaFilter className="mr-2 w-4 h-4" />
-        Filter
-      </button>
-    </div>
+                    {/* Filter Button */}
+                    <button
+                      onClick={() => setDateFilterModalOpen(true)}
+                      className="flex items-center justify-center flex-1 px-4 py-2.5 text-sm bg-secClr text-white font-semibold rounded-lg hover:bg-secClr/90 transition duration-300 shadow-sm"
+                    >
+                      <FaFilter className="mr-2 w-4 h-4" />
+                      Filter
+                    </button>
+                  </div>
 
-    {/* Download Button (goes under on sm, inline on md) */}
-    <button
-      onClick={() => setDownloadModalOpen(true)}
-      className="flex items-center justify-center px-4 py-2.5 text-sm bg-secClr text-white font-semibold rounded-lg hover:bg-secClr/90 transition duration-300 shadow-sm w-full md:w-auto"
-    >
-      <FaDownload className="mr-2 w-4 h-4" />
-      Download
-    </button>
-  </div>
-</div>
+                  {/* Download Button (goes under on sm, inline on md) */}
+                  <button
+                    onClick={() => setDownloadModalOpen(true)}
+                    className="flex items-center justify-center px-4 py-2.5 text-sm bg-secClr text-white font-semibold rounded-lg hover:bg-secClr/90 transition duration-300 shadow-sm w-full md:w-auto"
+                  >
+                    <FaDownload className="mr-2 w-4 h-4" />
+                    Download
+                  </button>
+                </div>
+              </div>
 
             </div>
 
@@ -781,6 +835,15 @@ const Dashboard = () => {
                               <Link to={`/edit-client/${item.id}`} aria-label={`Edit ${item.client_name || 'Client'}`}>
                                 <FaEdit className="text-secClr cursor-pointer w-4 h-4 md:w-5 md:h-5 hover:text-secClr/90" />
                               </Link>
+                              <button 
+                                disabled={isDeleting}
+                                onClick={() => handleDelete(item.id)} 
+                                aria-label={`Delete ${item.client_name || 'Client'}`}
+                                title={`Delete ${item.client_name || 'Client'}`}
+                                className='disabled:cursor-not-allowed disabled:opacity-50'
+                              >
+                                <FaTrashAlt className="text-red-600 cursor-pointer w-4 h-4 hover:text-red-800" />
+                              </button>
                             </div>
                           </td>
                         </tr>
