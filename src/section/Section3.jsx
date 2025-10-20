@@ -13,7 +13,7 @@ const Section3 = ({ formData, setFormData, prevSection, nextSection }) => {
   const lastTouch = useRef({ x: 0, y: 0 });
 
   const inputClass =
-    'mt-1 block w-full rounded-md border border-gray-300 shadow-sm focus:border-secClr focus:ring-secClr text-sm sm:text-base py-2 sm:py-3 px-4 sm:px-10 bg-white';
+    'mt-1 block w-full rounded-md border border-gray-300 shadow-sm focus:border-secClr focus:ring-secClr text-sm sm:text-base py-2 sm:py-3 md:pl-10 pl-8 bg-white';
 
   // Standardized branch options
   const branchOptions = [
@@ -38,7 +38,13 @@ const Section3 = ({ formData, setFormData, prevSection, nextSection }) => {
       .required('Number of plots is required')
       .min(1, 'Number of plots must be at least 1'),
     clientDeclarationSiteLocation: Yup.string().required('Site location is required'),
-    clientDeclarationPlotNumber: Yup.string().required('Plot number is required'),
+    clientDeclarationPlotNumber: Yup.string()
+      .trim()
+      .required('Plot number is required')
+      .matches(
+        /^[a-zA-Z0-9, ]*$/,
+        'Plot number can only contain letters, numbers, and commas.'
+      ),
     branches: Yup.string().required('Branch is required'),
     clientDeclarationSignature: Yup.string()
       .required('Signature is required')

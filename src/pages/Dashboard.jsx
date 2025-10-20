@@ -1,16 +1,20 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { FaFilter, FaDownload, FaEye, FaEdit, FaTimes, FaSearch, FaTrashAlt } from 'react-icons/fa';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 import axios from 'axios';
 import { toast } from 'sonner';
 import { Link } from 'react-router-dom';
-import { format, parseISO } from 'date-fns';
-import html2canvas from 'html2canvas';
+import { format, parseISO, startOfToday, endOfToday, startOfYesterday, endOfYesterday, startOfWeek, endOfWeek, subWeeks, startOfMonth, endOfMonth, subMonths } from 'date-fns';
 import jsPDF from 'jspdf';
 import assets from '../assets/assests';
 import logo from '../assets/logo.png';
 import autoTable from 'jspdf-autotable';
+import BranchFilterModal from '../components/modals/BranchFilterModal';
+import DateFilterModal from '../components/modals/DateFilterModal';
+import DownloadModal from '../components/modals/DownloadModal';
+import ApplicationsList from '../components/ApplicationsList';
+import PaginationControls from '../components/PaginationControls';
 
 const API_URL = import.meta.env.VITE_API_BASE_URL;
 
@@ -36,13 +40,13 @@ const Dashboard = () => {
   const [downloadModalOpen, setDownloadModalOpen] = useState(false);
   const [downloadDateFrom, setDownloadDateFrom] = useState(null);
   const [downloadTimeFrom, setDownloadTimeFrom] = useState(null);
-  const [downloadDateTo, setDownloadDateTo] = useState(null);
-  const [downloadTimeTo, setDownloadTimeTo] = useState(null);
+  const [lastDownloadTime, setLastDownloadTime] = useState(null);
   const [loading, setLoading] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
-  const [filteredDataForPrint, setFilteredDataForPrint] = useState([]);
+  const [filteredDataForPrint, _setFilteredDataForPrint] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('');
+  const [activePreset, setActivePreset] = useState(null);
   const componentRef = useRef();
 
   const branchOptions = [
@@ -85,6 +89,13 @@ const Dashboard = () => {
       document.body.style.overflow = 'auto';
     };
   }, [dateFilterModalOpen, branchFilterModalOpen, downloadModalOpen]);
+
+  useEffect(() => {
+    const savedLastDownloadTime = localStorage.getItem('lastDownloadTime');
+    if (savedLastDownloadTime) {
+      setLastDownloadTime(new Date(savedLastDownloadTime));
+    }
+  }, []);
 
   // Fetch all clients for CSV and PDF download and filtering
   useEffect(() => {
@@ -203,7 +214,7 @@ const Dashboard = () => {
   }, []);
 
   // Fetch paginated applications or search results
-  const fetchApplications = async () => {
+  const fetchApplications = useCallback(async () => {
     const toastId = toast.loading('Loading applications...');
     setLoading(true);
     try {
@@ -321,10 +332,11 @@ const Dashboard = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [currentPage, debouncedSearchQuery]);
+
   useEffect(() => {
     fetchApplications();
-  }, [currentPage, debouncedSearchQuery]);
+  }, [fetchApplications]);
 
   // Apply filters to allClients and paginate results
   useEffect(() => {
@@ -388,18 +400,72 @@ const Dashboard = () => {
   };
 
   // Apply date and time filter
-  const applyDateFilter = () => {
-    if (!dateFromInput || !timeFromInput || !dateToInput || !timeToInput) {
+  const applyDateFilterWithValues = (dateFrom, timeFrom, dateTo, timeTo) => {
+    if (!dateFrom || !timeFrom || !dateTo || !timeTo) {
       toast.error('Please provide both date and time for filtering.');
       return;
     }
-    setFilterDateFrom(dateFromInput);
-    setFilterTimeFrom(timeFromInput);
-    setFilterDateTo(dateToInput);
-    setFilterTimeTo(timeToInput);
+    setFilterDateFrom(dateFrom);
+    setFilterTimeFrom(timeFrom);
+    setFilterDateTo(dateTo);
+    setFilterTimeTo(timeTo);
     setDateFilterModalOpen(false);
     setCurrentPage(1);
     toast.success('Date and time filter applied successfully!');
+  };
+
+  const applyDateFilter = () => {
+    applyDateFilterWithValues(dateFromInput, timeFromInput, dateToInput, timeToInput);
+  };
+
+  const handlePresetDateFilter = (preset) => {
+    setActivePreset(preset);
+    let startDate;
+    let endDate;
+
+    const now = new Date();
+
+    switch (preset) {
+      case 'Today':
+        startDate = startOfToday();
+        endDate = endOfToday();
+        break;
+      case 'Yesterday':
+        startDate = startOfYesterday();
+        endDate = endOfYesterday();
+        break;
+      case 'This Week':
+        startDate = startOfWeek(now);
+        endDate = endOfWeek(now);
+        break;
+      case 'Last Week': {
+        const lastWeek = subWeeks(now, 1);
+        startDate = startOfWeek(lastWeek);
+        endDate = endOfWeek(lastWeek);
+        break;
+      }
+      case 'This Month':
+        startDate = startOfMonth(now);
+        endDate = endOfMonth(now);
+        break;
+      case 'Last Month': {
+        const lastMonth = subMonths(now, 1);
+        startDate = startOfMonth(lastMonth);
+        endDate = endOfMonth(lastMonth);
+        break;
+      }
+      default:
+        return;
+    }
+
+    // Set the inputs in the modal for visual feedback
+    setDateFromInput(startDate);
+    setTimeFromInput('00:00');
+    setDateToInput(endDate);
+    setTimeToInput('23:59');
+
+    // Apply the filter
+    applyDateFilterWithValues(startDate, '00:00', endDate, '23:59');
   };
 
   // Reset all filters
@@ -416,6 +482,7 @@ const Dashboard = () => {
     setTimeToInput(null);
     setSearchQuery('');
     setDebouncedSearchQuery('');
+    setActivePreset(null);
     setCurrentPage(1);
     setDateFilterModalOpen(false);
     setBranchFilterModalOpen(false);
@@ -424,23 +491,26 @@ const Dashboard = () => {
 
   // Download CSV
   const handleDownloadCSV = () => {
-    if (!downloadDateFrom || !downloadTimeFrom || !downloadDateTo || !downloadTimeTo) {
-      toast.error('Please provide both date and time for downloading.');
-      return;
+    const filterTo = new Date();
+    let filterFrom;
+
+    if (lastDownloadTime) {
+      filterFrom = new Date(lastDownloadTime);
+    } else {
+      if (!downloadDateFrom || !downloadTimeFrom) {
+        toast.error('Please provide a start date and time for your first download.');
+        return;
+      }
+      filterFrom = new Date(downloadDateFrom);
+      const [fromHours, fromMinutes] = downloadTimeFrom.split(':').map(Number);
+      filterFrom.setHours(fromHours, fromMinutes, 0, 0);
     }
-
-    const filterFrom = new Date(downloadDateFrom);
-    const [fromHours, fromMinutes] = downloadTimeFrom.split(':').map(Number);
-    filterFrom.setHours(fromHours, fromMinutes, 0, 0);
-
-    const filterTo = new Date(downloadDateTo);
-    const [toHours, toMinutes] = downloadTimeTo.split(':').map(Number);
-    filterTo.setHours(toHours, toMinutes, 59, 999);
 
     const filteredForDownload = allClients.filter(item => {
       try {
         const createdDate = item.created_at ? new Date(parseISO(item.created_at)) : null;
-        return createdDate && createdDate >= filterFrom && createdDate <= filterTo;
+        if (!createdDate) return false;
+        return createdDate >= filterFrom && createdDate <= filterTo;
       } catch (error) {
         console.error('Error parsing date for item:', item, error);
         return false;
@@ -448,7 +518,7 @@ const Dashboard = () => {
     });
 
     if (filteredForDownload.length === 0) {
-      toast.error('No records found for the selected date and time range.');
+      toast.error('No new records found for the selected period.');
       return;
     }
 
@@ -498,29 +568,35 @@ const Dashboard = () => {
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
 
+    const now = new Date();
+    setLastDownloadTime(now);
+    localStorage.setItem('lastDownloadTime', now.toISOString());
     setDownloadModalOpen(false);
     toast.success('CSV downloaded successfully!');
   };
 
   // Download PDF
   const handleDownloadPDF = async () => {
-    if (!downloadDateFrom || !downloadTimeFrom || !downloadDateTo || !downloadTimeTo) {
-      toast.error("Please provide both date and time for downloading.");
-      return;
+    const filterTo = new Date();
+    let filterFrom;
+
+    if (lastDownloadTime) {
+      filterFrom = new Date(lastDownloadTime);
+    } else {
+      if (!downloadDateFrom || !downloadTimeFrom) {
+        toast.error('Please provide a start date and time for your first download.');
+        return;
+      }
+      filterFrom = new Date(downloadDateFrom);
+      const [fromHours, fromMinutes] = downloadTimeFrom.split(':').map(Number);
+      filterFrom.setHours(fromHours, fromMinutes, 0, 0);
     }
-
-    const filterFrom = new Date(downloadDateFrom);
-    const [fromHours, fromMinutes] = downloadTimeFrom.split(":").map(Number);
-    filterFrom.setHours(fromHours, fromMinutes, 0, 0);
-
-    const filterTo = new Date(downloadDateTo);
-    const [toHours, toMinutes] = downloadTimeTo.split(":").map(Number);
-    filterTo.setHours(toHours, toMinutes, 59, 999);
 
     const filteredForDownload = allClients.filter((item) => {
       try {
         const createdDate = item.created_at ? new Date(parseISO(item.created_at)) : null;
-        return createdDate && createdDate >= filterFrom && createdDate <= filterTo;
+        if (!createdDate) return false;
+        return createdDate >= filterFrom && createdDate <= filterTo;
       } catch (error) {
         console.error("Error parsing date for item:", item, error);
         return false;
@@ -528,7 +604,7 @@ const Dashboard = () => {
     });
 
     if (filteredForDownload.length === 0) {
-      toast.error("No records found for the selected date and time range.");
+      toast.error("No new records found for the selected period.");
       return;
     }
 
@@ -558,10 +634,10 @@ const Dashboard = () => {
 
       pdf.setFontSize(12);
       pdf.text(
-        `(${format(new Date(downloadDateFrom), "dd/MM/yyyy")} ${downloadTimeFrom} - ${format(
-          new Date(downloadDateTo),
-          "dd/MM/yyyy"
-        )} ${downloadTimeTo})`,
+        `(${format(new Date(filterFrom), "dd/MM/yyyy HH:mm")} - ${format(
+          new Date(filterTo),
+          "dd/MM/yyyy HH:mm"
+        )})`,
         pageWidth / 2,
         yPosition,
         { align: "center" }
@@ -600,6 +676,17 @@ const Dashboard = () => {
           textColor: [255, 255, 255],
           fontStyle: "bold",
         },
+        columnStyles: {
+          0: { cellWidth: 10 }, // S/N
+          1: { cellWidth: 35 }, // Client Name
+          2: { cellWidth: 17.5 }, // State of Origin
+          3: { cellWidth: 17.5 }, // LGA
+          4: { cellWidth: 35 }, // Property Name
+          5: { cellWidth: 15 }, // No. of Plot(s)
+          6: { cellWidth: 15 }, // Plot No(s)
+          7: { cellWidth: 17.5 }, // Land Price
+          8: { cellWidth: 17.5 }, // Branch
+        },
         alternateRowStyles: {
           fillColor: [245, 245, 245],
         },
@@ -607,6 +694,10 @@ const Dashboard = () => {
       });
 
       pdf.save(`clients_${format(new Date(), "yyyy-MM-dd_HH-mm")}.pdf`);
+      
+      const now = new Date();
+      setLastDownloadTime(now);
+      localStorage.setItem('lastDownloadTime', now.toISOString());
       setDownloadModalOpen(false);
       toast.success("PDF downloaded successfully!");
     } catch (error) {
@@ -680,17 +771,17 @@ const Dashboard = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-100 flex flex-col p-2 sm:p-4 md:p-5">
-      <div className="mx-auto bg-white rounded-2xl shadow-2xl p-2 sm:p-4 md:p-5 w-full py-8 transition-all duration-300">
+    <div className="min-h-screen bg-gray-100 flex flex-col p-0 md:p-5">
+      <div className="mx-auto bg-white rounded-2xl shadow-2xl p-4 md:p-5 w-full py-8 transition-all duration-300">
         {loading && (
           <div className="flex justify-center items-center min-h-[200px]">
-            <div className="animate-spin rounded-full h-12 w-12 border-t-4 border-b-4 border-secClr"></div>
+            <div className="animate-spin rounded-full h-12 w-12 border-4 border-secClr border-t-transparent"></div>
           </div>
         )}
         {!loading && (
           <>
             {/* Header */}
-            <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between mb-4 md:mb-6 border-b border-gray-200 pb-2 md:pb-4">
+            <div className="flex flex-col gap-4 lg:flex-row lg:items-center md:justify-between mb-4 md:mb-6 border-b border-gray-200 pb-2 md:pb-4">
               {/* Logo + Title */}
               <div className="flex items-center gap-2 md:gap-3">
                 <img
@@ -704,7 +795,7 @@ const Dashboard = () => {
               </div>
 
               {/* Search + Buttons */}
-              <div className="flex flex-col md:flex-row gap-2 md:gap-3 w-full md:w-[65%]">
+              <div className="flex flex-col md:flex-row gap-2 md:gap-3 w-full lg:w-[65%]">
                 {/* Search */}
                 <div className="relative flex-1">
                   <input
@@ -756,138 +847,23 @@ const Dashboard = () => {
 
 
             {/* Client List (Cards on mobile, Table on md+) */}
-            <div className="space-y-2 md:space-y-0">
-              {/* Mobile: Card Layout */}
-              <div className="md:hidden space-y-4">
-                {filteredData.length === 0 ? (
-                  <div className="p-3 text-center text-sm text-gray-600 bg-white rounded-lg shadow-sm border border-gray-200">
-                    No records found
-                  </div>
-                ) : (
-                  filteredData.map((item, index) => (
-                    <div
-                      key={item.id || index}
-                      className="bg-white rounded-lg shadow-sm border border-gray-200 p-3 hover:bg-gray-50 transition duration-200 overflow-hidden"
-                    >
-                      <div className="flex justify-between items-start">
-                        <div className="min-w-0 flex-1">
-                          <p className="text-sm font-semibold text-gray-900 break-words">
-                            {(currentPage - 1) * recordsPerPage + index + 1}. {item.client_name}
-                          </p>
-                          <p className="text-xs text-gray-600 break-words">{item.email}</p>
-                          <p className="text-xs text-gray-600 break-words">{item.mobile_number}</p>
-                        </div>
-                        <div className="flex gap-2 flex-shrink-0">
-                          <Link
-                            to={`/view-client/${item.id}`}
-                            className="p-2 bg-secClr text-white rounded-md hover:bg-secClr/90"
-                            aria-label={`View ${item.client_name || 'Client'}`}
-                          >
-                            <FaEye className="w-4 h-4" />
-                          </Link>
-                          <Link
-                            to={`/edit-client/${item.id}`}
-                            className="p-2 bg-secClr text-white rounded-md hover:bg-secClr/90"
-                            aria-label={`Edit ${item.client_name || 'Client'}`}
-                          >
-                            <FaEdit className="w-4 h-4" />
-                          </Link>
-                        </div>
-                      </div>
-                    </div>
-                  ))
-                )}
-              </div>
-
-              {/* Desktop: Table Layout */}
-              <div className="hidden md:block relative overflow-x-auto border border-gray-200 rounded-xl shadow-sm">
-                <table className="w-full divide-y divide-gray-200 table-auto">
-                  <thead className="bg-gray-50">
-                    <tr>
-                      <th className="p-2 md:p-5 text-left text-xs md:text-sm font-semibold text-gray-600 uppercase tracking-wider">S/N</th>
-                      <th className="p-2 md:p-5 text-left text-xs md:text-sm font-semibold text-gray-600 uppercase tracking-wider">Client Name</th>
-                      <th className="p-2 md:p-5 text-left text-xs md:text-sm font-semibold text-gray-600 uppercase tracking-wider">Email</th>
-                      <th className="p-2 md:p-5 text-left text-xs md:text-sm font-semibold text-gray-600 uppercase tracking-wider">Phone Number</th>
-                      <th className="p-2 md:p-5 text-left text-xs md:text-sm font-semibold text-gray-600 uppercase tracking-wider">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody className="bg-white divide-y divide-gray-200">
-                    {filteredData.length === 0 ? (
-                      <tr>
-                        <td colSpan="5" className="p-2 md:p-5 text-center text-sm md:text-base text-gray-600">
-                          No records found
-                        </td>
-                      </tr>
-                    ) : (
-                      filteredData.map((item, index) => (
-                        <tr key={item.id || index} className="hover:bg-secClr/10 transition duration-200">
-                          <td className="p-2 md:p-5 whitespace-nowrap text-sm md:text-base text-gray-700">
-                            {(currentPage - 1) * recordsPerPage + index + 1}
-                          </td>
-                          <td className="p-2 md:p-5 whitespace-nowrap text-sm md:text-base font-medium text-gray-900">{item.client_name}</td>
-                          <td className="p-2 md:p-5 whitespace-nowrap text-sm md:text-base text-gray-700">{item.email}</td>
-                          <td className="p-2 md:p-5 whitespace-nowrap text-sm md:text-base text-gray-700">{item.mobile_number}</td>
-                          <td className="p-2 md:p-5 whitespace-nowrap text-sm md:text-base text-gray-700">
-                            <div className="flex space-x-2 md:space-x-3">
-                              <Link to={`/view-client/${item.id}`} aria-label={`View ${item.client_name || 'Client'}`}>
-                                <FaEye className="text-secClr cursor-pointer w-4 h-4 md:w-5 md:h-5 hover:text-secClr/90" />
-                              </Link>
-                              <Link to={`/edit-client/${item.id}`} aria-label={`Edit ${item.client_name || 'Client'}`}>
-                                <FaEdit className="text-secClr cursor-pointer w-4 h-4 md:w-5 md:h-5 hover:text-secClr/90" />
-                              </Link>
-                              <button 
-                                disabled={isDeleting}
-                                onClick={() => handleDelete(item.id)} 
-                                aria-label={`Delete ${item.client_name || 'Client'}`}
-                                title={`Delete ${item.client_name || 'Client'}`}
-                                className='disabled:cursor-not-allowed disabled:opacity-50'
-                              >
-                                <FaTrashAlt className="text-red-600 cursor-pointer w-4 h-4 hover:text-red-800" />
-                              </button>
-                            </div>
-                          </td>
-                        </tr>
-                      ))
-                    )}
-                  </tbody>
-                </table>
-              </div>
-            </div>
+            <ApplicationsList
+              filteredData={filteredData}
+              currentPage={currentPage}
+              recordsPerPage={recordsPerPage}
+              isDeleting={isDeleting}
+              handleDelete={handleDelete}
+            />
 
             {/* Pagination */}
-            <div className="mt-4 md:mt-6 flex flex-col md:flex-row justify-between items-center gap-2 md:gap-4">
-              <div className="text-sm md:text-base text-gray-600">
-                Showing {filteredData.length} of {totalRecords} records
-              </div>
-              <div className="flex flex-wrap gap-1 md:gap-2">
-                <button
-                  onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-                  disabled={currentPage === 1}
-                  className="px-3 py-2 md:px-4 md:py-2 bg-gray-200 text-gray-800 font-semibold rounded-lg hover:bg-gray-300 transition duration-300 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
-                  aria-label="Previous page"
-                >
-                  Prev
-                </button>
-                {getPageNumbers().map(page => (
-                  <button
-                    key={page}
-                    onClick={() => setCurrentPage(page)}
-                    className={`px-3 py-2 md:px-4 md:py-2 rounded-lg font-semibold transition duration-300 shadow-sm ${currentPage === page ? 'bg-secClr text-white' : 'bg-gray-200 text-gray-800 hover:bg-gray-300'}`}
-                    aria-label={`Page ${page}`}
-                  >
-                    {page}
-                  </button>
-                ))}
-                <button
-                  onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
-                  disabled={currentPage === totalPages}
-                  className="px-3 py-2 md:px-4 md:py-2 bg-gray-200 text-gray-800 font-semibold rounded-lg hover:bg-gray-300 transition duration-300 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
-                  aria-label="Next page"
-                >
-                  Next
-                </button>
-              </div>
-            </div>
+            <PaginationControls
+              currentPage={currentPage}
+              totalPages={totalPages}
+              setCurrentPage={setCurrentPage}
+              getPageNumbers={getPageNumbers}
+              totalRecords={totalRecords}
+              filteredData={filteredData}
+            />
 
             {/* Hidden Print Section for PDF */}
             <div style={{ position: 'absolute', top: '-9999px', left: '-9999px' }}>
@@ -932,219 +908,46 @@ const Dashboard = () => {
         )}
 
         {/* Branch Filter Modal */}
-        {branchFilterModalOpen && (
-          <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-2 sm:p-4">
-            <div className="bg-white rounded-2xl p-4 sm:p-6 w-full max-w-md shadow-2xl max-h-[calc(100vh-2rem)] overflow-y-auto">
-              <div className="flex justify-between items-center mb-4">
-                <h3 className="text-lg md:text-xl font-bold text-gray-900">Filter by Branch</h3>
-                <button
-                  onClick={() => setBranchFilterModalOpen(false)}
-                  className="p-2 text-gray-600 hover:text-gray-900"
-                  aria-label="Close branch filter modal"
-                >
-                  <FaTimes className="w-5 h-5" />
-                </button>
-              </div>
-              <div className="flex flex-col gap-3 md:gap-4 mb-6">
-                <div>
-                  <label className="block text-sm md:text-base font-medium text-gray-700 mb-1 md:mb-2">Branch</label>
-                  <select
-                    value={branchInput}
-                    onChange={e => setBranchInput(e.target.value)}
-                    className="w-full px-3 py-2 md:px-4 md:py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-secClr text-sm md:text-base bg-gray-50"
-                    aria-label="Select branch"
-                  >
-                    <option value="">Select Branch</option>
-                    {branchOptions.map((branch) => (
-                      <option key={branch} value={branch}>
-                        {branch}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-              <div className="flex justify-end gap-2 md:gap-3">
-                <button
-                  onClick={resetFilter}
-                  className="px-3 py-2 md:px-4 md:py-2 bg-gray-200 text-gray-800 font-semibold rounded-lg hover:bg-gray-300 transition duration-300 shadow-md w-full md:w-auto"
-                  aria-label="Reset branch filter"
-                >
-                  Reset
-                </button>
-                <button
-                  onClick={applyBranchFilter}
-                  className="px-3 py-2 md:px-4 md:py-2 bg-secClr text-white font-semibold rounded-lg hover:bg-secClr/90 transition duration-300 shadow-md w-full md:w-auto"
-                  aria-label="Apply branch filter"
-                >
-                  Apply
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
+        <BranchFilterModal
+          isOpen={branchFilterModalOpen}
+          onClose={() => setBranchFilterModalOpen(false)}
+          branchInput={branchInput}
+          onBranchInputChange={setBranchInput}
+          branchOptions={branchOptions}
+          onReset={resetFilter}
+          onApply={applyBranchFilter}
+        />
 
         {/* Date and Time Filter Modal */}
-        {dateFilterModalOpen && (
-          <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-2 sm:p-4">
-            <div className="bg-white rounded-2xl p-4 sm:p-6 w-full max-w-md shadow-2xl max-h-[calc(100vh-2rem)] overflow-y-auto">
-              <div className="flex justify-between items-center mb-4">
-                <h3 className="text-lg md:text-xl font-bold text-gray-900">Filter by Date and Time</h3>
-                <button
-                  onClick={() => setDateFilterModalOpen(false)}
-                  className="p-2 text-gray-600 hover:text-gray-900"
-                  aria-label="Close date filter modal"
-                >
-                  <FaTimes className="w-5 h-5" />
-                </button>
-              </div>
-              <div className="flex flex-col gap-3 md:gap-4 mb-6">
-                <div>
-                  <label className="block text-sm md:text-base font-medium text-gray-700 mb-1 md:mb-2">Date From</label>
-                  <DatePicker
-                    selected={dateFromInput}
-                    onChange={date => setDateFromInput(date)}
-                    dateFormat="dd-MM-yyyy"
-                    placeholderText="Select start date"
-                    className="w-full px-3 py-2 md:px-4 md:py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-secClr text-sm md:text-base bg-gray-50"
-                    aria-label="Select start date"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm md:text-base font-medium text-gray-700 mb-1 md:mb-2">Time From</label>
-                  <input
-                    type="time"
-                    value={timeFromInput || ''}
-                    onChange={e => setTimeFromInput(e.target.value)}
-                    className="w-full px-3 py-2 md:px-4 md:py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-secClr text-sm md:text-base bg-gray-50"
-                    aria-label="Select start time"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm md:text-base font-medium text-gray-700 mb-1 md:mb-2">Date To</label>
-                  <DatePicker
-                    selected={dateToInput}
-                    onChange={date => setDateToInput(date)}
-                    dateFormat="dd-MM-yyyy"
-                    placeholderText="Select end date"
-                    className="w-full px-3 py-2 md:px-4 md:py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-secClr text-sm md:text-base bg-gray-50"
-                    aria-label="Select end date"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm md:text-base font-medium text-gray-700 mb-1 md:mb-2">Time To</label>
-                  <input
-                    type="time"
-                    value={timeToInput || ''}
-                    onChange={e => setTimeToInput(e.target.value)}
-                    className="w-full px-3 py-2 md:px-4 md:py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-secClr text-sm md:text-base bg-gray-50"
-                    aria-label="Select end time"
-                  />
-                </div>
-              </div>
-              <div className="flex justify-end gap-2 md:gap-3">
-                <button
-                  onClick={resetFilter}
-                  className="px-3 py-2 md:px-4 md:py-2 bg-gray-200 text-gray-800 font-semibold rounded-lg hover:bg-gray-300 transition duration-300 shadow-md w-full md:w-auto"
-                  aria-label="Reset date filter"
-                >
-                  Reset
-                </button>
-                <button
-                  onClick={applyDateFilter}
-                  className="px-3 py-2 md:px-4 md:py-2 bg-secClr text-white font-semibold rounded-lg hover:bg-secClr/90 transition duration-300 shadow-md w-full md:w-auto"
-                  aria-label="Apply date filter"
-                >
-                  Apply
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
+        <DateFilterModal
+          isOpen={dateFilterModalOpen}
+          onClose={() => setDateFilterModalOpen(false)}
+          dateFromInput={dateFromInput}
+          onDateFromChange={(date) => { setDateFromInput(date); setActivePreset(null); }}
+          timeFromInput={timeFromInput}
+          onTimeFromChange={(e) => { setTimeFromInput(e.target.value); setActivePreset(null); }}
+          dateToInput={dateToInput}
+          onDateToChange={(date) => { setDateToInput(date); setActivePreset(null); }}
+          timeToInput={timeToInput}
+          onTimeToChange={(e) => { setTimeToInput(e.target.value); setActivePreset(null); }}
+          onReset={resetFilter}
+          onApply={applyDateFilter}
+          onPresetSelect={handlePresetDateFilter}
+          activePreset={activePreset}
+        />
 
         {/* Download Modal */}
-        {downloadModalOpen && (
-          <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-2 sm:p-4">
-            <div className="bg-white rounded-2xl p-4 sm:p-6 w-full md:w-[70%] shadow-2xl max-h-[calc(100vh-2rem)] overflow-y-auto">
-              <div className="flex justify-between items-center mb-4">
-                <h3 className="text-lg md:text-xl font-bold text-gray-900">Download Options</h3>
-                <button
-                  onClick={() => setDownloadModalOpen(false)}
-                  className="p-2 text-gray-600 hover:text-gray-900"
-                  aria-label="Close download modal"
-                >
-                  <FaTimes className="w-5 h-5" />
-                </button>
-              </div>
-              <div className="flex flex-col gap-3 md:gap-4 mb-6">
-                <div>
-                  <label className="block text-sm md:text-base font-medium text-gray-700 mb-1 md:mb-2">Date From</label>
-                  <DatePicker
-                    selected={downloadDateFrom}
-                    onChange={date => setDownloadDateFrom(date)}
-                    dateFormat="dd-MM-yyyy"
-                    placeholderText="Select start date"
-                    className="w-full px-3 py-2 md:px-4 md:py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-secClr text-sm md:text-base bg-gray-50"
-                    aria-label="Select download start date"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm md:text-base font-medium text-gray-700 mb-1 md:mb-2">Time From</label>
-                  <input
-                    type="time"
-                    value={downloadTimeFrom || ''}
-                    onChange={e => setDownloadTimeFrom(e.target.value)}
-                    className="w-full px-3 py-2 md:px-4 md:py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-secClr text-sm md:text-base bg-gray-50"
-                    aria-label="Select download start time"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm md:text-base font-medium text-gray-700 mb-1 md:mb-2">Date To</label>
-                  <DatePicker
-                    selected={downloadDateTo}
-                    onChange={date => setDownloadDateTo(date)}
-                    dateFormat="dd-MM-yyyy"
-                    placeholderText="Select end date"
-                    className="w-full px-3 py-2 md:px-4 md:py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-secClr text-sm md:text-base bg-gray-50"
-                    aria-label="Select download end date"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm md:text-base font-medium text-gray-700 mb-1 md:mb-2">Time To</label>
-                  <input
-                    type="time"
-                    value={downloadTimeTo || ''}
-                    onChange={e => setDownloadTimeTo(e.target.value)}
-                    className="w-full px-3 py-2 md:px-4 md:py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-secClr text-sm md:text-base bg-gray-50"
-                    aria-label="Select download end time"
-                  />
-                </div>
-              </div>
-              <div className="flex justify-end gap-2 md:gap-3">
-                <button
-                  onClick={() => setDownloadModalOpen(false)}
-                  className="px-3 py-2 md:px-4 md:py-2 bg-gray-200 text-gray-800 font-semibold rounded-lg hover:bg-gray-300 transition duration-300 shadow-md w-full md:w-auto"
-                  aria-label="Cancel download"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={handleDownloadCSV}
-                  className="px-3 py-2 md:px-4 md:py-2 bg-secClr text-white font-semibold rounded-lg hover:bg-secClr/90 transition duration-300 shadow-md w-full md:w-auto"
-                  aria-label="Download CSV"
-                >
-                  Download as CSV
-                </button>
-                <button
-                  onClick={handleDownloadPDF}
-                  className="px-3 py-2 md:px-4 md:py-2 bg-secClr text-white font-semibold rounded-lg hover:bg-secClr/90 transition duration-300 shadow-md w-full md:w-auto"
-                  aria-label="Download PDF"
-                >
-                  Download PDF
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
+        <DownloadModal
+          isOpen={downloadModalOpen}
+          onClose={() => setDownloadModalOpen(false)}
+          lastDownloadTime={lastDownloadTime}
+          downloadDateFrom={downloadDateFrom}
+          onDownloadDateFromChange={setDownloadDateFrom}
+          downloadTimeFrom={downloadTimeFrom}
+          onDownloadTimeFromChange={setDownloadTimeFrom}
+          onDownloadCSV={handleDownloadCSV}
+          onDownloadPDF={handleDownloadPDF}
+        />
       </div>
     </div>
   );
