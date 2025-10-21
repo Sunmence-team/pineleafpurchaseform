@@ -614,7 +614,7 @@ const Dashboard = () => {
 
   // Download PDF
   const handleDownloadPDF = async () => {
-    const filterTo = new Date();
+    const downloadStartTime = new Date();
     let filterFrom;
 
     if (lastDownloadTime) {
@@ -633,7 +633,7 @@ const Dashboard = () => {
       try {
         const createdDate = item.created_at ? new Date(parseISO(item.created_at)) : null;
         if (!createdDate) return false;
-        return createdDate >= filterFrom && createdDate <= filterTo;
+        return createdDate >= filterFrom && createdDate <= downloadStartTime;
       } catch (error) {
         console.error("Error parsing date for item:", item, error);
         return false;
@@ -672,7 +672,7 @@ const Dashboard = () => {
       pdf.setFontSize(12);
       pdf.text(
         `(${format(new Date(filterFrom), "dd/MM/yyyy HH:mm")} - ${format(
-          new Date(filterTo),
+          new Date(downloadStartTime),
           "dd/MM/yyyy HH:mm"
         )})`,
         pageWidth / 2,
@@ -732,9 +732,8 @@ const Dashboard = () => {
 
       pdf.save(`clients_${format(new Date(), "yyyy-MM-dd_HH-mm")}.pdf`);
       
-      const now = new Date();
-      setLastDownloadTime(now);
-      updateLastDownloadTime(now);
+      setLastDownloadTime(downloadStartTime);
+      updateLastDownloadTime(downloadStartTime);
       setDownloadModalOpen(false);
       toast.success("PDF downloaded successfully!");
     } catch (error) {
