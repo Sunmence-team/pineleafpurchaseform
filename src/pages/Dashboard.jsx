@@ -91,10 +91,27 @@ const Dashboard = () => {
   }, [dateFilterModalOpen, branchFilterModalOpen, downloadModalOpen]);
 
   useEffect(() => {
-    const savedLastDownloadTime = localStorage.getItem('lastDownloadTime');
-    if (savedLastDownloadTime) {
-      setLastDownloadTime(new Date(savedLastDownloadTime));
-    }
+    const fetchLastDownloadTime = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        if (!token) return;
+
+        const response = await axios.get(`${API_URL}/api/admin/download-date`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+        
+        if (response.status === 200 && response.data.data.downloaded_date) {
+          console.log("response.data.downloaded_date",response.data.data.downloaded_date)
+          setLastDownloadTime(new Date(response.data.data.downloaded_date));
+        }
+      } catch (error) {
+        console.error('Error fetching last download time:', error);
+      }
+    };
+
+    fetchLastDownloadTime();
   }, []);
 
   // Fetch all clients for CSV and PDF download and filtering
@@ -489,9 +506,30 @@ const Dashboard = () => {
     toast.success('Filters reset successfully!');
   };
 
+  const updateLastDownloadTime = async (downloadTime) => {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) return;
+
+      await axios.put(
+        `${API_URL}/api/applications/download-date`,
+        { downloaded_date: format(downloadTime, 'yyyy-MM-dd HH:mm:ss') },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+        }
+      );
+    } catch (error) {
+      console.error('Error updating last download time:', error);
+      toast.error('Failed to update last download time on the server.');
+    }
+  };
+
   // Download CSV
   const handleDownloadCSV = () => {
-    const filterTo = new Date();
+    const downloadStartTime = new Date(); // Use a single timestamp
     let filterFrom;
 
     if (lastDownloadTime) {
@@ -510,7 +548,7 @@ const Dashboard = () => {
       try {
         const createdDate = item.created_at ? new Date(parseISO(item.created_at)) : null;
         if (!createdDate) return false;
-        return createdDate >= filterFrom && createdDate <= filterTo;
+        return createdDate >= filterFrom && createdDate <= downloadStartTime; // Use downloadStartTime
       } catch (error) {
         console.error('Error parsing date for item:', item, error);
         return false;
@@ -559,7 +597,7 @@ const Dashboard = () => {
     link.setAttribute(
       'download',
       `clients_${format(new Date(filterFrom), 'yyyy-MM-dd_HH-mm')}_to_${format(
-        new Date(filterTo),
+        new Date(downloadStartTime),
         'yyyy-MM-dd_HH-mm'
       )}.csv`
     );
@@ -568,9 +606,8 @@ const Dashboard = () => {
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
 
-    const now = new Date();
-    setLastDownloadTime(now);
-    localStorage.setItem('lastDownloadTime', now.toISOString());
+    setLastDownloadTime(downloadStartTime); // Use downloadStartTime
+    updateLastDownloadTime(downloadStartTime); // Use downloadStartTime
     setDownloadModalOpen(false);
     toast.success('CSV downloaded successfully!');
   };
@@ -656,7 +693,7 @@ const Dashboard = () => {
         item.site_location || "N/A",
         item.number_of_plot || "N/A",
         item.plot_number || "N/A",
-        item.land_price || "N/A",
+        item.land_price ? item.land_price.toLocaleString('en-NG') : "N/A",
         item.branches || "N/A",
       ]);
 
@@ -697,7 +734,7 @@ const Dashboard = () => {
       
       const now = new Date();
       setLastDownloadTime(now);
-      localStorage.setItem('lastDownloadTime', now.toISOString());
+      updateLastDownloadTime(now);
       setDownloadModalOpen(false);
       toast.success("PDF downloaded successfully!");
     } catch (error) {
@@ -872,8 +909,8 @@ const Dashboard = () => {
                   <img src={assets.logo} style={{ width: '30mm', height: '30mm', marginRight: '5mm' }} alt="Logo" />
                   <h2 style={{ fontSize: '18px', textAlign: 'center' }}>
                     Client Records
-                    {downloadDateFrom && downloadTimeFrom && downloadDateTo && downloadTimeTo &&
-                      ` (${format(new Date(downloadDateFrom), 'dd/MM/yyyy')} ${downloadTimeFrom} - ${format(new Date(downloadDateTo), 'dd/MM/yyyy')} ${downloadTimeTo})`}
+                    {filterDateFrom && filterTimeFrom && filterDateTo && filterTimeTo &&
+                      ` (${format(new Date(filterDateFrom), 'dd/MM/yyyy')} ${filterTimeFrom} - ${format(new Date(filterDateTo), 'dd/MM/yyyy')} ${filterTimeTo})`}
                   </h2>
                 </div>
                 <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px' }}>
@@ -886,6 +923,7 @@ const Dashboard = () => {
                       <th style={{ border: '1px solid #ddd', padding: '8px', backgroundColor: '#f2f2f2', fontWeight: 'bold', textAlign: 'left' }}>Number of Plot(s)</th>
                       <th style={{ border: '1px solid #ddd', padding: '8px', backgroundColor: '#f2f2f2', fontWeight: 'bold', textAlign: 'left' }}>Plot No(s)</th>
                       <th style={{ border: '1px solid #ddd', padding: '8px', backgroundColor: '#f2f2f2', fontWeight: 'bold', textAlign: 'left' }}>Land Price</th>
+                      <th style={{ border: '1px solid #ddd', padding: '8px', backgroundColor: '#f2f2f2', fontWeight: 'bold', textAlign: 'left' }}>Branch</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -898,6 +936,7 @@ const Dashboard = () => {
                         <td style={{ border: '1px solid #ddd', padding: '8px' }}>{item.number_of_plot || 'N/A'}</td>
                         <td style={{ border: '1px solid #ddd', padding: '8px' }}>{item.plot_number || 'N/A'}</td>
                         <td style={{ border: '1px solid #ddd', padding: '8px' }}>{item.land_price || 'N/A'}</td>
+                        <td style={{ border: '1px solid #ddd', padding: '8px' }}>{item.branches || 'N/A'}</td>
                       </tr>
                     ))}
                   </tbody>
