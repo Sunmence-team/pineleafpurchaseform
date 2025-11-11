@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { FaFilter, FaDownload, FaEye, FaEdit, FaTimes, FaSearch, FaTrashAlt } from 'react-icons/fa';
+import { FaFilter, FaDownload, FaEye, FaEdit, FaTimes, FaSearch, FaTrashAlt, FaCaretDown } from 'react-icons/fa';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 import axios from 'axios';
@@ -13,6 +13,8 @@ import autoTable from 'jspdf-autotable';
 import BranchFilterModal from '../components/modals/BranchFilterModal';
 import DateFilterModal from '../components/modals/DateFilterModal';
 import DownloadModal from '../components/modals/DownloadModal';
+import DownloadAllModal from '../components/modals/DownloadAllModal';
+import SiteDownloadModal from '../components/modals/SiteDownloadModal';
 import ApplicationsList from '../components/ApplicationsList';
 import PaginationControls from '../components/PaginationControls';
 
@@ -37,7 +39,10 @@ const Dashboard = () => {
   const [timeToInput, setTimeToInput] = useState(null);
   const [dateFilterModalOpen, setDateFilterModalOpen] = useState(false);
   const [branchFilterModalOpen, setBranchFilterModalOpen] = useState(false);
+  const [showMoreDownloadOptions, setShowMoreDownloadOptions] = useState(false);
   const [downloadModalOpen, setDownloadModalOpen] = useState(false);
+  const [downloadAllModalOpen, setDownloadAllModalOpen] = useState(false);
+  const [siteDownloadModalOpen, setSiteDownloadModalOpen] = useState(false);
   const [downloadDateFrom, setDownloadDateFrom] = useState(null);
   const [downloadTimeFrom, setDownloadTimeFrom] = useState(null);
   const [lastDownloadTime, setLastDownloadTime] = useState(null);
@@ -47,7 +52,52 @@ const Dashboard = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('');
   const [activePreset, setActivePreset] = useState(null);
+  const [excludedSites, setExcludedSites] = useState('');
+  const [initialDownloadData, setInitialDownloadData] = useState([]);
+  const [filteredDownloadData, setFilteredDownloadData] = useState([]);
   const componentRef = useRef();
+
+  const token = localStorage.getItem('token');
+
+  useEffect(() => {
+    if (downloadModalOpen) {
+      const filterTo = new Date();
+      let filterFrom;
+
+      if (lastDownloadTime) {
+        filterFrom = new Date(lastDownloadTime);
+      } else {
+        if (!downloadDateFrom || !downloadTimeFrom) {
+          setInitialDownloadData([]);
+          return;
+        }
+        filterFrom = new Date(downloadDateFrom);
+        const [fromHours, fromMinutes] = downloadTimeFrom.split(':').map(Number);
+        filterFrom.setHours(fromHours, fromMinutes, 0, 0);
+      }
+
+      const data = allClients.filter(item => {
+        const createdDate = item.created_at ? new Date(parseISO(item.created_at)) : null;
+        if (!createdDate) return false;
+        return createdDate >= filterFrom && createdDate <= filterTo;
+      });
+      setInitialDownloadData(data);
+      setFilteredDownloadData(data); // Initially, filtered is the same as initial
+    }
+  }, [downloadModalOpen, allClients, lastDownloadTime, downloadDateFrom, downloadTimeFrom]);
+
+  useEffect(() => {
+    if (excludedSites.trim() === '') {
+      setFilteredDownloadData(initialDownloadData);
+      return;
+    }
+
+    const sitesToExclude = excludedSites.split(',').map(site => site.trim().toLowerCase());
+    const filtered = initialDownloadData.filter(item => 
+      !sitesToExclude.some(excludedSite => item.site_location?.toLowerCase().includes(excludedSite))
+    );
+    setFilteredDownloadData(filtered);
+  }, [excludedSites, initialDownloadData]);
 
   const branchOptions = [
     'HQ - Onitsha',
@@ -80,7 +130,7 @@ const Dashboard = () => {
 
   // Prevent background scrolling when modals are open
   useEffect(() => {
-    if (dateFilterModalOpen || branchFilterModalOpen || downloadModalOpen) {
+    if (dateFilterModalOpen || branchFilterModalOpen || downloadModalOpen || siteDownloadModalOpen) {
       document.body.style.overflow = 'hidden';
     } else {
       document.body.style.overflow = 'auto';
@@ -88,12 +138,11 @@ const Dashboard = () => {
     return () => {
       document.body.style.overflow = 'auto';
     };
-  }, [dateFilterModalOpen, branchFilterModalOpen, downloadModalOpen]);
+  }, [dateFilterModalOpen, branchFilterModalOpen, downloadModalOpen, siteDownloadModalOpen]);
 
   useEffect(() => {
     const fetchLastDownloadTime = async () => {
       try {
-        const token = localStorage.getItem('token');
         if (!token) return;
 
         const response = await axios.get(`${API_URL}/api/admin/download-date`, {
@@ -103,7 +152,7 @@ const Dashboard = () => {
         });
         
         if (response.status === 200 && response.data.data.downloaded_date) {
-          console.log("response.data.downloaded_date",response.data.data.downloaded_date)
+          // console.log("response.data.downloaded_date",response.data.data.downloaded_date)
           setLastDownloadTime(new Date(response.data.data.downloaded_date));
         }
       } catch (error) {
@@ -117,10 +166,10 @@ const Dashboard = () => {
   // Fetch all clients for CSV and PDF download and filtering
   useEffect(() => {
     const fetchAllClients = async () => {
+      if (!token) return;
       const toastId = toast.loading('Loading all clients...');
       setLoading(true);
       try {
-        const token = localStorage.getItem('token');
         if (!token) {
           toast.error('Please log in to view the dashboard.', { id: toastId });
           window.location.href = '/login';
@@ -228,14 +277,14 @@ const Dashboard = () => {
     };
 
     fetchAllClients();
-  }, []);
+  }, [token]);
 
   // Fetch paginated applications or search results
   const fetchApplications = useCallback(async () => {
+    if (!token) return;
     const toastId = toast.loading('Loading applications...');
     setLoading(true);
     try {
-      const token = localStorage.getItem('token');
       if (!token) {
         toast.error('Please log in to view the dashboard.', { id: toastId });
         window.location.href = '/login';
@@ -349,7 +398,7 @@ const Dashboard = () => {
     } finally {
       setLoading(false);
     }
-  }, [currentPage, debouncedSearchQuery]);
+  }, [token, currentPage, debouncedSearchQuery]);
 
   useEffect(() => {
     fetchApplications();
@@ -528,39 +577,200 @@ const Dashboard = () => {
   };
 
   // Download CSV
-  const handleDownloadCSV = () => {
-    const downloadStartTime = new Date(); // Use a single timestamp
-    let filterFrom;
-
-    if (lastDownloadTime) {
-      filterFrom = new Date(lastDownloadTime);
-    } else {
-      if (!downloadDateFrom || !downloadTimeFrom) {
-        toast.error('Please provide a start date and time for your first download.');
+    const handleDownloadCSV = () => {
+      const downloadStartTime = new Date(); // Use a single timestamp
+      let filterFrom;
+  
+      if (lastDownloadTime) {
+        filterFrom = new Date(lastDownloadTime);
+      } else {
+        if (!downloadDateFrom || !downloadTimeFrom) {
+          toast.error('Please provide a start date and time for your first download.');
+          return;
+        }
+        filterFrom = new Date(downloadDateFrom);
+        const [fromHours, fromMinutes] = downloadTimeFrom.split(':').map(Number);
+        filterFrom.setHours(fromHours, fromMinutes, 0, 0);
+      }
+  
+      if (filteredDownloadData.length === 0) {
+        toast.error('No new records found for the selected period.');
         return;
       }
-      filterFrom = new Date(downloadDateFrom);
-      const [fromHours, fromMinutes] = downloadTimeFrom.split(':').map(Number);
-      filterFrom.setHours(fromHours, fromMinutes, 0, 0);
-    }
-
-    const filteredForDownload = allClients.filter(item => {
-      try {
-        const createdDate = item.created_at ? new Date(parseISO(item.created_at)) : null;
-        if (!createdDate) return false;
-        return createdDate >= filterFrom && createdDate <= downloadStartTime; // Use downloadStartTime
-      } catch (error) {
-        console.error('Error parsing date for item:', item, error);
-        return false;
+  
+      const sortedForDownload = filteredDownloadData.sort((a, b) => {
+        const dateA = a.created_at ? new Date(parseISO(a.created_at)) : new Date(0);
+        const dateB = b.created_at ? new Date(parseISO(b.created_at)) : new Date(0);
+        return dateB - dateA;
+      });
+  
+      const headers = [
+        'Client Name',
+        'State of Origin',
+        'LGA',
+        'Property Name',
+        'Number of Plot(s)',
+        'Plot No(s)',
+        'Land Price',
+        'Branch',
+      ];
+  
+      const rows = sortedForDownload.map(item => [
+        item.client_name || '',
+        item.state_of_origin || '',
+        item.lga || '',
+        item.site_location || '',
+        item.number_of_plot || '',
+        item.plot_number || '',
+        item.land_price || '',
+        item.branches || '',
+      ].map(field => `"${String(field).replace(/"/g, '""' )}"`));
+  
+      const csvContent = [headers, ...rows].map(row => row.join(',')).join('\n');
+  
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute(
+        'download',
+        `clients_${format(new Date(filterFrom), 'yyyy-MM-dd_HH-mm')}_to_${format(
+          new Date(downloadStartTime),
+          'yyyy-MM-dd_HH-mm'
+        )}.csv`
+      );
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+  
+      setLastDownloadTime(downloadStartTime); // Use downloadStartTime
+      updateLastDownloadTime(downloadStartTime); // Use downloadStartTime
+      setDownloadModalOpen(false);
+      toast.success('CSV downloaded successfully!');
+    };
+  
+    // Download PDF
+    const handleDownloadPDF = async () => {
+      const downloadStartTime = new Date();
+      let filterFrom;
+  
+      if (lastDownloadTime) {
+        filterFrom = new Date(lastDownloadTime);
+      } else {
+        if (!downloadDateFrom || !downloadTimeFrom) {
+          toast.error('Please provide a start date and time for your first download.');
+          return;
+        }
+        filterFrom = new Date(downloadDateFrom);
+        const [fromHours, fromMinutes] = downloadTimeFrom.split(':').map(Number);
+        filterFrom.setHours(fromHours, fromMinutes, 0, 0);
       }
-    });
+  
+      if (filteredDownloadData.length === 0) {
+        toast.error("No new records found for the selected period.");
+        return;
+      }
+  
+      const sortedForDownload = filteredDownloadData.sort((a, b) => {
+        const dateA = a.created_at ? new Date(parseISO(a.created_at)) : new Date(0);
+        const dateB = b.created_at ? new Date(parseISO(b.created_at)) : new Date(0);
+        return dateB - dateA;
+      });
+  
+      try {
+        const pdf = new jsPDF({
+          orientation: "portrait",
+          unit: "mm",
+          format: "a4",
+        });
+  
+        const pageWidth = pdf.internal.pageSize.getWidth();
+        const margin = 15;
+        let yPosition = margin;
+  
+        pdf.addImage(logo, "PNG", margin, yPosition, 30, 30);
+        yPosition += 35;
+  
+        pdf.setFontSize(18);
+        pdf.text("Client Records", pageWidth / 2, yPosition, { align: "center" });
+        yPosition += 10;
+  
+        pdf.setFontSize(12);
+        pdf.text(
+          `(${format(new Date(filterFrom), "dd/MM/yyyy HH:mm")} - ${format(
+            new Date(downloadStartTime),
+            "dd/MM/yyyy HH:mm"
+          )})`,
+          pageWidth / 2,
+          yPosition,
+          { align: "center" }
+        );
+        yPosition += 15;
+  
+        const tableHead = [
+          ["S/N", "Client Name", "State of Origin", "LGA", "Property Name", "No. of Plot(s)", "Plot No(s)", "Land Price", "Branch"],
+        ];
+  
+        const tableBody = sortedForDownload.map((item, index) => [
+          index + 1,
+          item.client_name || "N/A",
+          item.state_of_origin || "N/A",
+          item.lga || "N/A",
+          item.site_location || "N/A",
+          item.number_of_plot || "N/A",
+          item.plot_number || "N/A",
+          item.land_price ? item.land_price.toLocaleString('en-NG') : "N/A",
+          item.branches || "N/A",
+        ]);
+  
+        autoTable(pdf, {
+          startY: yPosition,
+          head: tableHead,
+          body: tableBody,
+          theme: "grid",
+          styles: {
+            fontSize: 9,
+            cellPadding: 3,
+            halign: "center",
+            valign: "middle",
+          },
+          headStyles: {
+            fillColor: [47, 83, 24],
+            textColor: [255, 255, 255],
+            fontStyle: "bold",
+          },
+          columnStyles: {
+            0: { cellWidth: 10 }, // S/N
+            1: { cellWidth: 35 }, // Client Name
+            2: { cellWidth: 17.5 }, // State of Origin
+            3: { cellWidth: 17.5 }, // LGA
+            4: { cellWidth: 35 }, // Property Name
+            5: { cellWidth: 15 }, // No. of Plot(s)
+            6: { cellWidth: 15 }, // Plot No(s)
+            7: { cellWidth: 17.5 }, // Land Price
+            8: { cellWidth: 17.5 }, // Branch
+          },
+          alternateRowStyles: {
+            fillColor: [245, 245, 245],
+          },
+          margin: { left: margin, right: margin },
+        });
+  
+        pdf.save(`clients_${format(new Date(), "yyyy-MM-dd_HH-mm")}.pdf`);
+        
+        setLastDownloadTime(downloadStartTime);
+        updateLastDownloadTime(downloadStartTime);
+        setDownloadModalOpen(false);
+        toast.success("PDF downloaded successfully!");
+      } catch (error) {
+        console.error("Error generating PDF:", error);
+        toast.error("Failed to generate PDF: " + (error.message || "Unknown error"));
+      }
+    };
 
-    if (filteredForDownload.length === 0) {
-      toast.error('No new records found for the selected period.');
-      return;
-    }
-
-    const sortedForDownload = filteredForDownload.sort((a, b) => {
+  const handleDownloadAllCSV = () => {
+    const sortedForDownload = allClients.sort((a, b) => {
       const dateA = a.created_at ? new Date(parseISO(a.created_at)) : new Date(0);
       const dateB = b.created_at ? new Date(parseISO(b.created_at)) : new Date(0);
       return dateB - dateA;
@@ -586,7 +796,7 @@ const Dashboard = () => {
       item.plot_number || '',
       item.land_price || '',
       item.branches || '',
-    ].map(field => `"${String(field).replace(/"/g, '""')}"`));
+    ].map(field => `"${String(field).replace(/"/g, '""' )}"`));
 
     const csvContent = [headers, ...rows].map(row => row.join(',')).join('\n');
 
@@ -594,58 +804,18 @@ const Dashboard = () => {
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.setAttribute(
-      'download',
-      `clients_${format(new Date(filterFrom), 'yyyy-MM-dd_HH-mm')}_to_${format(
-        new Date(downloadStartTime),
-        'yyyy-MM-dd_HH-mm'
-      )}.csv`
-    );
+    link.setAttribute('download', `all_clients_${format(new Date(), 'yyyy-MM-dd_HH-mm')}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
 
-    setLastDownloadTime(downloadStartTime); // Use downloadStartTime
-    updateLastDownloadTime(downloadStartTime); // Use downloadStartTime
-    setDownloadModalOpen(false);
+    setDownloadAllModalOpen(false);
     toast.success('CSV downloaded successfully!');
   };
 
-  // Download PDF
-  const handleDownloadPDF = async () => {
-    const downloadStartTime = new Date();
-    let filterFrom;
-
-    if (lastDownloadTime) {
-      filterFrom = new Date(lastDownloadTime);
-    } else {
-      if (!downloadDateFrom || !downloadTimeFrom) {
-        toast.error('Please provide a start date and time for your first download.');
-        return;
-      }
-      filterFrom = new Date(downloadDateFrom);
-      const [fromHours, fromMinutes] = downloadTimeFrom.split(':').map(Number);
-      filterFrom.setHours(fromHours, fromMinutes, 0, 0);
-    }
-
-    const filteredForDownload = allClients.filter((item) => {
-      try {
-        const createdDate = item.created_at ? new Date(parseISO(item.created_at)) : null;
-        if (!createdDate) return false;
-        return createdDate >= filterFrom && createdDate <= downloadStartTime;
-      } catch (error) {
-        console.error("Error parsing date for item:", item, error);
-        return false;
-      }
-    });
-
-    if (filteredForDownload.length === 0) {
-      toast.error("No new records found for the selected period.");
-      return;
-    }
-
-    const sortedForDownload = filteredForDownload.sort((a, b) => {
+  const handleDownloadAllPDF = async () => {
+    const sortedForDownload = allClients.sort((a, b) => {
       const dateA = a.created_at ? new Date(parseISO(a.created_at)) : new Date(0);
       const dateB = b.created_at ? new Date(parseISO(b.created_at)) : new Date(0);
       return dateB - dateA;
@@ -666,19 +836,7 @@ const Dashboard = () => {
       yPosition += 35;
 
       pdf.setFontSize(18);
-      pdf.text("Client Records", pageWidth / 2, yPosition, { align: "center" });
-      yPosition += 10;
-
-      pdf.setFontSize(12);
-      pdf.text(
-        `(${format(new Date(filterFrom), "dd/MM/yyyy HH:mm")} - ${format(
-          new Date(downloadStartTime),
-          "dd/MM/yyyy HH:mm"
-        )})`,
-        pageWidth / 2,
-        yPosition,
-        { align: "center" }
-      );
+      pdf.text("All Client Records", pageWidth / 2, yPosition, { align: "center" });
       yPosition += 15;
 
       const tableHead = [
@@ -730,11 +888,9 @@ const Dashboard = () => {
         margin: { left: margin, right: margin },
       });
 
-      pdf.save(`clients_${format(new Date(), "yyyy-MM-dd_HH-mm")}.pdf`);
+      pdf.save(`all_clients_${format(new Date(), "yyyy-MM-dd_HH-mm")}.pdf`);
       
-      setLastDownloadTime(downloadStartTime);
-      updateLastDownloadTime(downloadStartTime);
-      setDownloadModalOpen(false);
+      setDownloadAllModalOpen(false);
       toast.success("PDF downloaded successfully!");
     } catch (error) {
       console.error("Error generating PDF:", error);
@@ -742,7 +898,143 @@ const Dashboard = () => {
     }
   };
 
-  // Calculate pagination numbers to display
+  const handleSiteDownload = (format, data) => {
+    if (format === 'csv') {
+      handleSiteDownloadCSV(data);
+    } else {
+      handleSiteDownloadPDF(data);
+    }
+  };
+
+  const handleSiteDownloadCSV = (data) => {
+    const sortedForDownload = data.sort((a, b) => {
+      const dateA = a.created_at ? new Date(parseISO(a.created_at)) : new Date(0);
+      const dateB = b.created_at ? new Date(parseISO(b.created_at)) : new Date(0);
+      return dateB - dateA;
+    });
+
+    const headers = [
+      'Client Name',
+      'State of Origin',
+      'LGA',
+      'Property Name',
+      'Number of Plot(s)',
+      'Plot No(s)',
+      'Land Price',
+      'Branch',
+    ];
+
+    const rows = sortedForDownload.map(item => [
+      item.client_name || '',
+      item.state_of_origin || '',
+      item.lga || '',
+      item.site_location || '',
+      item.number_of_plot || '',
+      item.plot_number || '',
+      item.land_price || '',
+      item.branches || '',
+    ].map(field => `"${String(field).replace(/"/g, '""' )}"`));
+
+    const csvContent = [headers, ...rows].map(row => row.join(',')).join('\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', `site_search_clients_${format(new Date(), 'yyyy-MM-dd_HH-mm')}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+
+    setSiteDownloadModalOpen(false);
+    toast.success('CSV downloaded successfully!');
+  };
+
+  const handleSiteDownloadPDF = async (data) => {
+    const sortedForDownload = data.sort((a, b) => {
+      const dateA = a.created_at ? new Date(parseISO(a.created_at)) : new Date(0);
+      const dateB = b.created_at ? new Date(parseISO(b.created_at)) : new Date(0);
+      return dateB - dateA;
+    });
+
+    try {
+      const pdf = new jsPDF({
+        orientation: "portrait",
+        unit: "mm",
+        format: "a4",
+      });
+
+      const pageWidth = pdf.internal.pageSize.getWidth();
+      const margin = 15;
+      let yPosition = margin;
+
+      pdf.addImage(logo, "PNG", margin, yPosition, 30, 30);
+      yPosition += 35;
+
+      pdf.setFontSize(18);
+      pdf.text("Site Specific Client Records", pageWidth / 2, yPosition, { align: "center" });
+      yPosition += 15;
+
+      const tableHead = [
+        ["S/N", "Client Name", "State of Origin", "LGA", "Property Name", "No. of Plot(s)", "Plot No(s)", "Land Price", "Branch"],
+      ];
+
+      const tableBody = sortedForDownload.map((item, index) => [
+        index + 1,
+        item.client_name || "N/A",
+        item.state_of_origin || "N/A",
+        item.lga || "N/A",
+        item.site_location || "N/A",
+        item.number_of_plot || "N/A",
+        item.plot_number || "N/A",
+        item.land_price ? item.land_price.toLocaleString('en-NG') : "N/A",
+        item.branches || "N/A",
+      ]);
+
+      autoTable(pdf, {
+        startY: yPosition,
+        head: tableHead,
+        body: tableBody,
+        theme: "grid",
+        styles: {
+          fontSize: 9,
+          cellPadding: 3,
+          halign: "center",
+          valign: "middle",
+        },
+        headStyles: {
+          fillColor: [47, 83, 24],
+          textColor: [255, 255, 255],
+          fontStyle: "bold",
+        },
+        columnStyles: {
+          0: { cellWidth: 10 }, // S/N
+          1: { cellWidth: 35 }, // Client Name
+          2: { cellWidth: 17.5 }, // State of Origin
+          3: { cellWidth: 17.5 }, // LGA
+          4: { cellWidth: 35 }, // Property Name
+          5: { cellWidth: 15 }, // No. of Plot(s)
+          6: { cellWidth: 15 }, // Plot No(s)
+          7: { cellWidth: 17.5 }, // Land Price
+          8: { cellWidth: 17.5 }, // Branch
+        },
+        alternateRowStyles: {
+          fillColor: [245, 245, 245],
+        },
+        margin: { left: margin, right: margin },
+      });
+
+      pdf.save(`site_search_clients_${format(new Date(), "yyyy-MM-dd_HH-mm")}.pdf`);
+      
+      setSiteDownloadModalOpen(false);
+      toast.success("PDF downloaded successfully!");
+    } catch (error) {
+      console.error("Error generating PDF:", error);
+      toast.error("Failed to generate PDF: " + (error.message || "Unknown error"));
+    }
+  };
+  
   const getPageNumbers = () => {
     const pages = [];
     if (totalPages <= 3) {
@@ -869,13 +1161,45 @@ const Dashboard = () => {
                   </div>
 
                   {/* Download Button (goes under on sm, inline on md) */}
-                  <button
-                    onClick={() => setDownloadModalOpen(true)}
-                    className="flex items-center justify-center px-4 py-2.5 text-sm bg-secClr text-white font-semibold rounded-lg hover:bg-secClr/90 transition duration-300 shadow-sm w-full md:w-auto"
-                  >
-                    <FaDownload className="mr-2 w-4 h-4" />
-                    Download
-                  </button>
+                  <div className="relative">
+                    <button
+                      // onClick={() => setDownloadModalOpen(true)}
+                      onClick={() => setShowMoreDownloadOptions(prev => !prev)}
+                      className="flex items-center justify-center px-4 py-2.5 text-sm bg-secClr text-white font-semibold rounded-lg hover:bg-secClr/90 transition duration-300 shadow-sm w-full md:w-auto"
+                    >
+                      Download
+                      <FaCaretDown className="ml-2 w-6 h-6" />
+                    </button>
+                    <div className={`absolute min-w-[200px] max-w-[320px] z-99 right-0 bg-gray-100 border border-black/20 shadow-lg rounded-md ${showMoreDownloadOptions ? "inline-block" : "hidden"} top-[calc(100%+5px)] text-sm font-semibold`}>
+                      <button
+                        onClick={() => {
+                          setShowMoreDownloadOptions(prev => !prev)
+                          setDownloadModalOpen(true)
+                        }}
+                        className="w-full border-b border-gray-300 p-3  whitespace-nowrap cursor-pointer hover:bg-gray-200 transition-all duration-300"
+                      >
+                        Continue from last download
+                      </button>
+                      <button
+                        onClick={() => {
+                          setShowMoreDownloadOptions(prev => !prev)
+                          setDownloadAllModalOpen(true);
+                        }}
+                        className="w-full border-b border-gray-300 p-3  whitespace-nowrap cursor-pointer hover:bg-gray-200 transition-all duration-300"
+                      >
+                        Download from all times
+                      </button>
+                      <button
+                        onClick={() => {
+                          setShowMoreDownloadOptions(prev => !prev)
+                          setSiteDownloadModalOpen(true);
+                        }}
+                        className="w-full border-b border-gray-300 p-3  whitespace-nowrap cursor-pointer hover:bg-gray-200 transition-all duration-300"
+                      >
+                        Download for a specific site
+                      </button>
+                      </div>
+                  </div>
                 </div>
               </div>
 
@@ -985,6 +1309,24 @@ const Dashboard = () => {
           onDownloadTimeFromChange={setDownloadTimeFrom}
           onDownloadCSV={handleDownloadCSV}
           onDownloadPDF={handleDownloadPDF}
+          excludedSites={excludedSites}
+          onExcludeChange={setExcludedSites}
+          initialCount={initialDownloadData.length}
+          excludedCount={initialDownloadData.length - filteredDownloadData.length}
+          remainingCount={filteredDownloadData.length}
+        />
+
+        <DownloadAllModal
+          isOpen={downloadAllModalOpen}
+          onClose={() => setDownloadAllModalOpen(false)}
+          onDownloadCSV={handleDownloadAllCSV}
+          onDownloadPDF={handleDownloadAllPDF}
+        />
+
+        <SiteDownloadModal
+          isOpen={siteDownloadModalOpen}
+          onClose={() => setSiteDownloadModalOpen(false)}
+          onDownload={handleSiteDownload}
         />
       </div>
     </div>

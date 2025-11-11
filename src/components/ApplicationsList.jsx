@@ -73,6 +73,7 @@ const ApplicationsList = ({
               <th className="p-2 md:p-5 text-left text-xs md:text-sm font-semibold text-gray-600 uppercase tracking-wider">Client Name</th>
               <th className="p-2 md:p-5 text-left text-xs md:text-sm font-semibold text-gray-600 uppercase tracking-wider">Email</th>
               <th className="p-2 md:p-5 text-left text-xs md:text-sm font-semibold text-gray-600 uppercase tracking-wider">Phone Number</th>
+              <th className="p-2 md:p-5 text-left text-xs md:text-sm font-semibold text-gray-600 uppercase tracking-wider">Site Location</th>
               <th className="p-2 md:p-5 text-left text-xs md:text-sm font-semibold text-gray-600 uppercase tracking-wider">Actions</th>
             </tr>
           </thead>
@@ -89,11 +90,14 @@ const ApplicationsList = ({
                   <td className="p-2 md:p-5 whitespace-nowrap text-sm md:text-base text-gray-700">
                     {(currentPage - 1) * recordsPerPage + index + 1}
                   </td>
-                  <td className="p-2 md:p-5 text-sm md:text-base font-medium text-gray-900 max-w-[500px] min-w-[400px]">
+                  <td className="p-2 md:p-5 text-sm md:text-base font-medium text-gray-900 max-w-[400px] min-w-[300px]">
                     <p className="lg:line-clamp-0 line-clamp-2">{item.client_name}</p>
                   </td>
                   <td className="p-2 md:p-5 whitespace-nowrap text-sm md:text-base text-gray-700">{item.email}</td>
                   <td className="p-2 md:p-5 whitespace-nowrap text-sm md:text-base text-gray-700">{item.mobile_number}</td>
+                  <td className="p-2 md:p-5 text-sm md:text-base text-gray-700 max-w-[300px] min-w-[300px]">
+                    <p className="lg:line-clamp-0 line-clamp-2">{item.site_location}</p>
+                  </td>
                   <td className="p-2 md:p-5 whitespace-nowrap text-sm md:text-base text-gray-700">
                     <div className="flex space-x-2 md:space-x-3">
                       <Link to={`/view-client/${item.id}`} aria-label={`View ${item.client_name || 'Client'}`}>

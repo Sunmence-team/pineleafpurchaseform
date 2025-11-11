@@ -13,6 +13,11 @@ const DownloadModal = ({
   onDownloadTimeFromChange,
   onDownloadCSV,
   onDownloadPDF,
+  excludedSites,
+  onExcludeChange,
+  initialCount,
+  excludedCount,
+  remainingCount,
 }) => {
   if (!isOpen) return null;
 
@@ -41,6 +46,21 @@ const DownloadModal = ({
             <p className="text-sm text-gray-500 mt-1">
               The next download will include all records since that time.
             </p>
+            <div className="mt-6 text-start">
+              <label className="block text-sm md:text-base font-medium text-gray-700 mb-1 md:mb-2">Exclude Sites (comma-separated)</label>
+              <input
+                type="text"
+                value={excludedSites}
+                onChange={(e) => onExcludeChange(e.target.value)}
+                placeholder="e.g. siteA, siteB"
+                className="w-full px-3 py-2 md:px-4 md:py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-secClr text-sm md:text-base bg-gray-50"
+              />
+            </div>
+            <div className="mt-4 text-sm text-gray-600 flex items-center justify-between">
+              <p>Initial records: {initialCount}</p>
+              <p>Excluded: {excludedCount}</p>
+              <p>Remaining: {remainingCount}</p>
+            </div>
           </div>
         ) : (
           <div className="flex flex-col gap-3 md:gap-4 mb-6">

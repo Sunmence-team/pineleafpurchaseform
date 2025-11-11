@@ -6,7 +6,7 @@ import Section3 from '../section/Section3';
 import Section4 from '../section/Section4';
 
 const Form = () => {
-  const [currentSection, setCurrentSection] = useState(3);
+  const [currentSection, setCurrentSection] = useState(1);
   const [formData, setFormData] = useState({
     image: null,
     title: '',
@@ -73,7 +73,7 @@ const Form = () => {
 
   return (
     <div className="w-full min-h-[100vh] bg-secClr/20 flex items-start justify-center py-12">
-      <div className="w-[90%] md:w-[60%] lg:w-[50%] bg-white rounded-lg p-6 md:p-8 flex items-center justify-center flex-col">
+      <div className="w-[90%] md:w-[60%] lg:w-[60%] bg-white rounded-lg p-6 md:p-8 flex items-center justify-center flex-col">
         <img src={assets.logo} className="w-12" alt="Pineleaf Estate Logo" />
         <div className="flex flex-col gap-2 text-center mt-2">
           <p className="text-secClr font-semibold text-2xl md:text-3xl">Pineleaf Estate and Properties Limited</p>

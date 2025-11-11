@@ -127,7 +127,28 @@ const Section1 = ({ formData, setFormData, nextSection }) => {
       return maritalStatus === 'Married' ? schema.required('Spouse last name is required') : schema.nullable();
     }),
     stateOfOrigin: Yup.string().required('State of origin is required'),
-    lga: Yup.string().required('Local government (LGA) is required'),
+    // lga: Yup.string().required('Local government (LGA) is required'),
+    lga: Yup.string()
+    .required('Town, Village, and Local Government (LGA) are required')
+    .test(
+        'has-three-non-empty-entries',
+        'Please enter three distinct, non-empty values (Town, Village, LGA) separated by commas.',
+        (value) => {
+            if (!value) {
+                return false;
+            }
+
+            const entries = value.split(',');
+
+            if (entries.length !== 3) {
+                return false;
+            }
+
+            const allValid = entries.every(entry => entry.trim().length > 0);
+
+            return allValid;
+        }
+    ),
     occupation: Yup.string().nullable(),
     countryOfResidence: Yup.string().required('Country of residence is required'),
     language: Yup.string().nullable(),
@@ -153,7 +174,7 @@ const Section1 = ({ formData, setFormData, nextSection }) => {
         nextSection();
       }}
     >
-      {({ setFieldValue, values }) => (
+      {({ setFieldValue, values, errors }) => (
         <Form className="space-y-6">
           {error && <div className="text-red-500 text-sm mb-4">{error}</div>}
           <p className="font-semibold text-xl md:text-2xl text-center">Section 1: Client's Details</p>
@@ -253,7 +274,7 @@ const Section1 = ({ formData, setFormData, nextSection }) => {
             <div className="relative">
               <label htmlFor="title" className="block text-sm font-medium text-black/70">Title</label>
               <div className="relative">
-                <MdTitle className="absolute top-1/2 transform -translate-y-1/2 left-3 text-secClr" />
+                <MdTitle className={`absolute top-1/2 transform ${errors.title ? "-translate-y-full" : "-translate-y-1/2"} left-3 text-secClr`} />
                 <Field
                   as="select"
                   id="title"
@@ -277,7 +298,7 @@ const Section1 = ({ formData, setFormData, nextSection }) => {
             <div className="relative">
               <label htmlFor="firstName" className="block text-sm font-medium text-black/70">First Name</label>
               <div className="relative">
-                <FaUser className="absolute top-1/2 transform -translate-y-1/2 left-3 text-secClr" />
+                <FaUser className={`absolute top-1/2 transform ${errors.firstName ? "-translate-y-full" : "-translate-y-1/2"} left-3 text-secClr`} />
                 <Field
                   type="text"
                   name="firstName"
@@ -290,7 +311,7 @@ const Section1 = ({ formData, setFormData, nextSection }) => {
             <div className="relative">
               <label htmlFor="middleName" className="block text-sm font-medium text-black/70">Middle Name</label>
               <div className="relative">
-                <FaUser className="absolute top-1/2 transform -translate-y-1/2 left-3 text-secClr" />
+                <FaUser className={`absolute top-1/2 transform ${errors.middleName ? "-translate-y-full" : "-translate-y-1/2"} left-3 text-secClr`} />
                 <Field
                   type="text"
                   name="middleName"
@@ -303,7 +324,7 @@ const Section1 = ({ formData, setFormData, nextSection }) => {
             <div className="relative">
               <label htmlFor="lastName" className="block text-sm font-medium text-black/70">Last Name</label>
               <div className="relative">
-                <FaUser className="absolute top-1/2 transform -translate-y-1/2 left-3 text-secClr" />
+                <FaUser className={`absolute top-1/2 transform ${errors.lastName ? "-translate-y-full" : "-translate-y-1/2"} left-3 text-secClr`} />
                 <Field
                   type="text"
                   name="lastName"
@@ -318,7 +339,7 @@ const Section1 = ({ formData, setFormData, nextSection }) => {
           <div className="relative">
             <label htmlFor="address" className="block text-sm font-medium text-black/70">Address</label>
             <div className="relative">
-              <FaAddressCard className="absolute top-1/2 transform -translate-y-1/2 left-3 text-secClr" />
+              <FaAddressCard className={`absolute top-1/2 transform ${errors.address ? "-translate-y-full" : "-translate-y-1/2"} left-3 text-secClr`} />
               <Field
                 type="text"
                 name="address"
@@ -333,7 +354,7 @@ const Section1 = ({ formData, setFormData, nextSection }) => {
             <div className="relative">
               <label htmlFor="dateOfBirth" className="block text-sm font-medium text-black/70">Date of Birth</label>
               <div className="relative">
-                <FaCalendarAlt className="absolute top-1/2 transform -translate-y-1/2 left-3 text-secClr z-10" />
+                <FaCalendarAlt className={`absolute top-1/2 transform ${errors.dateOfBirth ? "-translate-y-full" : "-translate-y-1/2"} left-3 text-secClr z-10`} />
                 <DatePicker
                   selected={values.dateOfBirth}
                   onChange={(date) => setFieldValue('dateOfBirth', date)}
@@ -350,7 +371,7 @@ const Section1 = ({ formData, setFormData, nextSection }) => {
             <div className="relative">
               <label htmlFor="nationality" className="block text-sm font-medium text-black/70">Nationality</label>
               <div className="relative">
-                <FaFlag className="absolute top-1/2 transform -translate-y-1/2 left-3 text-secClr" />
+                <FaFlag className={`absolute top-1/2 transform ${errors.nationality ? "-translate-y-full" : "-translate-y-1/2"} left-3 text-secClr`} />
                 <Field
                   type="text"
                   name="nationality"
@@ -407,7 +428,7 @@ const Section1 = ({ formData, setFormData, nextSection }) => {
                 <div className="relative">
                   <label htmlFor="spouseTitle" className="block text-sm font-medium text-black/70">Title</label>
                   <div className="relative">
-                    <MdTitle className="absolute top-1/2 transform -translate-y-1/2 left-3 text-secClr" />
+                    <MdTitle className={`absolute top-1/2 transform ${errors.spouseTitle ? "-translate-y-full" : "-translate-y-1/2"} left-3 text-secClr`} />
                     <Field
                       as="select"
                       id="spouseTitle"
@@ -431,7 +452,7 @@ const Section1 = ({ formData, setFormData, nextSection }) => {
                 <div className="relative">
                   <label htmlFor="spouseFirstName" className="block text-sm font-medium text-black/70">First Name</label>
                   <div className="relative">
-                    <FaUser className="absolute top-1/2 transform -translate-y-1/2 left-3 text-secClr" />
+                    <FaUser className={`absolute top-1/2 transform ${errors.spouseFirstName ? "-translate-y-full" : "-translate-y-1/2"} left-3 text-secClr`} />
                     <Field
                       type="text"
                       name="spouseFirstName"
@@ -444,7 +465,7 @@ const Section1 = ({ formData, setFormData, nextSection }) => {
                 <div className="relative">
                   <label htmlFor="spouseMiddleName" className="block text-sm font-medium text-black/70">Middle Name</label>
                   <div className="relative">
-                    <FaUser className="absolute top-1/2 transform -translate-y-1/2 left-3 text-secClr" />
+                    <FaUser className={`absolute top-1/2 transform ${errors.spouseMiddleName ? "-translate-y-full" : "-translate-y-1/2"} left-3 text-secClr`} />
                     <Field
                       type="text"
                       name="spouseMiddleName"
@@ -457,7 +478,7 @@ const Section1 = ({ formData, setFormData, nextSection }) => {
                 <div className="relative">
                   <label htmlFor="spouseLastName" className="block text-sm font-medium text-black/70">Last Name</label>
                   <div className="relative">
-                    <FaUser className="absolute top-1/2 transform -translate-y-1/2 left-3 text-secClr" />
+                    <FaUser className={`absolute top-1/2 transform ${errors.spouseLastName ? "-translate-y-full" : "-translate-y-1/2"} left-3 text-secClr`} />
                     <Field
                       type="text"
                       name="spouseLastName"
@@ -475,7 +496,7 @@ const Section1 = ({ formData, setFormData, nextSection }) => {
             <div className="relative">
               <label htmlFor="countryOfResidence" className="block text-sm font-medium text-black/70">Country of Residence</label>
               <div className="relative">
-                <BiGlobe className="absolute top-1/2 transform -translate-y-1/2 left-3 text-secClr" />
+                <BiGlobe className={`absolute top-1/2 transform ${errors.countryOfResidence ? "-translate-y-full" : "-translate-y-1/2"} left-3 text-secClr`} />
                 <Field
                   as="select"
                   name="countryOfResidence"
@@ -504,7 +525,7 @@ const Section1 = ({ formData, setFormData, nextSection }) => {
             <div className="relative">
               <label htmlFor="stateOfOrigin" className="block text-sm font-medium text-black/70">State of Origin</label>
               <div className="relative">
-                <FaMapMarkerAlt className="absolute top-1/2 transform -translate-y-1/2 left-3 text-secClr" />
+                <FaMapMarkerAlt className={`absolute top-1/2 transform ${errors.stateOfOrigin ? "-translate-y-full" : "-translate-y-1/2"} left-3 text-secClr`} />
                 <Field
                   as="select"
                   name="stateOfOrigin"
@@ -544,13 +565,14 @@ const Section1 = ({ formData, setFormData, nextSection }) => {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="relative">
-              <label htmlFor="lga" className="block text-sm font-medium text-black/70">Local Government (LGA)</label>
+              <label htmlFor="lga" className="block text-sm font-medium text-black/70">Town, Village, Local Government (LGA)</label>
               <div className="relative">
-                <FaMapMarkerAlt className="absolute top-1/2 transform -translate-y-1/2 left-3 text-secClr" />
+                <FaMapMarkerAlt className={`absolute top-1/2 transform ${errors.lga ? "-translate-y-full" : "-translate-y-1/2"} left-3 text-secClr`} />
                 <Field
                   type="text"
                   name="lga"
                   id="lga"
+                  placeholder="Seperate the 3 entries with commas"
                   className={inputClass}
                 />
                 <ErrorMessage name="lga" component="div" className="text-xs text-red-500 mt-1" />
@@ -559,7 +581,7 @@ const Section1 = ({ formData, setFormData, nextSection }) => {
             <div className="relative">
               <label htmlFor="occupation" className="block text-sm font-medium text-black/70">Occupation</label>
               <div className="relative">
-                <BiBriefcase className="absolute top-1/2 transform -translate-y-1/2 left-3 text-secClr" />
+                <BiBriefcase className={`absolute top-1/2 transform ${errors.occupation ? "-translate-y-full" : "-translate-y-1/2"} left-3 text-secClr`} />
                 <Field
                   type="text"
                   name="occupation"
@@ -575,7 +597,7 @@ const Section1 = ({ formData, setFormData, nextSection }) => {
             <div className="relative">
               <label htmlFor="language" className="block text-sm font-medium text-black/70">Language</label>
               <div className="relative">
-                <FaLanguage className="absolute top-1/2 transform -translate-y-1/2 left-3 text-secClr" />
+                <FaLanguage className={`absolute top-1/2 transform ${errors.language ? "-translate-y-full" : "-translate-y-1/2"} left-3 text-secClr`} />
                 <Field
                   type="text"
                   name="language"
@@ -588,7 +610,7 @@ const Section1 = ({ formData, setFormData, nextSection }) => {
             <div className="relative">
               <label htmlFor="email" className="block text-sm font-medium text-black/70">Email Address</label>
               <div className="relative">
-                <BiEnvelope className="absolute top-1/2 transform -translate-y-1/2 left-3 text-secClr" />
+                <BiEnvelope className={`absolute top-1/2 transform ${errors.email ? "-translate-y-full" : "-translate-y-1/2"} left-3 text-secClr`} />
                 <Field
                   type="email"
                   name="email"
@@ -604,7 +626,7 @@ const Section1 = ({ formData, setFormData, nextSection }) => {
             <div className="relative">
               <label htmlFor="mobileNumber" className="block text-sm font-medium text-black/70">Mobile Number</label>
               <div className="relative">
-                <FaPhoneAlt className="absolute top-1/2 transform -translate-y-1/2 left-3 text-secClr" />
+                <FaPhoneAlt className={`absolute top-1/2 transform ${errors.mobileNumber ? "-translate-y-full" : "-translate-y-1/2"} left-3 text-secClr`} />
                 <Field
                   type="tel"
                   name="mobileNumber"
@@ -618,7 +640,7 @@ const Section1 = ({ formData, setFormData, nextSection }) => {
             <div className="relative">
               <label htmlFor="telephoneNumber" className="block text-sm font-medium text-black/70">Telephone Number</label>
               <div className="relative">
-                <FaPhoneAlt className="absolute top-1/2 transform -translate-y-1/2 left-3 text-secClr" />
+                <FaPhoneAlt className={`absolute top-1/2 transform ${errors.telephoneNumber ? "-translate-y-full" : "-translate-y-1/2"} left-3 text-secClr`} />
                 <Field
                   type="tel"
                   name="telephoneNumber"
