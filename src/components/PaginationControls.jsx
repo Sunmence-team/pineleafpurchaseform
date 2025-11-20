@@ -8,12 +8,6 @@ const PaginationControls = ({
   totalRecords,
   filteredData,
 }) => {
-  console.table(
-    currentPage,
-  totalPages,
-  totalRecords,
-  filteredData
-  )
   return (
     <div className="mt-4 md:mt-6 flex flex-col md:flex-row justify-between items-center gap-2 md:gap-4">
       <div className="text-sm md:text-base text-gray-600">
