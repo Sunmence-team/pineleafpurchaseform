@@ -1,6 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { FaEye, FaEdit, FaTrashAlt } from 'react-icons/fa';
+import { formatISODateToCustom } from '../utilities/formatterUtility';
 
 const ApplicationsList = ({
   filteredData,
@@ -69,18 +70,19 @@ const ApplicationsList = ({
         <table className="w-full divide-y divide-gray-200 table-auto">
           <thead className="bg-gray-50">
             <tr>
-              <th className="p-2 md:p-5 text-left text-xs md:text-sm font-semibold text-gray-600 uppercase tracking-wider">S/N</th>
-              <th className="p-2 md:p-5 text-left text-xs md:text-sm font-semibold text-gray-600 uppercase tracking-wider">Client Name</th>
-              <th className="p-2 md:p-5 text-left text-xs md:text-sm font-semibold text-gray-600 uppercase tracking-wider">Email</th>
-              <th className="p-2 md:p-5 text-left text-xs md:text-sm font-semibold text-gray-600 uppercase tracking-wider">Phone Number</th>
-              <th className="p-2 md:p-5 text-left text-xs md:text-sm font-semibold text-gray-600 uppercase tracking-wider">Site Location</th>
-              <th className="p-2 md:p-5 text-left text-xs md:text-sm font-semibold text-gray-600 uppercase tracking-wider">Actions</th>
+              <th className="p-2 md:p-5 text-left text-xs md:text-sm font-semibold text-gray-600 whitespace-nowrap uppercase tracking-wider">S/N</th>
+              <th className="p-2 md:p-5 text-left text-xs md:text-sm font-semibold text-gray-600 whitespace-nowrap uppercase tracking-wider">Client Name</th>
+              <th className="p-2 md:p-5 text-left text-xs md:text-sm font-semibold text-gray-600 whitespace-nowrap uppercase tracking-wider">Email</th>
+              <th className="p-2 md:p-5 text-left text-xs md:text-sm font-semibold text-gray-600 whitespace-nowrap uppercase tracking-wider">Phone Number</th>
+              <th className="p-2 md:p-5 text-left text-xs md:text-sm font-semibold text-gray-600 whitespace-nowrap uppercase tracking-wider">Property name/Location</th>
+              <th className="p-2 md:p-5 text-left text-xs md:text-sm font-semibold text-gray-600 whitespace-nowrap uppercase tracking-wider">Date Filled</th>
+              <th className="p-2 md:p-5 text-left text-xs md:text-sm font-semibold text-gray-600 whitespace-nowrap uppercase tracking-wider">Actions</th>
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
             {filteredData.length === 0 ? (
               <tr>
-                <td colSpan="5" className="p-2 md:p-5 text-center text-sm md:text-base text-gray-600">
+                <td colSpan="7" className="p-2 md:p-5 text-center text-sm md:text-base text-gray-600">
                   No records found
                 </td>
               </tr>
@@ -98,6 +100,7 @@ const ApplicationsList = ({
                   <td className="p-2 md:p-5 text-sm md:text-base text-gray-700 max-w-[300px] min-w-[300px]">
                     <p className="lg:line-clamp-0 line-clamp-2">{item.site_location}</p>
                   </td>
+                  <td className="p-2 md:p-5 whitespace-nowrap text-sm md:text-base text-gray-700">{formatISODateToCustom(item.created_at)}</td>
                   <td className="p-2 md:p-5 whitespace-nowrap text-sm md:text-base text-gray-700">
                     <div className="flex space-x-2 md:space-x-3">
                       <Link to={`/view-client/${item.id}`} aria-label={`View ${item.client_name || 'Client'}`}>

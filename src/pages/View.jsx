@@ -40,7 +40,7 @@ const ViewClient = () => {
         const application = response.data.data;
         if (!application) throw new Error("No client data found");
 
-        console.log("Raw API response:", application);
+        // console.log("Raw API response:", application);
 
         const clientData = {
           id: application.id,
@@ -91,10 +91,10 @@ const ViewClient = () => {
           referral_email: application.referral_email || "",
         };
 
-        console.log("Raw personal_picture:", application.personal_picture);
-        console.log("Built Profile URL:", clientData.personal_picture);
-        console.log("Raw signature:", application.signature);
-        console.log("Built Signature URL:", clientData.signature);
+        // console.log("Raw personal_picture:", application.personal_picture);
+        // console.log("Built Profile URL:", clientData.personal_picture);
+        // console.log("Raw signature:", application.signature);
+        // console.log("Built Signature URL:", clientData.signature);
 
         setClient(clientData);
       } catch (err) {

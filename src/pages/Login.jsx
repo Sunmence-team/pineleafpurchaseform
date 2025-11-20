@@ -68,7 +68,7 @@ const Login = () => {
   return (
     <div className="min-h-screen flex items-center justify-center bg-secClr/50 p-4">
       <div
-        className="mx-auto bg-white rounded-2xl shadow-2xl p-8 md:p-12 w-full md:w-[60%] transform transition-all duration-500 ease-in-out animate-fadeIn"
+        className="mx-auto bg-white rounded-2xl shadow-2xl p-8 md:p-12 w-full lg:w-[60%] md:w-3/4 transform transition-all duration-500 ease-in-out animate-fadeIn"
         style={{ boxShadow: '0 8px 32px rgba(0, 0, 0, 0.15)' }}
       >
         <form onSubmit={formik.handleSubmit} className="space-y-8">

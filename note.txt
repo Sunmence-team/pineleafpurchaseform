@@ -1308,3 +1308,160 @@ const Dashboard = () => {
 };
 
 export default Dashboard;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// useEffect(() => {
+  //   const fetchAllClients = async () => {
+  //     const token = localStorage.getItem("token");
+  //     if (!token) return;
+  //     const toastId = toast.loading("Loading all clients...");
+  //     setLoading(true);
+  //     try {
+  //       if (!token) {
+  //         toast.error("Please log in to view the dashboard.", { id: toastId });
+  //         window.location.href = "/login";
+  //         setLoading(false);
+  //         return;
+  //       }
+
+  //       let allData = [];
+  //       let page = 1;
+  //       let lastPage = 1;
+
+  //       do {
+  //         const payload = { page, per_page: 10 };
+  //         const response = await axios.post(
+  //           `${API_URL}/api/all_clients`,
+  //           payload,
+  //           {
+  //             headers: {
+  //               Authorization: `Bearer ${token}`,
+  //               "Content-Type": "application/json",
+  //             },
+  //           }
+  //         );
+
+  //         let applications = [];
+  //         let meta = {};
+  //         if (response.data && Array.isArray(response.data.data)) {
+  //           applications = response.data.data;
+  //           meta = response.data.meta || {};
+  //         } else if (
+  //           response.data &&
+  //           Array.isArray(response.data.applications)
+  //         ) {
+  //           applications = response.data.applications;
+  //           meta = response.data.meta || {};
+  //         } else if (response.data && Array.isArray(response.data.clients)) {
+  //           applications = response.data.clients;
+  //           meta = response.data.meta || {};
+  //         } else if (Array.isArray(response.data)) {
+  //           applications = response.data;
+  //         } else {
+  //           console.error("Unexpected response structure:", response.data);
+  //           throw new Error(
+  //             "Response data is not an array or does not contain an array of clients"
+  //           );
+  //         }
+
+  //         const mappedApplications = applications.map((item) => ({
+  //           id: item.id || "",
+  //           client_name: item.client_name || "",
+  //           email: item.email || "",
+  //           mobile_number: item.mobile_number || "",
+  //           branches: item.branches || "",
+  //           created_at: item.created_at || "",
+  //           address: item.address || "",
+  //           country: item.country || "",
+  //           declaration_date: item.declaration_date || "",
+  //           declaration_name: item.declaration_name || "",
+  //           dob: item.dob || "",
+  //           first_name: item.first_name || "",
+  //           first_name_of_spouse: item.first_name_of_spouse || "",
+  //           gender: item.gender || "",
+  //           land_price: item.land_price || "",
+  //           language: item.language || "",
+  //           last_name: item.last_name || "",
+  //           last_name_of_spouse: item.last_name_of_spouse || "",
+  //           lga: item.lga || "",
+  //           marital_status: item.marital_status || "",
+  //           middle_name: item.middle_name || "",
+  //           middle_name_of_spouse: item.middle_name_of_spouse || "",
+  //           nationality: item.nationality || "",
+  //           next_of_kin_address: item.next_of_kin_address || "",
+  //           next_of_kin_email: item.next_of_kin_email || "",
+  //           next_of_kin_full_name: item.next_of_kin_full_name || "",
+  //           next_of_kin_mobile_number: item.next_of_kin_mobile_number || "",
+  //           number_of_plot: item.number_of_plot || "",
+  //           occupation: item.occupation || "",
+  //           personal_picture: item.personal_picture || "",
+  //           plot_number: item.plot_number || "",
+  //           referral_date: item.referral_date || "",
+  //           referral_email: item.referral_email || "",
+  //           referral_name: item.referral_name || "",
+  //           referral_number: item.referral_number || "",
+  //           signature: item.signature || "",
+  //           site_location: item.site_location || "",
+  //           state_of_origin: item.state_of_origin || "",
+  //           telephone_number: item.telephone_number || "",
+  //           title: item.title || "",
+  //           title_of_spouse: item.title_of_spouse || "",
+  //           updated_at: item.updated_at || "",
+  //         }));
+
+  //         allData = [...allData, ...mappedApplications];
+  //         lastPage = meta.last_page || 1;
+  //         page += 1;
+  //       } while (page <= lastPage);
+
+  //       setAllClients(allData);
+  //       toast.success("All clients loaded successfully!", { id: toastId });
+  //     } catch (err) {
+  //       console.error("Error fetching all clients:", err);
+  //       toast.error(
+  //         "Failed to fetch all clients: " + (err.message || "Unknown error"),
+  //         { id: toastId }
+  //       );
+  //       if (axios.isAxiosError(err) && err.response?.status === 401) {
+  //         localStorage.removeItem("token");
+  //         window.location.href = "/login";
+  //       }
+  //     } finally {
+  //       setLoading(false);
+  //     }
+  //   };
+
+  //   fetchAllClients();
+  // }, []);

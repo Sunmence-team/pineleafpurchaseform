@@ -4,6 +4,7 @@ import DatePicker from 'react-datepicker';
 
 const DateFilterModal = ({
   isOpen,
+  isLoadingAllclients,
   onClose,
   dateFromInput,
   onDateFromChange,
@@ -19,6 +20,13 @@ const DateFilterModal = ({
   activePreset,
 }) => {
   if (!isOpen) return null;
+
+  if (isLoadingAllclients) {
+    <div className="flex items-center justify-center p-4">
+      <div className="animate-spin rounded-full h-8 w-8 border-4 border-secClr border-t-transparent"></div>
+      <span className="ml-3">Loading all clients...</span>
+    </div>
+  }
 
   return (
     <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-2 sm:p-4">
