@@ -44,8 +44,8 @@ const BranchFilterModal = ({
             >
               <option value="">Select Branch</option>
               {branchOptions.map((branch) => (
-                <option key={branch} value={branch}>
-                  {branch}
+                <option key={branch.keyWord} value={branch.title}>
+                  {branch.title}
                 </option>
               ))}
             </select>

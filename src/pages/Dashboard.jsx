@@ -39,6 +39,7 @@ import DownloadAllModal from "../components/modals/DownloadAllModal";
 import SiteDownloadModal from "../components/modals/SiteDownloadModal";
 import ApplicationsList from "../components/ApplicationsList";
 import PaginationControls from "../components/PaginationControls";
+import { TfiReload } from "react-icons/tfi";
 
 const API_URL = import.meta.env.VITE_API_BASE_URL;
 
@@ -142,28 +143,68 @@ const Dashboard = () => {
   }, [excludedSites, initialDownloadData]);
 
   const branchOptions = [
-    "HQ - Onitsha",
-    "Mgbuka",
-    "Awka",
-    "Asaba",
-    "Owerri",
-    "Port Harcourt",
-    "Lagos Ajah",
-    "Lagos Apapa",
-    "Enugwu-Ukwu",
-    "Abuja",
-    "Abia",
-    "Nnewi",
-    "Enugu",
+    {  
+      keyWord: "HQ_ONI",
+      title: "HQ - Onitsha",
+    },
+    { 
+      keyWord: "MGB", 
+      title: "Mgbuka",
+    },
+    { 
+      keyWord: "AWKA", 
+      title: "Awka",
+    },
+    { 
+      keyWord: "ASB", 
+      title: "Asaba",
+    },
+    { 
+      keyWord: "OWE", 
+      title: "Owerri",
+    },
+    { 
+      keyWord: "PORT_HAR", 
+      title: "Port Harcourt",
+    },
+    { 
+      keyWord: "LAG_AJAH", 
+      title: "Lagos Ajah",
+    },
+    { 
+      keyWord: "LAG_APP", 
+      title: "Lagos Apapa",
+    },
+    { 
+      keyWord: "ENU_UKW", 
+      title: "Enugwu-Ukwu",
+    },
+    { 
+      keyWord: "ABJ", 
+      title: "Abuja",
+    },
+    { 
+      keyWord: "ABIA", 
+      title: "Abia",
+    },
+    { 
+      keyWord: "NNEWI", 
+      title: "Nnewi",
+    },
+    { 
+      keyWord: "ENUGU", 
+      title: "Enugu",
+    },
   ];
+
   const recordsPerPage = 10;
 
   // Debounce search query
   useEffect(() => {
     const handler = setTimeout(() => {
       setDebouncedSearchQuery(searchQuery);
-      setCurrentPage(1); // Reset to first page on new search
-    }, 1000); // 500ms delay
+      setCurrentPage(1);
+    }, 1000);
 
     return () => {
       clearTimeout(handler);
@@ -196,7 +237,10 @@ const Dashboard = () => {
     const fetchLastDownloadTime = async () => {
       const token = localStorage.getItem("token");
       try {
-        if (!token) return;
+        if (!token) {
+          window.location.href = "/#/login";
+          return;
+        };
 
         const response = await axios.get(`${API_URL}/api/admin/download-date`, {
           headers: {
@@ -210,6 +254,13 @@ const Dashboard = () => {
         }
       } catch (error) {
         console.error("Error fetching last download time:", error);
+        if (axios.isAxiosError(error) && error.response?.status === 401) {
+          toast.info("Session expired!. Logging out...")
+          setTimeout(() => {
+            localStorage.removeItem("token");
+            window.location.href = "/#/login";
+          }, 500);
+        }
       }
     };
 
@@ -333,13 +384,16 @@ const Dashboard = () => {
       setAllClientsFetched(true);
       toast.success(`Loaded ${allData.length} clients`);
       
-    } catch (err) {
-      console.error("Error fetching all clients:", err);
+    } catch (error) {
+      console.error("Error fetching all clients:", error);
       toast.error("Failed to load all clients");
       
-      if (axios.isAxiosError(err) && err.response?.status === 401) {
-        localStorage.removeItem("token");
-        window.location.href = "/#/login";
+      if (axios.isAxiosError(error) && error.response?.status === 401) {
+        toast.info("Session expired!. Logging out...")
+        setTimeout(() => {
+          localStorage.removeItem("token");
+          window.location.href = "/#/login";
+        }, 500);
       }
     } finally {
       setLoadingAllClients(false);
@@ -348,7 +402,10 @@ const Dashboard = () => {
 
   // Fetch paginated applications or search results
   const fetchApplications = useCallback(async () => {
-    if (!token) return;
+    if (!token) {
+      window.location.href = "/#/login";
+      return
+    };
 
     // Don't fetch if search query is empty and filters are active
     // (filters work on allClients, not search results)
@@ -462,15 +519,15 @@ const Dashboard = () => {
       setTotalPages(meta.last_page || 1);
       setTotalRecords(meta.total || applications.length);
       toast.success("Applications loaded successfully!", { id: toastId });
-    } catch (err) {
-      console.error("Error fetching applications:", err);
-      toast.error(
-        "Failed to fetch applications: " + (err.message || "Unknown error"),
-        { id: toastId }
-      );
-      if (axios.isAxiosError(err) && err.response?.status === 401) {
-        localStorage.removeItem("token");
-        window.location.href = "/#/login";
+    } catch (error) {
+      console.error("Error fetching applications:", error);
+      toast.error("Failed to fetch applications: " + (error.message || "Unknown error"), { id: toastId });
+      if (axios.isAxiosError(error) && error.response?.status === 401) {
+        toast.info("Session expired!. Logging out...")
+        setTimeout(() => {
+          localStorage.removeItem("token");
+          window.location.href = "/#/login";
+        }, 500);
       }
     } finally {
       setLoading(false);
@@ -487,12 +544,7 @@ const Dashboard = () => {
 
     // Apply branch filter
     if (filterBranch) {
-      filtered = filtered.filter(
-        (item) =>
-          item.branches &&
-          item.branches.toLowerCase().trim() ===
-            filterBranch.toLowerCase().trim()
-      );
+      filtered = filtered.filter((item) => item.branches && item.branches.toLowerCase().trim() === filterBranch.toLowerCase().trim());
     }
 
     // Apply date and time filters
@@ -561,19 +613,15 @@ const Dashboard = () => {
 
   // Apply branch filter
   const applyBranchFilter = () => {
-    if (branchInput && !branchOptions.includes(branchInput)) {
-      toast.error("Please select a valid branch.");
+    const seenBranch = branchOptions.some(option => option.title === branchInput)
+    if (branchInput && !seenBranch) {
+      toast.error('Please select a valid branch.');
       return;
     }
-
-    if (!allClientsFetched) {
-      fetchAllClients();
-    }
-
     setFilterBranch(branchInput);
     setBranchFilterModalOpen(false);
     setCurrentPage(1);
-    toast.success("Branch filter applied successfully!");
+    toast.success('Branch filter applied successfully!');
   };
 
   // Apply date and time filter
@@ -679,7 +727,10 @@ const Dashboard = () => {
   const updateLastDownloadTime = async (downloadTime) => {
     try {
       const token = localStorage.getItem("token");
-      if (!token) return;
+      if (!token) {
+        window.location.href = "/#/login";
+        return;
+      };
 
       await axios.put(
         `${API_URL}/api/applications/download-date`,
@@ -694,6 +745,13 @@ const Dashboard = () => {
     } catch (error) {
       console.error("Error updating last download time:", error);
       toast.error("Failed to update last download time on the server.");
+      if (axios.isAxiosError(error) && error.response?.status === 401) {
+        toast.info("Session expired!. Logging out...")
+        setTimeout(() => {
+          localStorage.removeItem("token");
+          window.location.href = "/#/login";
+        }, 500);
+      }
     }
   };
 
@@ -915,6 +973,13 @@ const Dashboard = () => {
       toast.error(
         "Failed to generate PDF: " + (error.message || "Unknown error")
       );
+      if (axios.isAxiosError(error) && error.response?.status === 401) {
+        toast.info("Session expired!. Logging out...")
+        setTimeout(() => {
+          localStorage.removeItem("token");
+          window.location.href = "/#/login";
+        }, 500);
+      }
     }
   };
 
@@ -1073,6 +1138,13 @@ const Dashboard = () => {
       toast.error(
         "Failed to generate PDF: " + (error.message || "Unknown error")
       );
+      if (axios.isAxiosError(error) && error.response?.status === 401) {
+        toast.info("Session expired!. Logging out...")
+        setTimeout(() => {
+          localStorage.removeItem("token");
+          window.location.href = "/#/login";
+        }, 500);
+      }
     }
   };
 
@@ -1241,6 +1313,13 @@ const Dashboard = () => {
       toast.error(
         "Failed to generate PDF: " + (error.message || "Unknown error")
       );
+      if (axios.isAxiosError(error) && error.response?.status === 401) {
+        toast.info("Session expired!. Logging out...")
+        setTimeout(() => {
+          localStorage.removeItem("token");
+          window.location.href = "/#/login";
+        }, 500);
+      }
     }
   };
 
@@ -1302,16 +1381,15 @@ const Dashboard = () => {
           id: toastId,
         });
       }
-    } catch (err) {
-      console.error("Error deleting client:", err);
-      toast.error(
-        "Failed to delete client: " +
-          (err.response?.data?.message || err.message || "Unknown error"),
-        { id: toastId }
-      );
-      if (axios.isAxiosError(err) && err.response?.status === 401) {
-        localStorage.removeItem("token");
-        window.location.href = "/#/login";
+    } catch (error) {
+      console.error("Error deleting client:", error);
+      toast.error("Failed to delete client: " + (error.response?.data?.message || error.message || "Unknown error"), { id: toastId });
+      if (axios.isAxiosError(error) && error.response?.status === 401) {
+        toast.info("Session expired!. Logging out...")
+        setTimeout(() => {
+          localStorage.removeItem("token");
+          window.location.href = "/#/login";
+        }, 500);
       }
     } finally {
       setIsDeleting(false);
@@ -1357,13 +1435,28 @@ const Dashboard = () => {
                   <FaSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4 md:w-5 md:h-5" />
                 </div>
 
+                <button
+                  onClick={() => fetchApplications()}
+                  disabled={loading}
+                  className="h-[45px] w-[45px] cursor-pointer flex items-center justify-center text-sm bg-secClr text-white font-semibold rounded-lg hover:bg-secClr/90 transition duration-300 shadow-sm disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  <TfiReload 
+                    className={`${loading && "animate-spin"} size-5`}
+                  />
+                </button>
+
                 {/* Buttons wrapper */}
                 <div className="flex flex-col md:flex-row gap-2 md:gap-3 w-full md:w-auto">
                   {/* Branch + Filter row (sm only) */}
                   <div className="flex flex-row gap-2 md:gap-3 w-full md:w-auto">
                     {/* Branch Button */}
                     <button
-                      onClick={() => setBranchFilterModalOpen(true)}
+                      onClick={() => {
+                        if (!allClientsFetched) {
+                          fetchAllClients();
+                        }
+                        setBranchFilterModalOpen(true)
+                      }}
                       className="flex items-center justify-center flex-1 px-4 py-2.5 text-sm bg-secClr text-white font-semibold rounded-lg hover:bg-secClr/90 transition duration-300 shadow-sm"
                     >
                       <FaFilter className="mr-2 w-4 h-4" />
