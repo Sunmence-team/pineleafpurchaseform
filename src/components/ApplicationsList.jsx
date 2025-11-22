@@ -74,6 +74,7 @@ const ApplicationsList = ({
               <th className="p-2 md:p-5 text-left text-xs md:text-sm font-semibold text-gray-600 whitespace-nowrap uppercase tracking-wider">Client Name</th>
               <th className="p-2 md:p-5 text-left text-xs md:text-sm font-semibold text-gray-600 whitespace-nowrap uppercase tracking-wider">Email</th>
               <th className="p-2 md:p-5 text-left text-xs md:text-sm font-semibold text-gray-600 whitespace-nowrap uppercase tracking-wider">Phone Number</th>
+              <th className="p-2 md:p-5 text-left text-xs md:text-sm font-semibold text-gray-600 whitespace-nowrap uppercase tracking-wider">Branch</th>
               <th className="p-2 md:p-5 text-left text-xs md:text-sm font-semibold text-gray-600 whitespace-nowrap uppercase tracking-wider">Property name/Location</th>
               <th className="p-2 md:p-5 text-left text-xs md:text-sm font-semibold text-gray-600 whitespace-nowrap uppercase tracking-wider">Date Filled</th>
               <th className="p-2 md:p-5 text-left text-xs md:text-sm font-semibold text-gray-600 whitespace-nowrap uppercase tracking-wider">Actions</th>
@@ -97,6 +98,7 @@ const ApplicationsList = ({
                   </td>
                   <td className="p-2 md:p-5 whitespace-nowrap text-sm md:text-base text-gray-700">{item.email}</td>
                   <td className="p-2 md:p-5 whitespace-nowrap text-sm md:text-base text-gray-700">{item.mobile_number}</td>
+                  <td className="p-2 md:p-5 whitespace-nowrap text-sm md:text-base text-gray-700">{item.branches}</td>
                   <td className="p-2 md:p-5 text-sm md:text-base text-gray-700 max-w-[300px] min-w-[300px]">
                     <p className="lg:line-clamp-0 line-clamp-2">{item.site_location}</p>
                   </td>

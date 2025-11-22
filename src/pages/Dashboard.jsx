@@ -1,19 +1,12 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import {
   FaFilter,
-  FaDownload,
-  FaEye,
-  FaEdit,
-  FaTimes,
   FaSearch,
-  FaTrashAlt,
   FaCaretDown,
 } from "react-icons/fa";
-import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import axios from "axios";
 import { toast } from "sonner";
-import { Link } from "react-router-dom";
 import {
   format,
   parseISO,
@@ -83,7 +76,157 @@ const Dashboard = () => {
   const [excludedSites, setExcludedSites] = useState("");
   const [initialDownloadData, setInitialDownloadData] = useState([]);
   const [filteredDownloadData, setFilteredDownloadData] = useState([]);
+  const [branchLastDownload, setBranchLastDownload] = useState(null);
+  const [selectedBranchForDownload, setSelectedBranchForDownload] = useState(null);
+  const [branchStartDate, setBranchStartDate] = useState(null);
+  const [branchStartTime, setBranchStartTime] = useState('');
+  const [branchInitialData, setBranchInitialData] = useState([]);
+  const [loadingBranchDownloadTime, setLoadingBranchDownloadTime] = useState(false);
+  const [siteLocationLastDownload, setSiteLocationLastDownload] = useState(null);
+  const [siteLocationStartDate, setSiteLocationStartDate] = useState(null);
+  const [siteLocationStartTime, setSiteLocationStartTime] = useState('');
+  const [newRecordsForSite, setNewRecordsForSite] = useState([]);
+  const [loadingSiteDownloadTime, setLoadingSiteDownloadTime] = useState(false);
+  const [siteLocation, setSiteLocation] = useState('');
+  const [debouncedSiteLocation, setDebouncedSiteLocation] = useState('');
   const componentRef = useRef();
+
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedSiteLocation(siteLocation);
+    }, 1000);
+    return () => clearTimeout(handler);
+  }, [siteLocation]);
+
+  const onSiteModalCloseCleanup = () => {
+    setSiteLocation('');
+    setDebouncedSiteLocation('');
+    setSiteLocationLastDownload(null);
+    setSiteLocationStartDate(null);
+    setSiteLocationStartTime('');
+    setNewRecordsForSite([]);
+  };
+
+  const handleSiteLocationSelectForDownload = async (siteLocation) => {
+    if (!siteLocation) {
+      setSiteLocationLastDownload(null);
+      return;
+    }
+    setLoadingSiteDownloadTime(true);
+    const token = localStorage.getItem("token");
+    try {
+      const response = await axios.get(`${API_URL}/api/last/download-date?name=${siteLocation}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (response.data.data && response.data.data.updated_at) {
+        setSiteLocationLastDownload(response.data.data.updated_at);
+      } else {
+        setSiteLocationLastDownload(null);
+      }
+    } catch (error) {
+      if (error.response && error.response.status === 404) {
+        setSiteLocationLastDownload(null);
+      } else {
+        console.error("Error fetching site location last download time:", error);
+        toast.error("Could not fetch last download time for this site.");
+      }
+    } finally {
+      setLoadingSiteDownloadTime(false);
+    }
+  };
+
+  useEffect(() => {
+    // This useEffect needs to check selectedSiteLocationForDownload and siteLocationLastDownload
+    if (debouncedSiteLocation && siteLocationLastDownload) {
+      const filterFrom = new Date(siteLocationLastDownload);
+      const data = allClients.filter(item => {
+        const createdDate = item.created_at ? new Date(parseISO(item.created_at)) : null;
+        return item.site_location && item.site_location.toLowerCase().includes(debouncedSiteLocation.toLowerCase()) && createdDate && createdDate >= filterFrom;
+      });
+      setNewRecordsForSite(data);
+    } else {
+      setNewRecordsForSite([]);
+    }
+  }, [siteLocationLastDownload, allClients, debouncedSiteLocation]);
+
+  const onModalCloseCleanup = () => {
+    setSelectedBranchForDownload(null);
+    setBranchLastDownload(null);
+    setBranchStartDate(null);
+    setBranchStartTime('');
+    setBranchInitialData([]);
+  };
+
+  useEffect(() => {
+    if (selectedBranchForDownload && branchLastDownload) {
+      const filterFrom = new Date(branchLastDownload);
+      const selectedBranchTitle = branchOptions.find(opt => opt.keyWord === selectedBranchForDownload)?.title;
+      if (!selectedBranchTitle) {
+        setBranchInitialData([]);
+        return;
+      }
+      const data = allClients.filter(item => {
+        const createdDate = item.created_at ? new Date(parseISO(item.created_at)) : null;
+        return item.branches === selectedBranchTitle && createdDate && createdDate >= filterFrom;
+      });
+      setBranchInitialData(data);
+    } else {
+      setBranchInitialData([]);
+    }
+  }, [selectedBranchForDownload, branchLastDownload, allClients]);
+
+  const updateBranchDownloadTime = async (branchKey, dateTime) => {
+    const token = localStorage.getItem('token');
+    try {
+      await axios.put(
+        `${API_URL}/api/last/download-date`,
+        { name: branchKey, date: format(dateTime, 'yyyy-MM-dd HH:mm:ss') },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+    } catch (error) {
+      console.error('Error updating branch download time:', error);
+      toast.error('Could not update the download time for the branch.');
+    }
+  };
+  
+  const handleBranchSelectForDownload = async (branchKey) => {
+    if (!branchKey) {
+      setSelectedBranchForDownload(null);
+      setBranchLastDownload(null);
+      return;
+    }
+    setSelectedBranchForDownload(branchKey);
+    setLoadingBranchDownloadTime(true); // Set loading to true
+    const token = localStorage.getItem("token");
+    try {
+      const response = await axios.get(
+        `${API_URL}/api/last/download-date?name=${branchKey}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+      if (response.data.data && response.data.data.updated_at) {
+        setBranchLastDownload(response.data.data.updated_at);
+      } else {
+        setBranchLastDownload(null);
+      }
+    } catch (error) {
+      if (error.response && error.response.status === 404) {
+        setBranchLastDownload(null); // Explicitly set to null on 404
+      } else {
+        console.error("Error fetching branch last download time:", error);
+        toast.error("Could not fetch last download time for this branch.");
+      }
+    } finally {
+      setLoadingBranchDownloadTime(false); // Set loading to false regardless of outcome
+    }
+  };
 
   const token = localStorage.getItem("token");
 
@@ -143,56 +286,56 @@ const Dashboard = () => {
   }, [excludedSites, initialDownloadData]);
 
   const branchOptions = [
-    {  
+    {
       keyWord: "HQ_ONI",
       title: "HQ - Onitsha",
     },
-    { 
-      keyWord: "MGB", 
+    {
+      keyWord: "MGB",
       title: "Mgbuka",
     },
-    { 
-      keyWord: "AWKA", 
+    {
+      keyWord: "AWKA",
       title: "Awka",
     },
-    { 
-      keyWord: "ASB", 
+    {
+      keyWord: "ASB",
       title: "Asaba",
     },
-    { 
-      keyWord: "OWE", 
+    {
+      keyWord: "OWE",
       title: "Owerri",
     },
-    { 
-      keyWord: "PORT_HAR", 
+    {
+      keyWord: "PORT_HAR",
       title: "Port Harcourt",
     },
-    { 
-      keyWord: "LAG_AJAH", 
+    {
+      keyWord: "LAG_AJAH",
       title: "Lagos Ajah",
     },
-    { 
-      keyWord: "LAG_APP", 
+    {
+      keyWord: "LAG_APP",
       title: "Lagos Apapa",
     },
-    { 
-      keyWord: "ENU_UKW", 
+    {
+      keyWord: "ENU_UKW",
       title: "Enugwu-Ukwu",
     },
-    { 
-      keyWord: "ABJ", 
+    {
+      keyWord: "ABJ",
       title: "Abuja",
     },
-    { 
-      keyWord: "ABIA", 
+    {
+      keyWord: "ABIA",
       title: "Abia",
     },
-    { 
-      keyWord: "NNEWI", 
+    {
+      keyWord: "NNEWI",
       title: "Nnewi",
     },
-    { 
-      keyWord: "ENUGU", 
+    {
+      keyWord: "ENUGU",
       title: "Enugu",
     },
   ];
@@ -213,12 +356,7 @@ const Dashboard = () => {
 
   // Prevent background scrolling when modals are open
   useEffect(() => {
-    if (
-      dateFilterModalOpen ||
-      branchFilterModalOpen ||
-      downloadModalOpen ||
-      siteDownloadModalOpen
-    ) {
+    if (dateFilterModalOpen || branchFilterModalOpen || downloadModalOpen || siteDownloadModalOpen) {
       document.body.style.overflow = "hidden";
     } else {
       document.body.style.overflow = "auto";
@@ -240,7 +378,7 @@ const Dashboard = () => {
         if (!token) {
           window.location.href = "/#/login";
           return;
-        };
+        }
 
         const response = await axios.get(`${API_URL}/api/admin/download-date`, {
           headers: {
@@ -255,7 +393,7 @@ const Dashboard = () => {
       } catch (error) {
         console.error("Error fetching last download time:", error);
         if (axios.isAxiosError(error) && error.response?.status === 401) {
-          toast.info("Session expired!. Logging out...")
+          toast.info("Session expired!. Logging out...");
           setTimeout(() => {
             localStorage.removeItem("token");
             window.location.href = "/#/login";
@@ -271,7 +409,7 @@ const Dashboard = () => {
   const parseApplicationsResponse = (response) => {
     let applications = [];
     let meta = {};
-    
+
     if (response.data && Array.isArray(response.data.data)) {
       applications = response.data.data;
       meta = response.data.meta || {};
@@ -342,7 +480,7 @@ const Dashboard = () => {
   // Fetch all clients for CSV and PDF download and filtering
   const fetchAllClients = useCallback(async () => {
     if (allClientsFetched || loadingAllClients) return; // Prevent duplicate calls
-    
+
     const token = localStorage.getItem("token");
     if (!token) {
       window.location.href = "/#/login";
@@ -350,7 +488,7 @@ const Dashboard = () => {
     }
 
     setLoadingAllClients(true);
-    
+
     try {
       let allData = [];
       let page = 1;
@@ -371,25 +509,25 @@ const Dashboard = () => {
 
         const { applications, meta } = parseApplicationsResponse(response); // Extract to shared function
         allData.push(...applications); // More efficient than spread
-        
+
         lastPage = meta.last_page || 1;
         page += 1;
-        
+
         // Add progress indication
-        console.log(`Loaded ${allData.length} clients (page ${page-1}/${lastPage})`);
-        
+        console.log(
+          `Loaded ${allData.length} clients (page ${page - 1}/${lastPage})`
+        );
       } while (page <= lastPage);
 
       setAllClients(allData);
       setAllClientsFetched(true);
-      toast.success(`Loaded ${allData.length} clients`);
-      
+      toast.success(`Loaded clients`);
     } catch (error) {
       console.error("Error fetching all clients:", error);
       toast.error("Failed to load all clients");
-      
+
       if (axios.isAxiosError(error) && error.response?.status === 401) {
-        toast.info("Session expired!. Logging out...")
+        toast.info("Session expired!. Logging out...");
         setTimeout(() => {
           localStorage.removeItem("token");
           window.location.href = "/#/login";
@@ -404,8 +542,8 @@ const Dashboard = () => {
   const fetchApplications = useCallback(async () => {
     if (!token) {
       window.location.href = "/#/login";
-      return
-    };
+      return;
+    }
 
     // Don't fetch if search query is empty and filters are active
     // (filters work on allClients, not search results)
@@ -521,9 +659,12 @@ const Dashboard = () => {
       toast.success("Applications loaded successfully!", { id: toastId });
     } catch (error) {
       console.error("Error fetching applications:", error);
-      toast.error("Failed to fetch applications: " + (error.message || "Unknown error"), { id: toastId });
+      toast.error(
+        "Failed to fetch applications: " + (error.message || "Unknown error"),
+        { id: toastId }
+      );
       if (axios.isAxiosError(error) && error.response?.status === 401) {
-        toast.info("Session expired!. Logging out...")
+        toast.info("Session expired!. Logging out...");
         setTimeout(() => {
           localStorage.removeItem("token");
           window.location.href = "/#/login";
@@ -532,7 +673,14 @@ const Dashboard = () => {
     } finally {
       setLoading(false);
     }
-  }, [token, currentPage, debouncedSearchQuery, recordsPerPage, filterBranch, filterDateFrom]);
+  }, [
+    token,
+    currentPage,
+    debouncedSearchQuery,
+    recordsPerPage,
+    filterBranch,
+    filterDateFrom,
+  ]);
 
   useEffect(() => {
     fetchApplications();
@@ -544,7 +692,12 @@ const Dashboard = () => {
 
     // Apply branch filter
     if (filterBranch) {
-      filtered = filtered.filter((item) => item.branches && item.branches.toLowerCase().trim() === filterBranch.toLowerCase().trim());
+      filtered = filtered.filter(
+        (item) =>
+          item.branches &&
+          item.branches.toLowerCase().trim() ===
+            filterBranch.toLowerCase().trim()
+      );
     }
 
     // Apply date and time filters
@@ -603,25 +756,37 @@ const Dashboard = () => {
     //   debouncedSearchQuery.trim() ? allApplications : paginatedData
     // );
     setFilteredData(
-      debouncedSearchQuery.trim() 
-        ? allApplications 
-        : (filterBranch || filterDateFrom || filterTimeTo) 
-          ? paginatedData 
-          : allApplications
+      debouncedSearchQuery.trim()
+        ? allApplications
+        : filterBranch || filterDateFrom || filterTimeTo
+        ? paginatedData
+        : allApplications
     );
-  }, [allClients, allApplications, filterBranch, filterDateFrom, filterTimeFrom, filterDateTo, filterTimeTo, currentPage, debouncedSearchQuery]);
+  }, [
+    allClients,
+    allApplications,
+    filterBranch,
+    filterDateFrom,
+    filterTimeFrom,
+    filterDateTo,
+    filterTimeTo,
+    currentPage,
+    debouncedSearchQuery,
+  ]);
 
   // Apply branch filter
   const applyBranchFilter = () => {
-    const seenBranch = branchOptions.some(option => option.title === branchInput)
+    const seenBranch = branchOptions.some(
+      (option) => option.title === branchInput
+    );
     if (branchInput && !seenBranch) {
-      toast.error('Please select a valid branch.');
+      toast.error("Please select a valid branch.");
       return;
     }
     setFilterBranch(branchInput);
     setBranchFilterModalOpen(false);
     setCurrentPage(1);
-    toast.success('Branch filter applied successfully!');
+    toast.success("Branch filter applied successfully!");
   };
 
   // Apply date and time filter
@@ -730,7 +895,7 @@ const Dashboard = () => {
       if (!token) {
         window.location.href = "/#/login";
         return;
-      };
+      }
 
       await axios.put(
         `${API_URL}/api/applications/download-date`,
@@ -746,7 +911,7 @@ const Dashboard = () => {
       console.error("Error updating last download time:", error);
       toast.error("Failed to update last download time on the server.");
       if (axios.isAxiosError(error) && error.response?.status === 401) {
-        toast.info("Session expired!. Logging out...")
+        toast.info("Session expired!. Logging out...");
         setTimeout(() => {
           localStorage.removeItem("token");
           window.location.href = "/#/login";
@@ -756,30 +921,47 @@ const Dashboard = () => {
   };
 
   // Download CSV
-  const handleDownloadCSV = () => {
-    const downloadStartTime = new Date(); // Use a single timestamp
+  const handleDownloadCSV = (downloadMode) => {
+    const downloadStartTime = new Date();
     let filterFrom;
+    let dataToDownload;
 
-    if (lastDownloadTime) {
-      filterFrom = new Date(lastDownloadTime);
-    } else {
-      if (!downloadDateFrom || !downloadTimeFrom) {
-        toast.error(
-          "Please provide a start date and time for your first download."
-        );
+    if (downloadMode === "branch") {
+      if (!selectedBranchForDownload) {
+        toast.error("Please select a branch first.");
         return;
       }
-      filterFrom = new Date(downloadDateFrom);
-      const [fromHours, fromMinutes] = downloadTimeFrom.split(":").map(Number);
-      filterFrom.setHours(fromHours, fromMinutes, 0, 0);
+      if (branchLastDownload) {
+        filterFrom = new Date(branchLastDownload);
+      } else {
+        if (!branchStartDate || !branchStartTime) {
+          toast.error('Please select a start date and time for this branch.');
+          return;
+        }
+        filterFrom = new Date(branchStartDate);
+        const [fromHours, fromMinutes] = branchStartTime.split(':').map(Number);
+        filterFrom.setHours(fromHours, fromMinutes, 0, 0);
+      }
+      const selectedBranchTitle = branchOptions.find(opt => opt.keyWord === selectedBranchForDownload)?.title;
+      if (!selectedBranchTitle) {
+        toast.error('Could not find the selected branch title.');
+        return;
+      }
+      dataToDownload = allClients.filter(item => {
+        const createdDate = item.created_at ? new Date(parseISO(item.created_at)) : null;
+        return item.branches === selectedBranchTitle && createdDate && createdDate >= filterFrom;
+      });
+    } else {
+      filterFrom = lastDownloadTime ? new Date(lastDownloadTime) : null;
+      dataToDownload = filteredDownloadData;
     }
 
-    if (filteredDownloadData.length === 0) {
+    if (dataToDownload.length === 0) {
       toast.error("No new records found for the selected period.");
       return;
     }
 
-    const sortedForDownload = filteredDownloadData.sort((a, b) => {
+    const sortedForDownload = dataToDownload.sort((a, b) => {
       const dateA = a.created_at
         ? new Date(parseISO(a.created_at))
         : new Date(0);
@@ -823,47 +1005,64 @@ const Dashboard = () => {
     link.href = url;
     link.setAttribute(
       "download",
-      `clients_${format(new Date(filterFrom), "yyyy-MM-dd_HH-mm")}_to_${format(
-        new Date(downloadStartTime),
-        "yyyy-MM-dd_HH-mm"
-      )}.csv`
+      `clients_${format(new Date(), "yyyy-MM-dd_HH-mm")}.csv`
     );
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
 
-    setLastDownloadTime(downloadStartTime); // Use downloadStartTime
-    updateLastDownloadTime(downloadStartTime); // Use downloadStartTime
+    if (downloadMode === 'branch') {
+      updateBranchDownloadTime(selectedBranchForDownload, downloadStartTime);
+    } else { // This is for 'general' mode
+      setLastDownloadTime(downloadStartTime);
+      updateLastDownloadTime(downloadStartTime);
+    }
     setDownloadModalOpen(false);
     toast.success("CSV downloaded successfully!");
   };
 
-  // Download PDF
-  const handleDownloadPDF = async () => {
+  const handleDownloadPDF = async (downloadMode) => {
     const downloadStartTime = new Date();
     let filterFrom;
+    let dataToDownload;
 
-    if (lastDownloadTime) {
-      filterFrom = new Date(lastDownloadTime);
-    } else {
-      if (!downloadDateFrom || !downloadTimeFrom) {
-        toast.error(
-          "Please provide a start date and time for your first download."
-        );
+    if (downloadMode === "branch") {
+      if (!selectedBranchForDownload) {
+        toast.error("Please select a branch first.");
         return;
       }
-      filterFrom = new Date(downloadDateFrom);
-      const [fromHours, fromMinutes] = downloadTimeFrom.split(":").map(Number);
-      filterFrom.setHours(fromHours, fromMinutes, 0, 0);
+      if (branchLastDownload) {
+        filterFrom = new Date(branchLastDownload);
+      } else {
+        if (!branchStartDate || !branchStartTime) {
+          toast.error('Please select a start date and time for this branch.');
+          return;
+        }
+        filterFrom = new Date(branchStartDate);
+        const [fromHours, fromMinutes] = branchStartTime.split(':').map(Number);
+        filterFrom.setHours(fromHours, fromMinutes, 0, 0);
+      }
+      const selectedBranchTitle = branchOptions.find(opt => opt.keyWord === selectedBranchForDownload)?.title;
+      if (!selectedBranchTitle) {
+        toast.error('Could not find the selected branch title.');
+        return;
+      }
+      dataToDownload = allClients.filter(item => {
+        const createdDate = item.created_at ? new Date(parseISO(item.created_at)) : null;
+        return item.branches === selectedBranchTitle && createdDate && createdDate >= filterFrom;
+      });
+    } else {
+      filterFrom = lastDownloadTime ? new Date(lastDownloadTime) : null;
+      dataToDownload = filteredDownloadData;
     }
 
-    if (filteredDownloadData.length === 0) {
+    if (dataToDownload.length === 0) {
       toast.error("No new records found for the selected period.");
       return;
     }
 
-    const sortedForDownload = filteredDownloadData.sort((a, b) => {
+    const sortedForDownload = dataToDownload.sort((a, b) => {
       const dateA = a.created_at
         ? new Date(parseISO(a.created_at))
         : new Date(0);
@@ -891,17 +1090,19 @@ const Dashboard = () => {
       pdf.text("Client Records", pageWidth / 2, yPosition, { align: "center" });
       yPosition += 10;
 
-      pdf.setFontSize(12);
-      pdf.text(
-        `(${format(new Date(filterFrom), "dd/MM/yyyy HH:mm")} - ${format(
-          new Date(downloadStartTime),
-          "dd/MM/yyyy HH:mm"
-        )})`,
-        pageWidth / 2,
-        yPosition,
-        { align: "center" }
-      );
-      yPosition += 15;
+      if (filterFrom) {
+        pdf.setFontSize(12);
+        pdf.text(
+          `(${format(filterFrom, "dd/MM/yyyy HH:mm")} - ${format(
+            downloadStartTime,
+            "dd/MM/yyyy HH:mm"
+          )})`,
+          pageWidth / 2,
+          yPosition,
+          { align: "center" }
+        );
+        yPosition += 15;
+      }
 
       const tableHead = [
         [
@@ -946,15 +1147,15 @@ const Dashboard = () => {
           fontStyle: "bold",
         },
         columnStyles: {
-          0: { cellWidth: 10 }, // S/N
-          1: { cellWidth: 35 }, // Client Name
-          2: { cellWidth: 17.5 }, // State of Origin
-          3: { cellWidth: 17.5 }, // LGA
-          4: { cellWidth: 35 }, // Property Name
-          5: { cellWidth: 15 }, // No. of Plot(s)
-          6: { cellWidth: 15 }, // Plot No(s)
-          7: { cellWidth: 17.5 }, // Land Price
-          8: { cellWidth: 17.5 }, // Branch
+          0: { cellWidth: 10 },
+          1: { cellWidth: 35 },
+          2: { cellWidth: 17.5 },
+          3: { cellWidth: 17.5 },
+          4: { cellWidth: 35 },
+          5: { cellWidth: 15 },
+          6: { cellWidth: 15 },
+          7: { cellWidth: 17.5 },
+          8: { cellWidth: 17.5 },
         },
         alternateRowStyles: {
           fillColor: [245, 245, 245],
@@ -964,22 +1165,17 @@ const Dashboard = () => {
 
       pdf.save(`clients_${format(new Date(), "yyyy-MM-dd_HH-mm")}.pdf`);
 
-      setLastDownloadTime(downloadStartTime);
-      updateLastDownloadTime(downloadStartTime);
+      if (downloadMode === 'branch') {
+        updateBranchDownloadTime(selectedBranchForDownload, downloadStartTime);
+      } else { // This is for 'general' mode
+        setLastDownloadTime(downloadStartTime);
+        updateLastDownloadTime(downloadStartTime);
+      }
       setDownloadModalOpen(false);
       toast.success("PDF downloaded successfully!");
     } catch (error) {
       console.error("Error generating PDF:", error);
-      toast.error(
-        "Failed to generate PDF: " + (error.message || "Unknown error")
-      );
-      if (axios.isAxiosError(error) && error.response?.status === 401) {
-        toast.info("Session expired!. Logging out...")
-        setTimeout(() => {
-          localStorage.removeItem("token");
-          window.location.href = "/#/login";
-        }, 500);
-      }
+      toast.error("Failed to generate PDF: " + (error.message || "Unknown error"));
     }
   };
 
@@ -1139,7 +1335,7 @@ const Dashboard = () => {
         "Failed to generate PDF: " + (error.message || "Unknown error")
       );
       if (axios.isAxiosError(error) && error.response?.status === 401) {
-        toast.info("Session expired!. Logging out...")
+        toast.info("Session expired!. Logging out...");
         setTimeout(() => {
           localStorage.removeItem("token");
           window.location.href = "/#/login";
@@ -1148,37 +1344,53 @@ const Dashboard = () => {
     }
   };
 
-  const handleSiteDownload = (format, data) => {
-    if (format === "csv") {
-      handleSiteDownloadCSV(data);
+  const handleSiteDownload = (format, siteLocation) => {
+    if (format === 'csv') {
+      handleSiteDownloadCSV(siteLocation);
     } else {
-      handleSiteDownloadPDF(data);
+      handleSiteDownloadPDF(siteLocation);
     }
   };
 
-  const handleSiteDownloadCSV = (data) => {
-    const sortedForDownload = data.sort((a, b) => {
-      const dateA = a.created_at
-        ? new Date(parseISO(a.created_at))
-        : new Date(0);
-      const dateB = b.created_at
-        ? new Date(parseISO(b.created_at))
-        : new Date(0);
-      return dateB - dateA;
+  const handleSiteDownloadCSV = (siteLocation) => {
+    const downloadStartTime = new Date();
+    let filterFrom;
+
+    if (siteLocationLastDownload) {
+      filterFrom = new Date(siteLocationLastDownload);
+    } else {
+      if (!siteLocationStartDate || !siteLocationStartTime) {
+        toast.error('Please select a start date and time for this site.');
+        return;
+      }
+      filterFrom = new Date(siteLocationStartDate);
+      const [fromHours, fromMinutes] = siteLocationStartTime.split(':').map(Number);
+      filterFrom.setHours(fromHours, fromMinutes, 0, 0);
+    }
+
+    const dataToDownload = allClients.filter(item => {
+      const createdDate = item.created_at ? new Date(parseISO(item.created_at)) : null;
+      return item.site_location && item.site_location.toLowerCase().includes(siteLocation.toLowerCase()) && createdDate && createdDate >= filterFrom;
     });
 
+    if (dataToDownload.length === 0) {
+      toast.error("No new records found for the selected period.");
+      return;
+    }
+    
+    // ... rest of CSV generation logic is the same ...
     const headers = [
-      "Client Name",
-      "State of Origin",
-      "LGA",
-      "Property Name",
-      "Number of Plot(s)",
-      "Plot No(s)",
-      "Land Price",
-      "Branch",
+      'Client Name',
+      'State of Origin',
+      'LGA',
+      'Property Name',
+      'Number of Plot(s)',
+      'Plot No(s)',
+      'Land Price',
+      'Branch',
     ];
 
-    const rows = sortedForDownload.map((item) =>
+    const rows = dataToDownload.map((item) =>
       [
         item.client_name || "",
         item.state_of_origin || "",
@@ -1201,28 +1413,44 @@ const Dashboard = () => {
     link.href = url;
     link.setAttribute(
       "download",
-      `site_search_clients_${format(new Date(), "yyyy-MM-dd_HH-mm")}.csv`
+      `clients_${siteLocation.replace(/ /g, "_")}_${format(new Date(), "yyyy-MM-dd_HH-mm")}.csv`
     );
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
 
+    updateBranchDownloadTime(siteLocation, downloadStartTime);
     setSiteDownloadModalOpen(false);
     toast.success("CSV downloaded successfully!");
   };
 
-  const handleSiteDownloadPDF = async (data) => {
-    const sortedForDownload = data.sort((a, b) => {
-      const dateA = a.created_at
-        ? new Date(parseISO(a.created_at))
-        : new Date(0);
-      const dateB = b.created_at
-        ? new Date(parseISO(b.created_at))
-        : new Date(0);
-      return dateB - dateA;
+  const handleSiteDownloadPDF = async (siteLocation) => {
+    const downloadStartTime = new Date();
+    let filterFrom;
+
+    if (siteLocationLastDownload) {
+      filterFrom = new Date(siteLocationLastDownload);
+    } else {
+      if (!siteLocationStartDate || !siteLocationStartTime) {
+        toast.error('Please select a start date and time for this site.');
+        return;
+      }
+      filterFrom = new Date(siteLocationStartDate);
+      const [fromHours, fromMinutes] = siteLocationStartTime.split(':').map(Number);
+      filterFrom.setHours(fromHours, fromMinutes, 0, 0);
+    }
+
+    const dataToDownload = allClients.filter(item => {
+      const createdDate = item.created_at ? new Date(parseISO(item.created_at)) : null;
+      return item.site_location && item.site_location.toLowerCase().includes(siteLocation.toLowerCase()) && createdDate && createdDate >= filterFrom;
     });
 
+    if (dataToDownload.length === 0) {
+      toast.error("No new records found for the selected period.");
+      return;
+    }
+    
     try {
       const pdf = new jsPDF({
         orientation: "portrait",
@@ -1238,10 +1466,22 @@ const Dashboard = () => {
       yPosition += 35;
 
       pdf.setFontSize(18);
-      pdf.text("Site Specific Client Records", pageWidth / 2, yPosition, {
-        align: "center",
-      });
-      yPosition += 15;
+      pdf.text(`Client Records for ${siteLocation}`, pageWidth / 2, yPosition, { align: "center" });
+      yPosition += 10;
+
+      if (filterFrom) {
+        pdf.setFontSize(12);
+        pdf.text(
+          `(${format(filterFrom, "dd/MM/yyyy HH:mm")} - ${format(
+            downloadStartTime,
+            "dd/MM/yyyy HH:mm"
+          )})`,
+          pageWidth / 2,
+          yPosition,
+          { align: "center" }
+        );
+        yPosition += 15;
+      }
 
       const tableHead = [
         [
@@ -1257,7 +1497,7 @@ const Dashboard = () => {
         ],
       ];
 
-      const tableBody = sortedForDownload.map((item, index) => [
+      const tableBody = dataToDownload.map((item, index) => [
         index + 1,
         item.client_name || "N/A",
         item.state_of_origin || "N/A",
@@ -1286,15 +1526,15 @@ const Dashboard = () => {
           fontStyle: "bold",
         },
         columnStyles: {
-          0: { cellWidth: 10 }, // S/N
-          1: { cellWidth: 35 }, // Client Name
-          2: { cellWidth: 17.5 }, // State of Origin
-          3: { cellWidth: 17.5 }, // LGA
-          4: { cellWidth: 35 }, // Property Name
-          5: { cellWidth: 15 }, // No. of Plot(s)
-          6: { cellWidth: 15 }, // Plot No(s)
-          7: { cellWidth: 17.5 }, // Land Price
-          8: { cellWidth: 17.5 }, // Branch
+          0: { cellWidth: 10 },
+          1: { cellWidth: 35 },
+          2: { cellWidth: 17.5 },
+          3: { cellWidth: 17.5 },
+          4: { cellWidth: 35 },
+          5: { cellWidth: 15 },
+          6: { cellWidth: 15 },
+          7: { cellWidth: 17.5 },
+          8: { cellWidth: 17.5 },
         },
         alternateRowStyles: {
           fillColor: [245, 245, 245],
@@ -1303,23 +1543,15 @@ const Dashboard = () => {
       });
 
       pdf.save(
-        `site_search_clients_${format(new Date(), "yyyy-MM-dd_HH-mm")}.pdf`
+        `clients_${siteLocation.replace(/ /g, "_")}_${format(new Date(), "yyyy-MM-dd_HH-mm")}.pdf`
       );
 
+      updateBranchDownloadTime(siteLocation, downloadStartTime);
       setSiteDownloadModalOpen(false);
       toast.success("PDF downloaded successfully!");
     } catch (error) {
       console.error("Error generating PDF:", error);
-      toast.error(
-        "Failed to generate PDF: " + (error.message || "Unknown error")
-      );
-      if (axios.isAxiosError(error) && error.response?.status === 401) {
-        toast.info("Session expired!. Logging out...")
-        setTimeout(() => {
-          localStorage.removeItem("token");
-          window.location.href = "/#/login";
-        }, 500);
-      }
+      toast.error("Failed to generate PDF: " + (error.message || "Unknown error"));
     }
   };
 
@@ -1383,9 +1615,13 @@ const Dashboard = () => {
       }
     } catch (error) {
       console.error("Error deleting client:", error);
-      toast.error("Failed to delete client: " + (error.response?.data?.message || error.message || "Unknown error"), { id: toastId });
+      toast.error(
+        "Failed to delete client: " +
+          (error.response?.data?.message || error.message || "Unknown error"),
+        { id: toastId }
+      );
       if (axios.isAxiosError(error) && error.response?.status === 401) {
-        toast.info("Session expired!. Logging out...")
+        toast.info("Session expired!. Logging out...");
         setTimeout(() => {
           localStorage.removeItem("token");
           window.location.href = "/#/login";
@@ -1436,26 +1672,29 @@ const Dashboard = () => {
                 </div>
 
                 <button
-                  onClick={() => fetchApplications()}
-                  disabled={loading}
-                  className="h-[45px] w-[45px] cursor-pointer flex items-center justify-center text-sm bg-secClr text-white font-semibold rounded-lg hover:bg-secClr/90 transition duration-300 shadow-sm disabled:cursor-not-allowed disabled:opacity-50"
+                  onClick={() => {
+                    setAllClientsFetched(false);
+                    // fetchAllClients();
+                    fetchApplications();
+                  }}
+                  disabled={loading || loadingAllClients}
+                  className="h-[45px] md:w-[45px] cursor-pointer flex gap-2 items-center justify-center text-sm bg-secClr text-white font-semibold rounded-lg hover:bg-secClr/90 transition duration-300 shadow-sm disabled:cursor-not-allowed disabled:opacity-50"
+                  aria-label="Refresh All Clients"
                 >
                   <TfiReload 
-                    className={`${loading && "animate-spin"} size-5`}
+                    className={`${loading || loadingAllClients && "animate-spin"} size-5`}
                   />
+                  <span className="md:hidden inline">Reload Data</span>
                 </button>
 
                 {/* Buttons wrapper */}
-                <div className="flex flex-col md:flex-row gap-2 md:gap-3 w-full md:w-auto">
-                  {/* Branch + Filter row (sm only) */}
+                <div className="flex flex-col md:flex-row gap-2 md:gap-3 w-full md:w-auto">                  {/* Branch + Filter row (sm only) */}
                   <div className="flex flex-row gap-2 md:gap-3 w-full md:w-auto">
                     {/* Branch Button */}
                     <button
                       onClick={() => {
-                        if (!allClientsFetched) {
-                          fetchAllClients();
-                        }
-                        setBranchFilterModalOpen(true)
+                        fetchAllClients();
+                        setBranchFilterModalOpen(true);
                       }}
                       className="flex items-center justify-center flex-1 px-4 py-2.5 text-sm bg-secClr text-white font-semibold rounded-lg hover:bg-secClr/90 transition duration-300 shadow-sm"
                     >
@@ -1478,12 +1717,10 @@ const Dashboard = () => {
                     <button
                       // onClick={() => setDownloadModalOpen(true)}
                       onClick={() => {
-                        if (!allClientsFetched) {
-                          fetchAllClients();
-                        }
-                        setShowMoreDownloadOptions((prev) => !prev)
+                        fetchAllClients();
+                        setShowMoreDownloadOptions((prev) => !prev);
                       }}
-                      className="flex items-center justify-center px-4 py-2.5 text-sm bg-secClr text-white font-semibold rounded-lg hover:bg-secClr/90 transition duration-300 shadow-sm w-full md:w-auto"
+                      className="flex items-center justify-center px-4 h-[45px] text-sm bg-secClr text-white font-semibold rounded-lg hover:bg-secClr/90 transition duration-300 shadow-sm w-full md:w-auto"
                     >
                       Download
                       <FaCaretDown className="ml-2 w-6 h-6" />
@@ -1798,6 +2035,7 @@ const Dashboard = () => {
           isOpen={downloadModalOpen}
           onClose={() => setDownloadModalOpen(false)}
           lastDownloadTime={lastDownloadTime}
+          branchLastDownload={branchLastDownload}
           downloadDateFrom={downloadDateFrom}
           onDownloadDateFromChange={setDownloadDateFrom}
           downloadTimeFrom={downloadTimeFrom}
@@ -1811,6 +2049,16 @@ const Dashboard = () => {
             initialDownloadData.length - filteredDownloadData.length
           }
           remainingCount={filteredDownloadData.length}
+          branchOptions={branchOptions}
+          onBranchSelect={handleBranchSelectForDownload}
+          selectedBranch={selectedBranchForDownload}
+          branchStartDate={branchStartDate}
+          setBranchStartDate={setBranchStartDate}
+          branchStartTime={branchStartTime}
+          setBranchStartTime={setBranchStartTime}
+          branchInitialCount={branchInitialData.length}
+          loadingBranchDownloadTime={loadingBranchDownloadTime}
+          onModalCloseCleanup={onModalCloseCleanup}
         />
 
         <DownloadAllModal
@@ -1822,10 +2070,21 @@ const Dashboard = () => {
         />
 
         <SiteDownloadModal
-          isLoadingAllclients={loadingAllClients}
           isOpen={siteDownloadModalOpen}
           onClose={() => setSiteDownloadModalOpen(false)}
           onDownload={handleSiteDownload}
+          onSiteSelect={handleSiteLocationSelectForDownload}
+          siteLastDownload={siteLocationLastDownload}
+          siteStartDate={siteLocationStartDate}
+          setSiteStartDate={setSiteLocationStartDate}
+          siteStartTime={siteLocationStartTime}
+          setSiteStartTime={setSiteLocationStartTime}
+          newRecordsCount={newRecordsForSite.length}
+          loadingSiteTime={loadingSiteDownloadTime}
+          onModalCloseCleanup={onSiteModalCloseCleanup}
+          siteLocation={siteLocation}
+          onSiteLocationChange={setSiteLocation}
+          debouncedSiteLocation={debouncedSiteLocation}
         />
       </div>
     </div>
