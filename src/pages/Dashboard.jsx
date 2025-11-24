@@ -74,9 +74,18 @@ const Dashboard = () => {
   const [debouncedSearchQuery, setDebouncedSearchQuery] = useState("");
   const [activePreset, setActivePreset] = useState(null);
   const [excludedSites, setExcludedSites] = useState("");
+  const [excludedBranches, setExcludedBranches] = useState([]);
   const [initialDownloadData, setInitialDownloadData] = useState([]);
   const [filteredDownloadData, setFilteredDownloadData] = useState([]);
   const [branchLastDownload, setBranchLastDownload] = useState(null);
+
+  const handleExcludeBranchChange = (branchKey) => {
+    setExcludedBranches(prev => 
+      prev.includes(branchKey) 
+        ? prev.filter(b => b !== branchKey) 
+        : [...prev, branchKey]
+    );
+  };
   const [selectedBranchForDownload, setSelectedBranchForDownload] = useState(null);
   const [branchStartDate, setBranchStartDate] = useState(null);
   const [branchStartTime, setBranchStartTime] = useState('');
@@ -266,25 +275,7 @@ const Dashboard = () => {
     downloadDateFrom,
     downloadTimeFrom,
   ]);
-
-  useEffect(() => {
-    if (excludedSites.trim() === "") {
-      setFilteredDownloadData(initialDownloadData);
-      return;
-    }
-
-    const sitesToExclude = excludedSites
-      .split(",")
-      .map((site) => site.trim().toLowerCase());
-    const filtered = initialDownloadData.filter(
-      (item) =>
-        !sitesToExclude.some((excludedSite) =>
-          item.site_location?.toLowerCase().includes(excludedSite)
-        )
-    );
-    setFilteredDownloadData(filtered);
-  }, [excludedSites, initialDownloadData]);
-
+  
   const branchOptions = [
     {
       keyWord: "HQ_ONI",
@@ -339,6 +330,26 @@ const Dashboard = () => {
       title: "Enugu",
     },
   ];
+
+  useEffect(() => {
+    const sitesToExclude = excludedSites.split(',').map(site => site.trim().toLowerCase()).filter(Boolean);
+    const excludedBranchTitles = excludedBranches.map(key => {
+      const branch = branchOptions.find(opt => opt.keyWord === key);
+      return branch ? branch.title.toLowerCase() : '';
+    }).filter(Boolean);
+
+    const filtered = initialDownloadData.filter(item => {
+      const siteLocationLower = item.site_location?.toLowerCase() || '';
+      const branchLower = item.branches?.toLowerCase() || '';
+      
+      const siteMatch = sitesToExclude.length > 0 && sitesToExclude.some(excludedSite => siteLocationLower.includes(excludedSite));
+      const branchMatch = excludedBranchTitles.length > 0 && excludedBranchTitles.includes(branchLower);
+
+      return !siteMatch && !branchMatch;
+    });
+
+    setFilteredDownloadData(filtered);
+  }, [excludedSites, excludedBranches, initialDownloadData, branchOptions]);
 
   const recordsPerPage = 10;
 
@@ -2044,6 +2055,8 @@ const Dashboard = () => {
           onDownloadPDF={handleDownloadPDF}
           excludedSites={excludedSites}
           onExcludeChange={setExcludedSites}
+          excludedBranches={excludedBranches}
+          onExcludeBranchChange={handleExcludeBranchChange}
           initialCount={initialDownloadData.length}
           excludedCount={
             initialDownloadData.length - filteredDownloadData.length

@@ -13,6 +13,8 @@ const DownloadModal = ({
   onDownloadPDF,
   excludedSites,
   onExcludeChange,
+  excludedBranches,
+  onExcludeBranchChange,
   initialCount,
   excludedCount,
   remainingCount,
@@ -90,6 +92,38 @@ const DownloadModal = ({
                     placeholder="e.g. siteA, siteB"
                     className="w-full px-3 py-2 md:px-4 md:py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-secClr text-sm md:text-base bg-gray-50"
                   />
+                </div>
+                <div className="mt-4">
+                  <label className="text-start block text-sm md:text-base font-medium text-gray-700 mb-1 md:mb-2">Exclude Branches</label>
+                  <select
+                    onChange={(e) => onExcludeBranchChange(e.target.value)}
+                    defaultValue={""}
+                    className="w-full px-3 py-2 md:px-4 md:py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-secClr text-sm md:text-base bg-gray-50"
+                  >
+                    <option value="" disabled>-- Select branches to exclude --</option>
+                    {branchOptions.map(option => (
+                      <option key={option.keyWord} value={option.keyWord} disabled={excludedBranches.includes(option.keyWord)}>
+                        {option.title}
+                      </option>
+                    ))}
+                  </select>
+                  <div className="flex flex-wrap gap-2 mt-4">
+                    {excludedBranches.map(branchKey => {
+                      const branch = branchOptions.find(opt => opt.keyWord === branchKey);
+                      return (
+                        <div key={branchKey} className="flex items-center bg-gray-200 border border-secClr/30 rounded-full px-3 py-1 text-xs cursor-pointer">
+                          <span>{branch ? branch.title : branchKey}</span>
+                          <button
+                            onClick={() => onExcludeBranchChange(branchKey)}
+                            className="ml-2 text-red-500 hover:text-red-700"
+                            title={`Include ${branch.title}`}
+                          >
+                            <FaTimes />
+                          </button>
+                        </div>
+                      );
+                    })}
+                  </div>
                 </div>
                 <div className="flex items-center justify-between mt-4 text-sm text-gray-600">
                   <p>Initial records: {initialCount}</p>

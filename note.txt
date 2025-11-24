@@ -1465,7 +1465,29 @@ export default DownloadModal;
 
 
 
-// filterFrom = branchLastDownload ? new Date(branchLastDownload) : null;
-      // dataToDownload = allClients.filter(
-      //   (item) => item.branches === selectedBranchForDownload
-      // );
+
+
+
+
+Task: Add Multi-Branch Exclusion to General Download
+
+   1. Update `Dashboard.jsx` State:
+       * I will create a new state variable, excludedBranches, initialized as an empty array []. This 
+         will store the keyWord of each branch the user wants to exclude.
+       * I will create a handler function, handleExcludeBranchChange(branchKey), that will add or     
+         remove a branch keyWord from the excludedBranches array.
+
+   2. Update `DownloadModal.jsx` UI:
+       * I will add a new dropdown (<select>) to the "General Download" section, populated with the   
+         branchOptions.
+       * I will add a display area below the dropdown to show the currently selected branches for     
+         exclusion.
+       * Each displayed branch name will have a "remove" button (<button>) next to it that, when      
+         clicked, will call handleExcludeBranchChange to remove that branch from the exclusion list.  
+
+   3. Update Filtering Logic in `Dashboard.jsx`:
+       * I will modify the main useEffect hook that calculates filteredDownloadData.
+       * In addition to filtering by excludedSites, I will add a new condition to also filter out any 
+         records where item.branches matches any of the titles corresponding to the keyWords in the   
+         excludedBranches array.
+       * This will also update the "Excluded" and "Remaining" counts automatically.
