@@ -1491,3 +1491,22 @@ Task: Add Multi-Branch Exclusion to General Download
          records where item.branches matches any of the titles corresponding to the keyWords in the   
          excludedBranches array.
        * This will also update the "Excluded" and "Remaining" counts automatically.
+
+
+
+
+       const branchOptions = [
+       "HQ - Onitsha",
+      Mgbuka",
+      Awka",
+      Asaba",
+      Owerri",
+      "Port Harcourt",
+      "Lagos Ajah",
+      : "Lagos Apapa",
+      : "Enugwu-Ukwu",
+      buja",
+      Abia",
+      "Nnewi",
+      "Enugu",
+  ];

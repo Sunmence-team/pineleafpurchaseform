@@ -19,40 +19,52 @@ const Section1 = ({ formData, setFormData, nextSection }) => {
   });
   const [error, setError] = useState(null);
   const [countryCodeMap, setCountryCodeMap] = useState({});
+  const [countryIdMap, setCountryIdMap] = useState({});
 
   const inputClass = "mt-1 block w-full rounded-md border border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm py-3 px-4 pl-10 bg-white";
 
   // Fetch countries and ISO codes on component mount
   useEffect(() => {
     const fetchCountries = async () => {
-      setLoading((prev) => ({ ...prev, countries: true }));
+      setLoading(prev => ({ ...prev, countries: true }));
       setError(null);
-      try {
-        const response = await fetch('https://countriesnow.space/api/v0.1/countries');
-        const result = await response.json();
-        if (result.error) throw new Error(result.msg);
 
-        const countryMap = {};
-        const countryList = result.data
-          .map((c) => ({ name: c.country, isoCode: c.iso2 }))
+      try {
+        const response = await fetch('https://csc.sidsworld.co.in/api/countries');
+        const result = await response.json();
+
+        if (!result.countries || result.countries.length === 0) {
+          throw new Error('No countries found');
+        }
+
+        const countryList = result.countries
+          .map(c => ({ name: c.name, id: c.id, iso2: c.iso2 }))
           .sort((a, b) => a.name.localeCompare(b.name));
 
-        countryList.forEach((c) => {
-          countryMap[c.name] = c.isoCode;
+        const codeMap = {};
+        const idMap = {};
+
+        result.countries.forEach(c => {
+          codeMap[c.name] = c.iso2;   // ISO code for phone validation
+          idMap[c.name] = c.id;       // ID for states API
         });
 
-        setCountries(countryList.map((c) => c.name));
-        setCountryCodeMap(countryMap);
+        setCountries(countryList.map(c => c.name));
+        setCountryCodeMap(codeMap);
+        setCountryIdMap(idMap);
+
       } catch (err) {
         console.error('Error fetching countries:', err);
         setError('Failed to load countries. Please try again later.');
         toast.error('Failed to load countries.');
       } finally {
-        setLoading((prev) => ({ ...prev, countries: false }));
+        setLoading(prev => ({ ...prev, countries: false }));
       }
     };
+
     fetchCountries();
   }, []);
+
 
   // Fetch states when countryOfResidence changes
   useEffect(() => {
@@ -60,16 +72,13 @@ const Section1 = ({ formData, setFormData, nextSection }) => {
       const fetchStates = async () => {
         setLoading((prev) => ({ ...prev, states: true }));
         setError(null);
+        const countryId = countryIdMap[formData.countryOfResidence];
         try {
-          const response = await fetch('https://countriesnow.space/api/v0.1/countries/states', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ country: formData.countryOfResidence }),
-          });
+          const response = await fetch(`https://csc.sidsworld.co.in/api/states/${countryId}`);
           const result = await response.json();
           if (result.error) throw new Error(result.msg);
 
-          const stateList = result.data?.states?.map((s) => s.name) || [];
+          const stateList = result.states?.map((s) => s.name) || [];
           setStates(stateList.sort());
         } catch (err) {
           console.error('Error fetching states:', err);
@@ -93,6 +102,7 @@ const Section1 = ({ formData, setFormData, nextSection }) => {
     const countryCode = getCountryCallingCode(countryCodeMap[country]);
     return `+${countryCode} XXXXXXXXXX`;
   };
+
 
   const validationSchema = Yup.object({
     image: Yup.mixed()
@@ -503,11 +513,19 @@ const Section1 = ({ formData, setFormData, nextSection }) => {
                   id="countryOfResidence"
                   className={inputClass}
                   onChange={(e) => {
-                    setFieldValue('countryOfResidence', e.target.value);
+                    const selectedCountry = e.target.value;
+                    setFieldValue('countryOfResidence', selectedCountry);
                     setFieldValue('stateOfOrigin', '');
                     setFieldValue('lga', '');
                     setFieldValue('mobileNumber', '');
-                    setFormData({ ...formData, countryOfResidence: e.target.value, stateOfOrigin: '', lga: '', mobileNumber: '' });
+
+                    setFormData({
+                      ...formData,
+                      countryOfResidence: selectedCountry,
+                      stateOfOrigin: '',
+                      lga: '',
+                      mobileNumber: ''
+                    });
                   }}
                 >
                   {[
