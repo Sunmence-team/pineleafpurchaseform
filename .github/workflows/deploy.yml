@@ -3,7 +3,7 @@ name: Deploy Pineleaf Purchase Form via FTP
 on:
   push:
     branches:
-      - master
+      - main
 
 jobs:
   deploy:
