@@ -1,4 +1,4 @@
-name: Deploy Pineleaf CPS via FTP
+name: Deploy Pineleaf Purchase Form via FTP
 
 on:
   push:
