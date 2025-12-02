@@ -856,7 +856,6 @@ const Section1 = ({ formData, setFormData, nextSection }) => {
     fetchCountries();
   }, []);
 
-
   // Fetch states when countryOfResidence changes
   useEffect(() => {
     if (formData.countryOfResidence) {
@@ -975,7 +974,7 @@ const Section1 = ({ formData, setFormData, nextSection }) => {
         nextSection();
       }}
     >
-      {({ setFieldValue, values, errors, handleChange, handleBlur, touched }) => (
+      {({ setFieldValue, values }) => (
         <Form className="space-y-6">
           {error && <div className="text-red-500 text-sm mb-4">{error}</div>}
           <p className="font-semibold text-xl md:text-2xl text-center">Section 1: Client's Details</p>
@@ -1098,89 +1097,89 @@ const Section1 = ({ formData, setFormData, nextSection }) => {
             </div>
             <div className="relative">
               <label htmlFor="firstName" className="block text-sm font-medium text-black/70">First Name</label>
-              <div className="relative">
-                <FaUser className={`absolute top-1/2 transform ${errors.firstName ? "-translate-y-full" : "-translate-y-1/2"} left-3 text-secClr`} />
+              <div className={parentClass}>
+                <FaUser className={`text-secClr`} />
                 <Field
                   type="text"
                   name="firstName"
                   id="firstName"
-                  className={parentClass}
+                  className={inputClass}
                 />
-                <ErrorMessage name="firstName" component="div" className="text-xs text-red-500 mt-1" />
               </div>
+              <ErrorMessage name="firstName" component="div" className="text-xs text-red-500 mt-1" />
             </div>
             <div className="relative">
               <label htmlFor="middleName" className="block text-sm font-medium text-black/70">Middle Name</label>
-              <div className="relative">
-                <FaUser className={`absolute top-1/2 transform ${errors.middleName ? "-translate-y-full" : "-translate-y-1/2"} left-3 text-secClr`} />
+              <div className={parentClass}>
+                <FaUser className={`text-secClr`} />
                 <Field
                   type="text"
                   name="middleName"
                   id="middleName"
-                  className={parentClass}
+                  className={inputClass}
                 />
-                <ErrorMessage name="middleName" component="div" className="text-xs text-red-500 mt-1" />
               </div>
+              <ErrorMessage name="middleName" component="div" className="text-xs text-red-500 mt-1" />
             </div>
             <div className="relative">
               <label htmlFor="lastName" className="block text-sm font-medium text-black/70">Last Name</label>
-              <div className="relative">
-                <FaUser className={`absolute top-1/2 transform ${errors.lastName ? "-translate-y-full" : "-translate-y-1/2"} left-3 text-secClr`} />
+              <div className={parentClass}>
+                <FaUser className={`text-secClr`} />
                 <Field
                   type="text"
                   name="lastName"
                   id="lastName"
-                  className={parentClass}
+                  className={inputClass}
                 />
-                <ErrorMessage name="lastName" component="div" className="text-xs text-red-500 mt-1" />
               </div>
+              <ErrorMessage name="lastName" component="div" className="text-xs text-red-500 mt-1" />
             </div>
           </div>
 
           <div className="relative">
             <label htmlFor="address" className="block text-sm font-medium text-black/70">Address</label>
-            <div className="relative">
-              <FaAddressCard className={`absolute top-1/2 transform ${errors.address ? "-translate-y-full" : "-translate-y-1/2"} left-3 text-secClr`} />
+            <div className={parentClass}>
+              <FaAddressCard className={`text-secClr`} />
               <Field
                 type="text"
                 name="address"
                 id="address"
-                className={parentClass}
+                className={inputClass}
               />
-              <ErrorMessage name="address" component="div" className="text-xs text-red-500 mt-1" />
             </div>
+            <ErrorMessage name="address" component="div" className="text-xs text-red-500 mt-1" />
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="relative">
               <label htmlFor="dateOfBirth" className="block text-sm font-medium text-black/70">Date of Birth</label>
-              <div className="relative">
-                <FaCalendarAlt className={`absolute top-1/2 transform ${errors.dateOfBirth ? "-translate-y-full" : "-translate-y-1/2"} left-3 text-secClr z-10`} />
+              <div className={parentClass}>
+                <FaCalendarAlt className={`text-secClr`} />
                 <DatePicker
                   selected={values.dateOfBirth}
                   onChange={(date) => setFieldValue('dateOfBirth', date)}
                   dateFormat="dd-MM-yyyy"
                   placeholderText="DD-MM-YYYY"
-                  className={parentClass}
+                  className={inputClass}
                   showYearDropdown
                   yearDropdownItemNumber={100}
                   scrollableYearDropdown
                 />
-                <ErrorMessage name="dateOfBirth" component="div" className="text-xs text-red-500 mt-1" />
               </div>
+              <ErrorMessage name="dateOfBirth" component="div" className="text-xs text-red-500 mt-1" />
             </div>
             <div className="relative">
               <label htmlFor="nationality" className="block text-sm font-medium text-black/70">Nationality</label>
-              <div className="relative">
-                <FaFlag className={`absolute top-1/2 transform ${errors.nationality ? "-translate-y-full" : "-translate-y-1/2"} left-3 text-secClr`} />
+              <div className={parentClass}>
+                <FaFlag className={`text-secClr`} />
                 <Field
                   type="text"
                   name="nationality"
                   id="nationality"
-                  className={parentClass}
+                  className={inputClass}
                 />
-                <ErrorMessage name="nationality" component="div" className="text-xs text-red-500 mt-1" />
               </div>
+              <ErrorMessage name="nationality" component="div" className="text-xs text-red-500 mt-1" />
             </div>
           </div>
 
@@ -1228,13 +1227,13 @@ const Section1 = ({ formData, setFormData, nextSection }) => {
               <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 mt-2">
                 <div className="relative">
                   <label htmlFor="spouseTitle" className="block text-sm font-medium text-black/70">Title</label>
-                  <div className="relative">
-                    <MdTitle className={`absolute top-1/2 transform ${errors.spouseTitle ? "-translate-y-full" : "-translate-y-1/2"} left-3 text-secClr`} />
+                  <div className={parentClass}>
+                    <MdTitle className={`text-secClr`} />
                     <Field
                       as="select"
                       id="spouseTitle"
                       name="spouseTitle"
-                      className={parentClass}
+                      className={inputClass}
                     >
                       {[
                         { value: '', label: 'Select', disabled: true, key: 'spouse-title-placeholder' },
@@ -1247,47 +1246,47 @@ const Section1 = ({ formData, setFormData, nextSection }) => {
                         </option>
                       ))}
                     </Field>
-                    <ErrorMessage name="spouseTitle" component="div" className="text-xs text-red-500 mt-1" />
                   </div>
+                  <ErrorMessage name="spouseTitle" component="div" className="text-xs text-red-500 mt-1" />
                 </div>
                 <div className="relative">
                   <label htmlFor="spouseFirstName" className="block text-sm font-medium text-black/70">First Name</label>
-                  <div className="relative">
-                    <FaUser className={`absolute top-1/2 transform ${errors.spouseFirstName ? "-translate-y-full" : "-translate-y-1/2"} left-3 text-secClr`} />
+                  <div className={parentClass}>
+                    <FaUser className={`text-secClr`} />
                     <Field
                       type="text"
                       name="spouseFirstName"
                       id="spouseFirstName"
-                      className={parentClass}
+                      className={inputClass}
                     />
-                    <ErrorMessage name="spouseFirstName" component="div" className="text-xs text-red-500 mt-1" />
                   </div>
+                  <ErrorMessage name="spouseFirstName" component="div" className="text-xs text-red-500 mt-1" />
                 </div>
                 <div className="relative">
                   <label htmlFor="spouseMiddleName" className="block text-sm font-medium text-black/70">Middle Name</label>
-                  <div className="relative">
-                    <FaUser className={`absolute top-1/2 transform ${errors.spouseMiddleName ? "-translate-y-full" : "-translate-y-1/2"} left-3 text-secClr`} />
+                  <div className={parentClass}>
+                    <FaUser className={`text-secClr`} />
                     <Field
                       type="text"
                       name="spouseMiddleName"
                       id="spouseMiddleName"
-                      className={parentClass}
+                      className={inputClass}
                     />
-                    <ErrorMessage name="spouseMiddleName" component="div" className="text-xs text-red-500 mt-1" />
                   </div>
+                  <ErrorMessage name="spouseMiddleName" component="div" className="text-xs text-red-500 mt-1" />
                 </div>
                 <div className="relative">
                   <label htmlFor="spouseLastName" className="block text-sm font-medium text-black/70">Last Name</label>
-                  <div className="relative">
-                    <FaUser className={`absolute top-1/2 transform ${errors.spouseLastName ? "-translate-y-full" : "-translate-y-1/2"} left-3 text-secClr`} />
+                  <div className={parentClass}>
+                    <FaUser className={`text-secClr`} />
                     <Field
                       type="text"
                       name="spouseLastName"
                       id="spouseLastName"
-                      className={parentClass}
+                      className={inputClass}
                     />
-                    <ErrorMessage name="spouseLastName" component="div" className="text-xs text-red-500 mt-1" />
                   </div>
+                  <ErrorMessage name="spouseLastName" component="div" className="text-xs text-red-500 mt-1" />
                 </div>
               </div>
             </div>
@@ -1296,13 +1295,13 @@ const Section1 = ({ formData, setFormData, nextSection }) => {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="relative">
               <label htmlFor="countryOfResidence" className="block text-sm font-medium text-black/70">Country of Residence</label>
-              <div className="relative">
-                <BiGlobe className={`absolute top-1/2 transform ${errors.countryOfResidence ? "-translate-y-full" : "-translate-y-1/2"} left-3 text-secClr`} />
+              <div className={parentClass}>
+                <BiGlobe className={`text-secClr`} />
                 <Field
                   as="select"
                   name="countryOfResidence"
                   id="countryOfResidence"
-                  className={parentClass}
+                  className={inputClass}
                   onChange={(e) => {
                     const selectedCountry = e.target.value;
                     setFieldValue('countryOfResidence', selectedCountry);
@@ -1328,18 +1327,18 @@ const Section1 = ({ formData, setFormData, nextSection }) => {
                     </option>
                   ))}
                 </Field>
-                <ErrorMessage name="countryOfResidence" component="div" className="text-xs text-red-500 mt-1" />
               </div>
+              <ErrorMessage name="countryOfResidence" component="div" className="text-xs text-red-500 mt-1" />
             </div>
             <div className="relative">
               <label htmlFor="stateOfOrigin" className="block text-sm font-medium text-black/70">State of Origin</label>
-              <div className="relative">
-                <FaMapMarkerAlt className={`absolute top-1/2 transform ${errors.stateOfOrigin ? "-translate-y-full" : "-translate-y-1/2"} left-3 text-secClr`} />
+              <div className={parentClass}>
+                <FaMapMarkerAlt className={`text-secClr`} />
                 <Field
                   as="select"
                   name="stateOfOrigin"
                   id="stateOfOrigin"
-                  className={parentClass}
+                  className={inputClass}
                   onChange={(e) => {
                     setFieldValue('stateOfOrigin', e.target.value);
                     setFieldValue('lga', '');
@@ -1367,97 +1366,97 @@ const Section1 = ({ formData, setFormData, nextSection }) => {
                     </option>
                   ))}
                 </Field>
-                <ErrorMessage name="stateOfOrigin" component="div" className="text-xs text-red-500 mt-1" />
               </div>
+              <ErrorMessage name="stateOfOrigin" component="div" className="text-xs text-red-500 mt-1" />
             </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="relative">
               <label htmlFor="lga" className="block text-sm font-medium text-black/70">Town, Village, Local Government (LGA)</label>
-              <div className="relative">
-                <FaMapMarkerAlt className={`absolute top-1/2 transform ${errors.lga ? "-translate-y-full" : "-translate-y-1/2"} left-3 text-secClr`} />
+              <div className={parentClass}>
+                <FaMapMarkerAlt className={`text-secClr`} />
                 <Field
                   type="text"
                   name="lga"
                   id="lga"
                   placeholder="Seperate the 3 entries with commas"
-                  className={parentClass}
+                  className={inputClass}
                 />
-                <ErrorMessage name="lga" component="div" className="text-xs text-red-500 mt-1" />
               </div>
+              <ErrorMessage name="lga" component="div" className="text-xs text-red-500 mt-1" />
             </div>
             <div className="relative">
               <label htmlFor="occupation" className="block text-sm font-medium text-black/70">Occupation</label>
-              <div className="relative">
-                <BiBriefcase className={`absolute top-1/2 transform ${errors.occupation ? "-translate-y-full" : "-translate-y-1/2"} left-3 text-secClr`} />
+              <div className={parentClass}>
+                <BiBriefcase className={`text-secClr`} />
                 <Field
                   type="text"
                   name="occupation"
                   id="occupation"
-                  className={parentClass}
+                  className={inputClass}
                 />
-                <ErrorMessage name="occupation" component="div" className="text-xs text-red-500 mt-1" />
               </div>
+              <ErrorMessage name="occupation" component="div" className="text-xs text-red-500 mt-1" />
             </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="relative">
               <label htmlFor="language" className="block text-sm font-medium text-black/70">Language</label>
-              <div className="relative">
-                <FaLanguage className={`absolute top-1/2 transform ${errors.language ? "-translate-y-full" : "-translate-y-1/2"} left-3 text-secClr`} />
+              <div className={parentClass}>
+                <FaLanguage className={`text-secClr`} />
                 <Field
                   type="text"
                   name="language"
                   id="language"
-                  className={parentClass}
+                  className={inputClass}
                 />
-                <ErrorMessage name="language" component="div" className="text-xs text-red-500 mt-1" />
               </div>
+              <ErrorMessage name="language" component="div" className="text-xs text-red-500 mt-1" />
             </div>
             <div className="relative">
               <label htmlFor="email" className="block text-sm font-medium text-black/70">Email Address</label>
-              <div className="relative">
-                <BiEnvelope className={`absolute top-1/2 transform ${errors.email ? "-translate-y-full" : "-translate-y-1/2"} left-3 text-secClr`} />
+              <div className={parentClass}>
+                <BiEnvelope className={`text-secClr`} />
                 <Field
                   type="email"
                   name="email"
                   id="email"
-                  className={parentClass}
+                  className={inputClass}
                 />
-                <ErrorMessage name="email" component="div" className="text-xs text-red-500 mt-1" />
               </div>
+              <ErrorMessage name="email" component="div" className="text-xs text-red-500 mt-1" />
             </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="relative">
               <label htmlFor="mobileNumber" className="block text-sm font-medium text-black/70">Mobile Number</label>
-              <div className="relative">
-                <FaPhoneAlt className={`absolute top-1/2 transform ${errors.mobileNumber ? "-translate-y-full" : "-translate-y-1/2"} left-3 text-secClr`} />
+              <div className={parentClass}>
+                <FaPhoneAlt className={`3 text-secClr`} />
                 <Field
                   type="tel"
                   name="mobileNumber"
                   id="mobileNumber"
-                  className={parentClass}
+                  className={inputClass}
                   placeholder={getMobilePlaceholder()}
                 />
-                <ErrorMessage name="mobileNumber" component="div" className="text-xs text-red-500 mt-1" />
               </div>
+              <ErrorMessage name="mobileNumber" component="div" className="text-xs text-red-500 mt-1" />
             </div>
             <div className="relative">
               <label htmlFor="telephoneNumber" className="block text-sm font-medium text-black/70">Telephone Number</label>
-              <div className="relative">
-                <FaPhoneAlt className={`absolute top-1/2 transform ${errors.telephoneNumber ? "-translate-y-full" : "-translate-y-1/2"} left-3 text-secClr`} />
+              <div className={parentClass}>
+                <FaPhoneAlt className={`text-secClr`} />
                 <Field
                   type="tel"
                   name="telephoneNumber"
                   id="telephoneNumber"
-                  className={parentClass}
+                  className={inputClass}
                 />
-                <ErrorMessage name="telephoneNumber" component="div" className="text-xs text-red-500 mt-1" />
               </div>
+              <ErrorMessage name="telephoneNumber" component="div" className="text-xs text-red-500 mt-1" />
             </div>
           </div>
 
