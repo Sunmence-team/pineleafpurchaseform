@@ -5,7 +5,9 @@ import { BiEnvelope } from 'react-icons/bi';
 import { FaUser, FaAddressCard, FaPhoneAlt } from 'react-icons/fa';
 
 const Section2 = ({ formData, setFormData, prevSection, nextSection }) => {
-    const inputClass = "mt-1 block w-full rounded-md border border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm py-3 px-4 pl-10 bg-white";
+    // const inputClass = "mt-1 block w-full rounded-md border border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm py-3 px-4 pl-10 bg-white";
+    const parentClass = "mt-1 block w-full rounded-md border border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 h-[50px] px-2 flex items-center bg-white";
+    const inputClass = "w-full focus:outline-0 text-sm h-full indent-2";
 
     const validationSchema = Yup.object({
         nextOfKinFullName: Yup.string().required('Full name is required'),
@@ -33,58 +35,58 @@ const Section2 = ({ formData, setFormData, prevSection, nextSection }) => {
 
                 <div className="relative w-full">
                     <label htmlFor="nextOfKinFullName" className="block text-sm font-medium text-black/70">Full Name</label>
-                    <div className="relative">
-                        <FaUser className="absolute top-1/2 transform -translate-y-1/2 left-3 text-secClr" />
+                    <div className={parentClass}>
+                        <FaUser className="text-secClr" />
                         <Field
                             type="text"
                             name="nextOfKinFullName"
                             id="nextOfKinFullName"
                             className={inputClass}
                         />
-                        <ErrorMessage name="nextOfKinFullName" component="div" className="text-xs text-red-500 mt-1" />
                     </div>
+                    <ErrorMessage name="nextOfKinFullName" component="div" className="text-xs text-red-500 mt-1" />
                 </div>
 
                 <div className="relative w-full">
                     <label htmlFor="nextOfKinAddress" className="block text-sm font-medium text-black/70">Address</label>
-                    <div className="relative">
-                        <FaAddressCard className="absolute top-1/2 transform -translate-y-1/2 left-3 text-secClr" />
+                    <div className={parentClass}>
+                        <FaAddressCard className="text-secClr" />
                         <Field
                             type="text"
                             name="nextOfKinAddress"
                             id="nextOfKinAddress"
                             className={inputClass}
                         />
-                        <ErrorMessage name="nextOfKinAddress" component="div" className="text-xs text-red-500 mt-1" />
                     </div>
+                    <ErrorMessage name="nextOfKinAddress" component="div" className="text-xs text-red-500 mt-1" />
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="relative">
                         <label htmlFor="nextOfKinMobileNumber" className="block text-sm font-medium text-black/70">Mobile Number</label>
-                        <div className="relative">
-                            <FaPhoneAlt className="absolute top-1/2 transform -translate-y-1/2 left-3 text-secClr" />
+                        <div className={parentClass}>
+                            <FaPhoneAlt className="text-secClr" />
                             <Field
                                 type="tel"
                                 name="nextOfKinMobileNumber"
                                 id="nextOfKinMobileNumber"
                                 className={inputClass}
                             />
-                            <ErrorMessage name="nextOfKinMobileNumber" component="div" className="text-xs text-red-500 mt-1" />
                         </div>
+                        <ErrorMessage name="nextOfKinMobileNumber" component="div" className="text-xs text-red-500 mt-1" />
                     </div>
                     <div className="relative">
                         <label htmlFor="nextOfKinEmail" className="block text-sm font-medium text-black/70">Email Address</label>
-                        <div className="relative">
-                            <BiEnvelope className="absolute top-1/2 transform -translate-y-1/2 left-3 text-secClr" />
+                        <div className={parentClass}>
+                            <BiEnvelope className="text-secClr" />
                             <Field
                                 type="email"
                                 name="nextOfKinEmail"
                                 id="nextOfKinEmail"
                                 className={inputClass}
                             />
-                            <ErrorMessage name="nextOfKinEmail" component="div" className="text-xs text-red-500 mt-1" />
                         </div>
+                        <ErrorMessage name="nextOfKinEmail" component="div" className="text-xs text-red-500 mt-1" />
                     </div>
                 </div>
 

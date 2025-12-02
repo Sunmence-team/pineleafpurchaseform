@@ -72,7 +72,7 @@ const Form = () => {
   };
 
   return (
-    <div className="w-full min-h-[100vh] bg-secClr/20 flex items-start justify-center py-12">
+    <div className="w-full min-h-screen bg-secClr/20 flex items-start justify-center py-12">
       <div className="w-[90%] md:w-[80%] lg:w-[60%] bg-white rounded-lg p-6 md:p-8 flex items-center justify-center flex-col">
         <img src={assets.logo} className="w-12" alt="Pineleaf Estate Logo" />
         <div className="flex flex-col gap-2 text-center mt-2">

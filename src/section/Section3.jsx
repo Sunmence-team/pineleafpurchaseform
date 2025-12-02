@@ -12,8 +12,11 @@ const Section3 = ({ formData, setFormData, prevSection, nextSection }) => {
   const isDrawing = useRef(false);
   const lastTouch = useRef({ x: 0, y: 0 });
 
-  const inputClass =
-    'mt-1 block w-full rounded-md border border-gray-300 shadow-sm focus:border-secClr focus:ring-secClr text-sm sm:text-base py-2 sm:py-3 md:pl-10 pl-8 bg-white';
+  // const inputClass =
+  //   'mt-1 block w-full rounded-md border border-gray-300 shadow-sm focus:border-secClr focus:ring-secClr text-sm sm:text-base py-2 sm:py-3 md:pl-10 pl-8 bg-white';
+
+  const parentClass = "mt-1 block w-full rounded-md border border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 h-[50px] px-2 flex items-center bg-white";
+  const inputClass = "w-full focus:outline-0 text-sm h-full indent-2";
 
   // Standardized branch options
   const branchOptions = [
@@ -129,8 +132,8 @@ const Section3 = ({ formData, setFormData, prevSection, nextSection }) => {
             >
               Client Name
             </label>
-            <div className="relative">
-              <FaUser className="absolute top-1/2 transform -translate-y-1/2 left-3 text-secClr text-sm sm:text-base" />
+            <div className={parentClass}>
+              <FaUser className="text-secClr" />
               <Field
                 type="text"
                 name="clientDeclarationClientName"
@@ -150,20 +153,20 @@ const Section3 = ({ formData, setFormData, prevSection, nextSection }) => {
               >
                 Land Price
               </label>
-              <div className="relative">
-                <BiMoney className="absolute top-1/2 transform -translate-y-1/2 left-3 text-secClr text-sm sm:text-base" />
+              <div className={parentClass}>
+                <BiMoney className="text-secClr" />
                 <Field
                   type="text"
                   name="clientDeclarationLandPrice"
                   id="clientDeclarationLandPrice"
                   className={inputClass}
                 />
-                <ErrorMessage
-                  name="clientDeclarationLandPrice"
-                  component="div"
-                  className="text-xs sm:text-sm text-red-500 mt-1"
-                />
               </div>
+              <ErrorMessage
+                name="clientDeclarationLandPrice"
+                component="div"
+                className="text-xs sm:text-sm text-red-500 mt-1"
+              />
             </div>
             <div className="relative">
               <label
@@ -172,20 +175,20 @@ const Section3 = ({ formData, setFormData, prevSection, nextSection }) => {
               >
                 Number of Plots
               </label>
-              <div className="relative">
-                <BiMap className="absolute top-1/2 transform -translate-y-1/2 left-3 text-secClr text-sm sm:text-base" />
+              <div className={parentClass}>
+                <BiMap className="text-secClr" />
                 <Field
                   type="number"
                   name="clientDeclarationNumberOfPlots"
                   id="clientDeclarationNumberOfPlots"
                   className={inputClass}
                 />
-                <ErrorMessage
-                  name="clientDeclarationNumberOfPlots"
-                  component="div"
-                  className="text-xs sm:text-sm text-red-500 mt-1"
-                />
               </div>
+              <ErrorMessage
+                name="clientDeclarationNumberOfPlots"
+                component="div"
+                className="text-xs sm:text-sm text-red-500 mt-1"
+              />
             </div>
           </div>
 
@@ -197,20 +200,20 @@ const Section3 = ({ formData, setFormData, prevSection, nextSection }) => {
               >
                 Site Location
               </label>
-              <div className="relative">
-                <BiMap className="absolute top-1/2 transform -translate-y-1/2 left-3 text-secClr text-sm sm:text-base" />
+              <div className={parentClass}>
+                <BiMap className="text-secClr" />
                 <Field
                   type="text"
                   name="clientDeclarationSiteLocation"
                   id="clientDeclarationSiteLocation"
                   className={inputClass}
                 />
-                <ErrorMessage
-                  name="clientDeclarationSiteLocation"
-                  component="div"
-                  className="text-xs sm:text-sm text-red-500 mt-1"
-                />
               </div>
+              <ErrorMessage
+                name="clientDeclarationSiteLocation"
+                component="div"
+                className="text-xs sm:text-sm text-red-500 mt-1"
+              />
             </div>
             <div className="relative">
               <label
@@ -219,20 +222,20 @@ const Section3 = ({ formData, setFormData, prevSection, nextSection }) => {
               >
                 Plot Number
               </label>
-              <div className="relative">
-                <BiMap className="absolute top-1/2 transform -translate-y-1/2 left-3 text-secClr text-sm sm:text-base" />
+              <div className={parentClass}>
+                <BiMap className="text-secClr" />
                 <Field
                   type="text"
                   name="clientDeclarationPlotNumber"
                   id="clientDeclarationPlotNumber"
                   className={inputClass}
                 />
-                <ErrorMessage
-                  name="clientDeclarationPlotNumber"
-                  component="div"
-                  className="text-xs sm:text-sm text-red-500 mt-1"
-                />
               </div>
+              <ErrorMessage
+                name="clientDeclarationPlotNumber"
+                component="div"
+                className="text-xs sm:text-sm text-red-500 mt-1"
+              />
             </div>
           </div>
 
@@ -243,8 +246,8 @@ const Section3 = ({ formData, setFormData, prevSection, nextSection }) => {
             >
               Branch
             </label>
-            <div className="relative">
-              <BiMap className="absolute top-1/2 transform -translate-y-1/2 left-3 text-secClr text-sm sm:text-base" />
+            <div className={parentClass}>
+              <BiMap className="text-secClr" />
               <Field
                 as="select"
                 name="branches"
@@ -258,12 +261,12 @@ const Section3 = ({ formData, setFormData, prevSection, nextSection }) => {
                   </option>
                 ))}
               </Field>
-              <ErrorMessage
-                name="branches"
-                component="div"
-                className="text-xs sm:text-sm text-red-500 mt-1"
-              />
             </div>
+            <ErrorMessage
+              name="branches"
+              component="div"
+              className="text-xs sm:text-sm text-red-500 mt-1"
+            />
           </div>
 
           <div className="relative w-full">
@@ -387,8 +390,8 @@ const Section3 = ({ formData, setFormData, prevSection, nextSection }) => {
             >
               Date
             </label>
-            <div className="relative w-full">
-              <FaCalendarAlt className="absolute top-1/2 transform -translate-y-1/2 left-3 text-secClr text-sm sm:text-base z-10" />
+            <div className={parentClass}>
+              <FaCalendarAlt className="text-secClr z-10" />
               <DatePicker
                 selected={values.clientDeclarationDate}
                 onChange={(date) => setFieldValue('clientDeclarationDate', date)}
@@ -401,12 +404,12 @@ const Section3 = ({ formData, setFormData, prevSection, nextSection }) => {
                 yearDropdownItemNumber={100}
                 scrollableYearDropdown
               />
-              <ErrorMessage
-                name="clientDeclarationDate"
-                component="div"
-                className="text-xs sm:text-sm text-red-500 mt-1"
-              />
             </div>
+            <ErrorMessage
+              name="clientDeclarationDate"
+              component="div"
+              className="text-xs sm:text-sm text-red-500 mt-1"
+            />
           </div>
 
           <div className="w-full flex flex-col sm:flex-row justify-between gap-3 sm:gap-4 mt-6 sm:mt-8">

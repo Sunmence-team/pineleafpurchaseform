@@ -14,8 +14,8 @@ const API_URL = import.meta.env.VITE_API_BASE_URL;
 
 const Section4 = ({ formData, setFormData, prevSection, onSubmit }) => {
   const navigate = useNavigate();
-  const inputClass =
-    'mt-1 block w-full rounded-md border border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm py-3 px-4 pl-10 bg-white';
+  const parentClass = "mt-1 block w-full rounded-md border border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 h-[50px] px-2 flex items-center bg-white";
+  const inputClass = "w-full focus:outline-0 text-sm h-full indent-2";
 
   const base64ToFile = (base64, filename) => {
     try {
@@ -291,8 +291,8 @@ const Section4 = ({ formData, setFormData, prevSection, onSubmit }) => {
             >
               Referral Full Name
             </label>
-            <div className="relative">
-              <FaUser className="absolute top-1/2 transform -translate-y-1/2 left-3 text-secClr" />
+            <div className={parentClass}>
+              <FaUser className="text-secClr" />
               <Field
                 type="text"
                 name="referralFullName"
@@ -300,12 +300,12 @@ const Section4 = ({ formData, setFormData, prevSection, onSubmit }) => {
                 className={inputClass}
                 disabled={isSubmitting}
               />
-              <ErrorMessage
-                name="referralFullName"
-                component="div"
-                className="text-xs text-red-500 mt-1"
-              />
             </div>
+            <ErrorMessage
+              name="referralFullName"
+              component="div"
+              className="text-xs text-red-500 mt-1"
+            />
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -316,8 +316,8 @@ const Section4 = ({ formData, setFormData, prevSection, onSubmit }) => {
               >
                 Mobile Number
               </label>
-              <div className="relative">
-                <FaPhoneAlt className="absolute top-1/2 transform -translate-y-1/2 left-3 text-secClr" />
+              <div className={parentClass}>
+                <FaPhoneAlt className="text-secClr" />
                 <Field
                   type="tel"
                   name="referralMobileNumber"
@@ -325,12 +325,12 @@ const Section4 = ({ formData, setFormData, prevSection, onSubmit }) => {
                   className={inputClass}
                   disabled={isSubmitting}
                 />
-                <ErrorMessage
-                  name="referralMobileNumber"
-                  component="div"
-                  className="text-xs text-red-500 mt-1"
-                />
               </div>
+              <ErrorMessage
+                name="referralMobileNumber"
+                component="div"
+                className="text-xs text-red-500 mt-1"
+              />
             </div>
 
             <div className="relative w-full">
@@ -340,8 +340,8 @@ const Section4 = ({ formData, setFormData, prevSection, onSubmit }) => {
               >
                 Date
               </label>
-              <div className="relative w-full">
-                <FaCalendarAlt className="absolute top-1/2 transform -translate-y-1/2 left-3 text-secClr z-10" />
+              <div className={parentClass}>
+                <FaCalendarAlt className="text-secClr z-10" />
                 <DatePicker
                   selected={values.referralDate}
                   onChange={(date) => setFieldValue('referralDate', date)}
@@ -352,12 +352,12 @@ const Section4 = ({ formData, setFormData, prevSection, onSubmit }) => {
                   popperClassName="z-50"
                   disabled={isSubmitting}
                 />
-                <ErrorMessage
-                  name="referralDate"
-                  component="div"
-                  className="text-xs text-red-500 mt-1"
-                />
               </div>
+              <ErrorMessage
+                name="referralDate"
+                component="div"
+                className="text-xs text-red-500 mt-1"
+              />
             </div>
           </div>
 
@@ -368,8 +368,8 @@ const Section4 = ({ formData, setFormData, prevSection, onSubmit }) => {
             >
               Email Address
             </label>
-            <div className="relative">
-              <BiEnvelope className="absolute top-1/2 transform -translate-y-1/2 left-3 text-secClr" />
+            <div className={parentClass}>
+              <BiEnvelope className="text-secClr" />
               <Field
                 type="email"
                 name="referralEmail"
@@ -377,12 +377,12 @@ const Section4 = ({ formData, setFormData, prevSection, onSubmit }) => {
                 className={inputClass}
                 disabled={isSubmitting}
               />
-              <ErrorMessage
-                name="referralEmail"
-                component="div"
-                className="text-xs text-red-500 mt-1"
-              />
             </div>
+            <ErrorMessage
+              name="referralEmail"
+              component="div"
+              className="text-xs text-red-500 mt-1"
+            />
           </div>
 
           <div className="w-full flex justify-between mt-6">
