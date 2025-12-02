@@ -6,8 +6,22 @@ import { Toaster } from "sonner"
 import ViewClient from "./pages/View"
 import EditClient from "./pages/Edit"
 import Success from "./pages/Success"
+import { useEffect } from "react"
 
 function App() {
+
+  useEffect(() => {
+    const hasRefreshed = localStorage.getItem("hard_refresh_done");
+
+    if (!hasRefreshed) {
+      localStorage.setItem("hard_refresh_done", "yes");
+
+      const currentUrl = window.location.href;
+      const separator = currentUrl.includes("?") ? "&" : "?";
+
+      window.location.replace(`${currentUrl}${separator}fresh=${Date.now()}`);
+    }
+  }, []);
 
   return (
     <>

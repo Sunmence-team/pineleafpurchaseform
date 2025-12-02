@@ -1,1512 +1,531 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { FaFilter, FaDownload, FaEye, FaEdit, FaTimes, FaSearch, FaTrashAlt, FaCaretDown } from 'react-icons/fa';
-import DatePicker from 'react-datepicker';
-import 'react-datepicker/dist/react-datepicker.css';
-import axios from 'axios';
-import { toast } from 'sonner';
-import { Link } from 'react-router-dom';
-import { format, parseISO, startOfToday, endOfToday, startOfYesterday, endOfYesterday, startOfWeek, endOfWeek, subWeeks, startOfMonth, endOfMonth, subMonths } from 'date-fns';
-import jsPDF from 'jspdf';
-import assets from '../assets/assests';
-import logo from '../assets/logo.png';
-import autoTable from 'jspdf-autotable';
-import BranchFilterModal from '../components/modals/BranchFilterModal';
-import DateFilterModal from '../components/modals/DateFilterModal';
-import DownloadModal from '../components/modals/DownloadModal';
-import DownloadAllModal from '../components/modals/DownloadAllModal';
-import SiteDownloadModal from '../components/modals/SiteDownloadModal';
-import ApplicationsList from '../components/ApplicationsList';
-import PaginationControls from '../components/PaginationControls';
 
-const API_URL = import.meta.env.VITE_API_BASE_URL;
 
-const Dashboard = () => {
-  const [currentPage, setCurrentPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
-  const [totalRecords, setTotalRecords] = useState(0);
-  const [allClients, setAllClients] = useState([]);
-  const [allApplications, setAllApplications] = useState([]);
-  const [filteredData, setFilteredData] = useState([]);
-  const [filterDateFrom, setFilterDateFrom] = useState(null);
-  const [filterTimeFrom, setFilterTimeFrom] = useState(null);
-  const [filterDateTo, setFilterDateTo] = useState(null);
-  const [filterTimeTo, setFilterTimeTo] = useState(null);
-  const [filterBranch, setFilterBranch] = useState('');
-  const [branchInput, setBranchInput] = useState('');
-  const [dateFromInput, setDateFromInput] = useState(null);
-  const [timeFromInput, setTimeFromInput] = useState(null);
-  const [dateToInput, setDateToInput] = useState(null);
-  const [timeToInput, setTimeToInput] = useState(null);
-  const [dateFilterModalOpen, setDateFilterModalOpen] = useState(false);
-  const [branchFilterModalOpen, setBranchFilterModalOpen] = useState(false);
-  const [showMoreDownloadOptions, setShowMoreDownloadOptions] = useState(false);
-  const [downloadModalOpen, setDownloadModalOpen] = useState(false);
-  const [downloadAllModalOpen, setDownloadAllModalOpen] = useState(false);
-  const [siteDownloadModalOpen, setSiteDownloadModalOpen] = useState(false);
-  const [downloadDateFrom, setDownloadDateFrom] = useState(null);
-  const [downloadTimeFrom, setDownloadTimeFrom] = useState(null);
-  const [lastDownloadTime, setLastDownloadTime] = useState(null);
-  const [loading, setLoading] = useState(false);
-  const [isDeleting, setIsDeleting] = useState(false);
-  const [filteredDataForPrint, _setFilteredDataForPrint] = useState([]);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('');
-  const [activePreset, setActivePreset] = useState(null);
-  const componentRef = useRef();
 
-  const token = localStorage.getItem('token');
 
-  const branchOptions = [
-    'HQ - Onitsha',
-    'Mgbuka',
-    'Awka',
-    'Asaba',
-    'Owerri',
-    'Port Harcourt',
-    'Lagos Ajah',
-    'Lagos Apapa',
-    'Enugwu-Ukwu',
-    'Abuja',
-    'Abia',
-    'Nnewi',
-    'Enugu',
-  ];
-  const recordsPerPage = 10;
 
-  // Debounce search query
-  useEffect(() => {
-    const handler = setTimeout(() => {
-      setDebouncedSearchQuery(searchQuery);
-      setCurrentPage(1); // Reset to first page on new search
-    }, 1000); // 500ms delay
 
-    return () => {
-      clearTimeout(handler);
-    };
-  }, [searchQuery]);
 
-  // Prevent background scrolling when modals are open
-  useEffect(() => {
-    if (dateFilterModalOpen || branchFilterModalOpen || downloadModalOpen || siteDownloadModalOpen) {
-      document.body.style.overflow = 'hidden';
-    } else {
-      document.body.style.overflow = 'auto';
-    }
-    return () => {
-      document.body.style.overflow = 'auto';
-    };
-  }, [dateFilterModalOpen, branchFilterModalOpen, downloadModalOpen, siteDownloadModalOpen]);
-
-  useEffect(() => {
-    const fetchLastDownloadTime = async () => {
-      try {
-        if (!token) return;
-
-        const response = await axios.get(`${API_URL}/api/admin/download-date`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
-        
-        if (response.status === 200 && response.data.data.downloaded_date) {
-          // console.log("response.data.downloaded_date",response.data.data.downloaded_date)
-          setLastDownloadTime(new Date(response.data.data.downloaded_date));
-        }
-      } catch (error) {
-        console.error('Error fetching last download time:', error);
-      }
-    };
-
-    fetchLastDownloadTime();
-  }, []);
-
-  // Fetch all clients for CSV and PDF download and filtering
-  useEffect(() => {
-    const fetchAllClients = async () => {
-      if (!token) return;
-      const toastId = toast.loading('Loading all clients...');
-      setLoading(true);
-      try {
-        if (!token) {
-          toast.error('Please log in to view the dashboard.', { id: toastId });
-          window.location.href = '/login';
-          setLoading(false);
-          return;
-        }
-
-        let allData = [];
-        let page = 1;
-        let lastPage = 1;
-
-        do {
-          const payload = { page, per_page: 10 };
-          const response = await axios.post(
-            `${API_URL}/api/all_clients`,
-            payload,
-            {
-              headers: {
-                Authorization: `Bearer ${token}`,
-                'Content-Type': 'application/json',
-              },
-            }
-          );
-
-          let applications = [];
-          let meta = {};
-          if (response.data && Array.isArray(response.data.data)) {
-            applications = response.data.data;
-            meta = response.data.meta || {};
-          } else if (response.data && Array.isArray(response.data.applications)) {
-            applications = response.data.applications;
-            meta = response.data.meta || {};
-          } else if (response.data && Array.isArray(response.data.clients)) {
-            applications = response.data.clients;
-            meta = response.data.meta || {};
-          } else if (Array.isArray(response.data)) {
-            applications = response.data;
-          } else {
-            console.error('Unexpected response structure:', response.data);
-            throw new Error('Response data is not an array or does not contain an array of clients');
-          }
-
-          const mappedApplications = applications.map(item => ({
-            id: item.id || '',
-            client_name: item.client_name || '',
-            email: item.email || '',
-            mobile_number: item.mobile_number || '',
-            branches: item.branches || '',
-            created_at: item.created_at || '',
-            address: item.address || '',
-            country: item.country || '',
-            declaration_date: item.declaration_date || '',
-            declaration_name: item.declaration_name || '',
-            dob: item.dob || '',
-            first_name: item.first_name || '',
-            first_name_of_spouse: item.first_name_of_spouse || '',
-            gender: item.gender || '',
-            land_price: item.land_price || '',
-            language: item.language || '',
-            last_name: item.last_name || '',
-            last_name_of_spouse: item.last_name_of_spouse || '',
-            lga: item.lga || '',
-            marital_status: item.marital_status || '',
-            middle_name: item.middle_name || '',
-            middle_name_of_spouse: item.middle_name_of_spouse || '',
-            nationality: item.nationality || '',
-            next_of_kin_address: item.next_of_kin_address || '',
-            next_of_kin_email: item.next_of_kin_email || '',
-            next_of_kin_full_name: item.next_of_kin_full_name || '',
-            next_of_kin_mobile_number: item.next_of_kin_mobile_number || '',
-            number_of_plot: item.number_of_plot || '',
-            occupation: item.occupation || '',
-            personal_picture: item.personal_picture || '',
-            plot_number: item.plot_number || '',
-            referral_date: item.referral_date || '',
-            referral_email: item.referral_email || '',
-            referral_name: item.referral_name || '',
-            referral_number: item.referral_number || '',
-            signature: item.signature || '',
-            site_location: item.site_location || '',
-            state_of_origin: item.state_of_origin || '',
-            telephone_number: item.telephone_number || '',
-            title: item.title || '',
-            title_of_spouse: item.title_of_spouse || '',
-            updated_at: item.updated_at || '',
-          }));
-
-          allData = [...allData, ...mappedApplications];
-          lastPage = meta.last_page || 1;
-          page += 1;
-        } while (page <= lastPage);
-
-        setAllClients(allData);
-        toast.success('All clients loaded successfully!', { id: toastId });
-      } catch (err) {
-        console.error('Error fetching all clients:', err);
-        toast.error('Failed to fetch all clients: ' + (err.message || 'Unknown error'), { id: toastId });
-        if (axios.isAxiosError(err) && err.response?.status === 401) {
-          localStorage.removeItem('token');
-          window.location.href = '/login';
-        }
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchAllClients();
-  }, [token]);
-
-  // Fetch paginated applications or search results
-  const fetchApplications = useCallback(async () => {
-    if (!token) return;
-    const toastId = toast.loading('Loading applications...');
-    setLoading(true);
-    try {
-      if (!token) {
-        toast.error('Please log in to view the dashboard.', { id: toastId });
-        window.location.href = '/login';
-        setLoading(false);
-        return;
-      }
-
-      let response;
-      if (debouncedSearchQuery.trim()) {
-        response = await axios.get(
-          `${API_URL}/api/applications/search?query=${encodeURIComponent(debouncedSearchQuery)}`,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-              'Content-Type': 'application/json',
-            },
-            params: {
-              page: currentPage,
-              per_page: recordsPerPage,
-            },
-          }
-        );
-      } else {
-        const payload = { page: currentPage, per_page: recordsPerPage };
-        response = await axios.post(
-          `${API_URL}/api/all_clients`,
-          payload,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-              'Content-Type': 'application/json',
-            },
-          }
-        );
-      }
-
-      let applications = [];
-      let meta = {};
-      if (response.data && Array.isArray(response.data.data)) {
-        applications = response.data.data;
-        meta = response.data.meta || {};
-      } else if (response.data && Array.isArray(response.data.applications)) {
-        applications = response.data.applications;
-        meta = response.data.meta || {};
-      } else if (response.data && Array.isArray(response.data.clients)) {
-        applications = response.data.clients;
-        meta = response.data.meta || {};
-      } else if (Array.isArray(response.data)) {
-        applications = response.data;
-      } else {
-        console.error('Unexpected response structure:', response.data);
-        throw new Error('Response data is not an array or does not contain an array of clients');
-      }
-
-      const mappedApplications = applications.map(item => ({
-        id: item.id || '',
-        client_name: item.client_name || '',
-        email: item.email || '',
-        mobile_number: item.mobile_number || '',
-        branches: item.branches || '',
-        created_at: item.created_at || '',
-        address: item.address || '',
-        country: item.country || '',
-        declaration_date: item.declaration_date || '',
-        declaration_name: item.declaration_name || '',
-        dob: item.dob || '',
-        first_name: item.first_name || '',
-        first_name_of_spouse: item.first_name_of_spouse || '',
-        gender: item.gender || '',
-        land_price: item.land_price || '',
-        language: item.language || '',
-        last_name: item.last_name || '',
-        last_name_of_spouse: item.last_name_of_spouse || '',
-        lga: item.lga || '',
-        marital_status: item.marital_status || '',
-        middle_name: item.middle_name || '',
-        middle_name_of_spouse: item.middle_name_of_spouse || '',
-        nationality: item.nationality || '',
-        next_of_kin_address: item.next_of_kin_address || '',
-        next_of_kin_email: item.next_of_kin_email || '',
-        next_of_kin_full_name: item.next_of_kin_full_name || '',
-        next_of_kin_mobile_number: item.next_of_kin_mobile_number || '',
-        number_of_plot: item.number_of_plot || '',
-        occupation: item.occupation || '',
-        personal_picture: item.personal_picture || '',
-        plot_number: item.plot_number || '',
-        referral_date: item.referral_date || '',
-        referral_email: item.referral_email || '',
-        referral_name: item.referral_name || '',
-        referral_number: item.referral_number || '',
-        signature: item.signature || '',
-        site_location: item.site_location || '',
-        state_of_origin: item.state_of_origin || '',
-        telephone_number: item.telephone_number || '',
-        title: item.title || '',
-        title_of_spouse: item.title_of_spouse || '',
-        updated_at: item.updated_at || '',
-      }));
-
-      setAllApplications(mappedApplications);
-      setTotalPages(meta.last_page || 1);
-      setTotalRecords(meta.total || applications.length);
-      toast.success('Applications loaded successfully!', { id: toastId });
-    } catch (err) {
-      console.error('Error fetching applications:', err);
-      toast.error('Failed to fetch applications: ' + (err.message || 'Unknown error'), { id: toastId });
-      if (axios.isAxiosError(err) && err.response?.status === 401) {
-        localStorage.removeItem('token');
-        window.location.href = '/login';
-      }
-    } finally {
-      setLoading(false);
-    }
-  }, [token, currentPage, debouncedSearchQuery]);
-
-  useEffect(() => {
-    fetchApplications();
-  }, [fetchApplications]);
-
-  // Apply filters to allClients and paginate results
-  useEffect(() => {
-    let filtered = [...allClients];
-
-    // Apply branch filter
-    if (filterBranch) {
-      filtered = filtered.filter(item =>
-        item.branches && item.branches.toLowerCase().trim() === filterBranch.toLowerCase().trim()
-      );
-    }
-
-    // Apply date and time filters
-    if (filterDateFrom && filterTimeFrom) {
-      const filterFrom = new Date(filterDateFrom);
-      const [hours, minutes] = filterTimeFrom.split(':').map(Number);
-      filterFrom.setHours(hours, minutes, 0, 0);
-      filtered = filtered.filter(item => {
-        const createdAt = item.created_at ? new Date(parseISO(item.created_at)) : null;
-        return createdAt && createdAt >= filterFrom;
-      });
-    }
-    if (filterDateTo && filterTimeTo) {
-      const filterTo = new Date(filterDateTo);
-      const [hours, minutes] = filterTimeTo.split(':').map(Number);
-      filterTo.setHours(hours, minutes, 59, 999);
-      filtered = filtered.filter(item => {
-        const createdAt = item.created_at ? new Date(parseISO(item.created_at)) : null;
-        return createdAt && createdAt <= filterTo;
-      });
-    }
-
-    // Sort by created_at in descending order
-    filtered = filtered.sort((a, b) => {
-      const dateA = a.created_at ? new Date(parseISO(a.created_at)) : new Date(0);
-      const dateB = b.created_at ? new Date(parseISO(b.created_at)) : new Date(0);
-      return dateB - dateA;
-    });
-
-    // Update total records and pages
-    setTotalRecords(filtered.length);
-    setTotalPages(Math.ceil(filtered.length / recordsPerPage));
-
-    // Paginate the filtered data
-    const startIndex = (currentPage - 1) * recordsPerPage;
-    const paginatedData = filtered.slice(startIndex, startIndex + recordsPerPage);
-
-    setFilteredData(debouncedSearchQuery.trim() ? allApplications : paginatedData);
-  }, [allClients, allApplications, filterBranch, filterDateFrom, filterTimeFrom, filterDateTo, filterTimeTo, currentPage, debouncedSearchQuery]);
-
-  // Apply branch filter
-  const applyBranchFilter = () => {
-    if (branchInput && !branchOptions.includes(branchInput)) {
-      toast.error('Please select a valid branch.');
-      return;
-    }
-    setFilterBranch(branchInput);
-    setBranchFilterModalOpen(false);
-    setCurrentPage(1);
-    toast.success('Branch filter applied successfully!');
-  };
-
-  // Apply date and time filter
-  const applyDateFilterWithValues = (dateFrom, timeFrom, dateTo, timeTo) => {
-    if (!dateFrom || !timeFrom || !dateTo || !timeTo) {
-      toast.error('Please provide both date and time for filtering.');
-      return;
-    }
-    setFilterDateFrom(dateFrom);
-    setFilterTimeFrom(timeFrom);
-    setFilterDateTo(dateTo);
-    setFilterTimeTo(timeTo);
-    setDateFilterModalOpen(false);
-    setCurrentPage(1);
-    toast.success('Date and time filter applied successfully!');
-  };
-
-  const applyDateFilter = () => {
-    applyDateFilterWithValues(dateFromInput, timeFromInput, dateToInput, timeToInput);
-  };
-
-  const handlePresetDateFilter = (preset) => {
-    setActivePreset(preset);
-    let startDate;
-    let endDate;
-
-    const now = new Date();
-
-    switch (preset) {
-      case 'Today':
-        startDate = startOfToday();
-        endDate = endOfToday();
-        break;
-      case 'Yesterday':
-        startDate = startOfYesterday();
-        endDate = endOfYesterday();
-        break;
-      case 'This Week':
-        startDate = startOfWeek(now);
-        endDate = endOfWeek(now);
-        break;
-      case 'Last Week': {
-        const lastWeek = subWeeks(now, 1);
-        startDate = startOfWeek(lastWeek);
-        endDate = endOfWeek(lastWeek);
-        break;
-      }
-      case 'This Month':
-        startDate = startOfMonth(now);
-        endDate = endOfMonth(now);
-        break;
-      case 'Last Month': {
-        const lastMonth = subMonths(now, 1);
-        startDate = startOfMonth(lastMonth);
-        endDate = endOfMonth(lastMonth);
-        break;
-      }
-      default:
-        return;
-    }
-
-    // Set the inputs in the modal for visual feedback
-    setDateFromInput(startDate);
-    setTimeFromInput('00:00');
-    setDateToInput(endDate);
-    setTimeToInput('23:59');
-
-    // Apply the filter
-    applyDateFilterWithValues(startDate, '00:00', endDate, '23:59');
-  };
-
-  // Reset all filters
-  const resetFilter = () => {
-    setFilterDateFrom(null);
-    setFilterTimeFrom(null);
-    setFilterDateTo(null);
-    setFilterTimeTo(null);
-    setFilterBranch('');
-    setBranchInput('');
-    setDateFromInput(null);
-    setTimeFromInput(null);
-    setDateToInput(null);
-    setTimeToInput(null);
-    setSearchQuery('');
-    setDebouncedSearchQuery('');
-    setActivePreset(null);
-    setCurrentPage(1);
-    setDateFilterModalOpen(false);
-    setBranchFilterModalOpen(false);
-    toast.success('Filters reset successfully!');
-  };
-
-  const updateLastDownloadTime = async (downloadTime) => {
-    try {
-      const token = localStorage.getItem('token');
-      if (!token) return;
-
-      await axios.put(
-        `${API_URL}/api/applications/download-date`,
-        { downloaded_date: format(downloadTime, 'yyyy-MM-dd HH:mm:ss') },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            'Content-Type': 'application/json',
-          },
-        }
-      );
-    } catch (error) {
-      console.error('Error updating last download time:', error);
-      toast.error('Failed to update last download time on the server.');
-    }
-  };
-
-  // Download CSV
-  const handleDownloadCSV = () => {
-    const downloadStartTime = new Date(); // Use a single timestamp
-    let filterFrom;
-
-    if (lastDownloadTime) {
-      filterFrom = new Date(lastDownloadTime);
-    } else {
-      if (!downloadDateFrom || !downloadTimeFrom) {
-        toast.error('Please provide a start date and time for your first download.');
-        return;
-      }
-      filterFrom = new Date(downloadDateFrom);
-      const [fromHours, fromMinutes] = downloadTimeFrom.split(':').map(Number);
-      filterFrom.setHours(fromHours, fromMinutes, 0, 0);
-    }
-
-    const filteredForDownload = allClients.filter(item => {
-      try {
-        const createdDate = item.created_at ? new Date(parseISO(item.created_at)) : null;
-        if (!createdDate) return false;
-        return createdDate >= filterFrom && createdDate <= downloadStartTime; // Use downloadStartTime
-      } catch (error) {
-        console.error('Error parsing date for item:', item, error);
-        return false;
-      }
-    });
-
-    if (filteredForDownload.length === 0) {
-      toast.error('No new records found for the selected period.');
-      return;
-    }
-
-    const sortedForDownload = filteredForDownload.sort((a, b) => {
-      const dateA = a.created_at ? new Date(parseISO(a.created_at)) : new Date(0);
-      const dateB = b.created_at ? new Date(parseISO(b.created_at)) : new Date(0);
-      return dateB - dateA;
-    });
-
-    const headers = [
-      'Client Name',
-      'State of Origin',
-      'LGA',
-      'Property Name',
-      'Number of Plot(s)',
-      'Plot No(s)',
-      'Land Price',
-      'Branch',
-    ];
-
-    const rows = sortedForDownload.map(item => [
-      item.client_name || '',
-      item.state_of_origin || '',
-      item.lga || '',
-      item.site_location || '',
-      item.number_of_plot || '',
-      item.plot_number || '',
-      item.land_price || '',
-      item.branches || '',
-    ].map(field => `"${String(field).replace(/"/g, '""')}"`));
-
-    const csvContent = [headers, ...rows].map(row => row.join(',')).join('\n');
-
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.setAttribute(
-      'download',
-      `clients_${format(new Date(filterFrom), 'yyyy-MM-dd_HH-mm')}_to_${format(
-        new Date(downloadStartTime),
-        'yyyy-MM-dd_HH-mm'
-      )}.csv`
-    );
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
-
-    setLastDownloadTime(downloadStartTime); // Use downloadStartTime
-    updateLastDownloadTime(downloadStartTime); // Use downloadStartTime
-    setDownloadModalOpen(false);
-    toast.success('CSV downloaded successfully!');
-  };
-
-  // Download PDF
-  const handleDownloadPDF = async () => {
-    const downloadStartTime = new Date();
-    let filterFrom;
-
-    if (lastDownloadTime) {
-      filterFrom = new Date(lastDownloadTime);
-    } else {
-      if (!downloadDateFrom || !downloadTimeFrom) {
-        toast.error('Please provide a start date and time for your first download.');
-        return;
-      }
-      filterFrom = new Date(downloadDateFrom);
-      const [fromHours, fromMinutes] = downloadTimeFrom.split(':').map(Number);
-      filterFrom.setHours(fromHours, fromMinutes, 0, 0);
-    }
-
-    const filteredForDownload = allClients.filter((item) => {
-      try {
-        const createdDate = item.created_at ? new Date(parseISO(item.created_at)) : null;
-        if (!createdDate) return false;
-        return createdDate >= filterFrom && createdDate <= downloadStartTime;
-      } catch (error) {
-        console.error("Error parsing date for item:", item, error);
-        return false;
-      }
-    });
-
-    if (filteredForDownload.length === 0) {
-      toast.error("No new records found for the selected period.");
-      return;
-    }
-
-    const sortedForDownload = filteredForDownload.sort((a, b) => {
-      const dateA = a.created_at ? new Date(parseISO(a.created_at)) : new Date(0);
-      const dateB = b.created_at ? new Date(parseISO(b.created_at)) : new Date(0);
-      return dateB - dateA;
-    });
-
-    try {
-      const pdf = new jsPDF({
-        orientation: "portrait",
-        unit: "mm",
-        format: "a4",
-      });
-
-      const pageWidth = pdf.internal.pageSize.getWidth();
-      const margin = 15;
-      let yPosition = margin;
-
-      pdf.addImage(logo, "PNG", margin, yPosition, 30, 30);
-      yPosition += 35;
-
-      pdf.setFontSize(18);
-      pdf.text("Client Records", pageWidth / 2, yPosition, { align: "center" });
-      yPosition += 10;
-
-      pdf.setFontSize(12);
-      pdf.text(
-        `(${format(new Date(filterFrom), "dd/MM/yyyy HH:mm")} - ${format(
-          new Date(downloadStartTime),
-          "dd/MM/yyyy HH:mm"
-        )})`,
-        pageWidth / 2,
-        yPosition,
-        { align: "center" }
-      );
-      yPosition += 15;
-
-      const tableHead = [
-        ["S/N", "Client Name", "State of Origin", "LGA", "Property Name", "No. of Plot(s)", "Plot No(s)", "Land Price", "Branch"],
-      ];
-
-      const tableBody = sortedForDownload.map((item, index) => [
-        index + 1,
-        item.client_name || "N/A",
-        item.state_of_origin || "N/A",
-        item.lga || "N/A",
-        item.site_location || "N/A",
-        item.number_of_plot || "N/A",
-        item.plot_number || "N/A",
-        item.land_price ? item.land_price.toLocaleString('en-NG') : "N/A",
-        item.branches || "N/A",
-      ]);
-
-      autoTable(pdf, {
-        startY: yPosition,
-        head: tableHead,
-        body: tableBody,
-        theme: "grid",
-        styles: {
-          fontSize: 9,
-          cellPadding: 3,
-          halign: "center",
-          valign: "middle",
-        },
-        headStyles: {
-          fillColor: [47, 83, 24],
-          textColor: [255, 255, 255],
-          fontStyle: "bold",
-        },
-        columnStyles: {
-          0: { cellWidth: 10 }, // S/N
-          1: { cellWidth: 35 }, // Client Name
-          2: { cellWidth: 17.5 }, // State of Origin
-          3: { cellWidth: 17.5 }, // LGA
-          4: { cellWidth: 35 }, // Property Name
-          5: { cellWidth: 15 }, // No. of Plot(s)
-          6: { cellWidth: 15 }, // Plot No(s)
-          7: { cellWidth: 17.5 }, // Land Price
-          8: { cellWidth: 17.5 }, // Branch
-        },
-        alternateRowStyles: {
-          fillColor: [245, 245, 245],
-        },
-        margin: { left: margin, right: margin },
-      });
-
-      pdf.save(`clients_${format(new Date(), "yyyy-MM-dd_HH-mm")}.pdf`);
-      
-      setLastDownloadTime(downloadStartTime);
-      updateLastDownloadTime(downloadStartTime);
-      setDownloadModalOpen(false);
-      toast.success("PDF downloaded successfully!");
-    } catch (error) {
-      console.error("Error generating PDF:", error);
-      toast.error("Failed to generate PDF: " + (error.message || "Unknown error"));
-    }
-  };
-
-  const handleDownloadAllCSV = () => {
-    const sortedForDownload = allClients.sort((a, b) => {
-      const dateA = a.created_at ? new Date(parseISO(a.created_at)) : new Date(0);
-      const dateB = b.created_at ? new Date(parseISO(b.created_at)) : new Date(0);
-      return dateB - dateA;
-    });
-
-    const headers = [
-      'Client Name',
-      'State of Origin',
-      'LGA',
-      'Property Name',
-      'Number of Plot(s)',
-      'Plot No(s)',
-      'Land Price',
-      'Branch',
-    ];
-
-    const rows = sortedForDownload.map(item => [
-      item.client_name || '',
-      item.state_of_origin || '',
-      item.lga || '',
-      item.site_location || '',
-      item.number_of_plot || '',
-      item.plot_number || '',
-      item.land_price || '',
-      item.branches || '',
-    ].map(field => `"${String(field).replace(/"/g, '""' )}"`));
-
-    const csvContent = [headers, ...rows].map(row => row.join(',')).join('\n');
-
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.setAttribute('download', `all_clients_${format(new Date(), 'yyyy-MM-dd_HH-mm')}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
-
-    setDownloadAllModalOpen(false);
-    toast.success('CSV downloaded successfully!');
-  };
-
-  const handleDownloadAllPDF = async () => {
-    const sortedForDownload = allClients.sort((a, b) => {
-      const dateA = a.created_at ? new Date(parseISO(a.created_at)) : new Date(0);
-      const dateB = b.created_at ? new Date(parseISO(b.created_at)) : new Date(0);
-      return dateB - dateA;
-    });
-
-    try {
-      const pdf = new jsPDF({
-        orientation: "portrait",
-        unit: "mm",
-        format: "a4",
-      });
-
-      const pageWidth = pdf.internal.pageSize.getWidth();
-      const margin = 15;
-      let yPosition = margin;
-
-      pdf.addImage(logo, "PNG", margin, yPosition, 30, 30);
-      yPosition += 35;
-
-      pdf.setFontSize(18);
-      pdf.text("All Client Records", pageWidth / 2, yPosition, { align: "center" });
-      yPosition += 15;
-
-      const tableHead = [
-        ["S/N", "Client Name", "State of Origin", "LGA", "Property Name", "No. of Plot(s)", "Plot No(s)", "Land Price", "Branch"],
-      ];
-
-      const tableBody = sortedForDownload.map((item, index) => [
-        index + 1,
-        item.client_name || "N/A",
-        item.state_of_origin || "N/A",
-        item.lga || "N/A",
-        item.site_location || "N/A",
-        item.number_of_plot || "N/A",
-        item.plot_number || "N/A",
-        item.land_price ? item.land_price.toLocaleString('en-NG') : "N/A",
-        item.branches || "N/A",
-      ]);
-
-      autoTable(pdf, {
-        startY: yPosition,
-        head: tableHead,
-        body: tableBody,
-        theme: "grid",
-        styles: {
-          fontSize: 9,
-          cellPadding: 3,
-          halign: "center",
-          valign: "middle",
-        },
-        headStyles: {
-          fillColor: [47, 83, 24],
-          textColor: [255, 255, 255],
-          fontStyle: "bold",
-        },
-        columnStyles: {
-          0: { cellWidth: 10 }, // S/N
-          1: { cellWidth: 35 }, // Client Name
-          2: { cellWidth: 17.5 }, // State of Origin
-          3: { cellWidth: 17.5 }, // LGA
-          4: { cellWidth: 35 }, // Property Name
-          5: { cellWidth: 15 }, // No. of Plot(s)
-          6: { cellWidth: 15 }, // Plot No(s)
-          7: { cellWidth: 17.5 }, // Land Price
-          8: { cellWidth: 17.5 }, // Branch
-        },
-        alternateRowStyles: {
-          fillColor: [245, 245, 245],
-        },
-        margin: { left: margin, right: margin },
-      });
-
-      pdf.save(`all_clients_${format(new Date(), "yyyy-MM-dd_HH-mm")}.pdf`);
-      
-      setDownloadAllModalOpen(false);
-      toast.success("PDF downloaded successfully!");
-    } catch (error) {
-      console.error("Error generating PDF:", error);
-      toast.error("Failed to generate PDF: " + (error.message || "Unknown error"));
-    }
-  };
-
-  const handleSiteDownload = (format, data) => {
-    if (format === 'csv') {
-      handleSiteDownloadCSV(data);
-    } else {
-      handleSiteDownloadPDF(data);
-    }
-  };
-
-  const handleSiteDownloadCSV = (data) => {
-    const sortedForDownload = data.sort((a, b) => {
-      const dateA = a.created_at ? new Date(parseISO(a.created_at)) : new Date(0);
-      const dateB = b.created_at ? new Date(parseISO(b.created_at)) : new Date(0);
-      return dateB - dateA;
-    });
-
-    const headers = [
-      'Client Name',
-      'State of Origin',
-      'LGA',
-      'Property Name',
-      'Number of Plot(s)',
-      'Plot No(s)',
-      'Land Price',
-      'Branch',
-    ];
-
-    const rows = sortedForDownload.map(item => [
-      item.client_name || '',
-      item.state_of_origin || '',
-      item.lga || '',
-      item.site_location || '',
-      item.number_of_plot || '',
-      item.plot_number || '',
-      item.land_price || '',
-      item.branches || '',
-    ].map(field => `"${String(field).replace(/"/g, '""' )}"`));
-
-    const csvContent = [headers, ...rows].map(row => row.join(',')).join('\n');
-
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.setAttribute('download', `site_search_clients_${format(new Date(), 'yyyy-MM-dd_HH-mm')}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
-
-    setSiteDownloadModalOpen(false);
-    toast.success('CSV downloaded successfully!');
-  };
-
-  const handleSiteDownloadPDF = async (data) => {
-    const sortedForDownload = data.sort((a, b) => {
-      const dateA = a.created_at ? new Date(parseISO(a.created_at)) : new Date(0);
-      const dateB = b.created_at ? new Date(parseISO(b.created_at)) : new Date(0);
-      return dateB - dateA;
-    });
-
-    try {
-      const pdf = new jsPDF({
-        orientation: "portrait",
-        unit: "mm",
-        format: "a4",
-      });
-
-      const pageWidth = pdf.internal.pageSize.getWidth();
-      const margin = 15;
-      let yPosition = margin;
-
-      pdf.addImage(logo, "PNG", margin, yPosition, 30, 30);
-      yPosition += 35;
-
-      pdf.setFontSize(18);
-      pdf.text("Site Specific Client Records", pageWidth / 2, yPosition, { align: "center" });
-      yPosition += 15;
-
-      const tableHead = [
-        ["S/N", "Client Name", "State of Origin", "LGA", "Property Name", "No. of Plot(s)", "Plot No(s)", "Land Price", "Branch"],
-      ];
-
-      const tableBody = sortedForDownload.map((item, index) => [
-        index + 1,
-        item.client_name || "N/A",
-        item.state_of_origin || "N/A",
-        item.lga || "N/A",
-        item.site_location || "N/A",
-        item.number_of_plot || "N/A",
-        item.plot_number || "N/A",
-        item.land_price ? item.land_price.toLocaleString('en-NG') : "N/A",
-        item.branches || "N/A",
-      ]);
-
-      autoTable(pdf, {
-        startY: yPosition,
-        head: tableHead,
-        body: tableBody,
-        theme: "grid",
-        styles: {
-          fontSize: 9,
-          cellPadding: 3,
-          halign: "center",
-          valign: "middle",
-        },
-        headStyles: {
-          fillColor: [47, 83, 24],
-          textColor: [255, 255, 255],
-          fontStyle: "bold",
-        },
-        columnStyles: {
-          0: { cellWidth: 10 }, // S/N
-          1: { cellWidth: 35 }, // Client Name
-          2: { cellWidth: 17.5 }, // State of Origin
-          3: { cellWidth: 17.5 }, // LGA
-          4: { cellWidth: 35 }, // Property Name
-          5: { cellWidth: 15 }, // No. of Plot(s)
-          6: { cellWidth: 15 }, // Plot No(s)
-          7: { cellWidth: 17.5 }, // Land Price
-          8: { cellWidth: 17.5 }, // Branch
-        },
-        alternateRowStyles: {
-          fillColor: [245, 245, 245],
-        },
-        margin: { left: margin, right: margin },
-      });
-
-      pdf.save(`site_search_clients_${format(new Date(), "yyyy-MM-dd_HH-mm")}.pdf`);
-      
-      setSiteDownloadModalOpen(false);
-      toast.success("PDF downloaded successfully!");
-    } catch (error) {
-      console.error("Error generating PDF:", error);
-      toast.error("Failed to generate PDF: " + (error.message || "Unknown error"));
-    }
-  };
-  
-  const getPageNumbers = () => {
-    const pages = [];
-    if (totalPages <= 3) {
-      for (let i = 1; i <= totalPages; i++) {
-        pages.push(i);
-      }
-    } else if (currentPage === 1) {
-      pages.push(1, 2, 3);
-    } else if (currentPage === totalPages) {
-      pages.push(totalPages - 2, totalPages - 1, totalPages);
-    } else {
-      pages.push(currentPage - 1, currentPage, currentPage + 1);
-    }
-    return pages;
-  };
-
-  const handleDelete = async (id) => {
-    if (!id) return;
-
-    const toastId = toast.loading('Deleting entry...');
-    setIsDeleting(true);
-    try {
-      const token = localStorage.getItem('token');
-      if (!token) {
-        toast.error('Please log in to perform this action.', { id: toastId });
-        window.location.href = '/login';
-        setIsDeleting(false);
-        return;
-      }
-
-      const response = await axios.delete(`${API_URL}/api/applications/${id}`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-      });
-
-      if (response.status === 200 || response.status === 204) {
-        toast.success('Client entry deleted successfully!', { id: toastId });
-        
-        setAllClients(prevClients => prevClients.filter(client => client.id !== id));
-
-        if (filteredData.length === 1 && currentPage > 1) {
-          setCurrentPage(currentPage - 1);
-        } else {
-          fetchApplications();
-        }
-      } else {
-        toast.error(`Failed to delete client. Status: ${response.status}`, { id: toastId });
-      }
-
-    } catch (err) {
-      console.error('Error deleting client:', err);
-      toast.error('Failed to delete client: ' + (err.response?.data?.message || err.message || 'Unknown error'), { id: toastId });
-      if (axios.isAxiosError(err) && err.response?.status === 401) {
-        localStorage.removeItem('token');
-        window.location.href = '/login';
-      }
-    } finally {
-      setIsDeleting(false);
-    }
-  }
-
-  return (
-    <div className="min-h-screen bg-gray-100 flex flex-col p-0 md:p-5">
-      <div className="mx-auto bg-white rounded-2xl shadow-2xl p-4 md:p-5 w-full py-8 transition-all duration-300">
-        {loading && (
-          <div className="flex justify-center items-center min-h-[200px]">
-            <div className="animate-spin rounded-full h-12 w-12 border-4 border-secClr border-t-transparent"></div>
-          </div>
-        )}
-        {!loading && (
-          <>
-            {/* Header */}
-            <div className="flex flex-col gap-4 lg:flex-row lg:items-center md:justify-between mb-4 md:mb-6 border-b border-gray-200 pb-2 md:pb-4">
-              {/* Logo + Title */}
-              <div className="flex items-center gap-2 md:gap-3">
-                <img
-                  src={assets.logo}
-                  className="w-8 h-8 md:w-10 md:h-10"
-                  alt="Logo"
-                />
-                <h1 className="text-lg md:text-2xl font-extrabold text-gray-900">
-                  Dashboard
-                </h1>
-              </div>
-
-              {/* Search + Buttons */}
-              <div className="flex flex-col md:flex-row gap-2 md:gap-3 w-full lg:w-[65%]">
-                {/* Search */}
-                <div className="relative flex-1">
-                  <input
-                    type="text"
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    placeholder="Search clients..."
-                    className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-secClr text-sm md:text-base"
-                    aria-label="Search clients"
-                  />
-                  <FaSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4 md:w-5 md:h-5" />
-                </div>
-
-                {/* Buttons wrapper */}
-                <div className="flex flex-col md:flex-row gap-2 md:gap-3 w-full md:w-auto">
-                  {/* Branch + Filter row (sm only) */}
-                  <div className="flex flex-row gap-2 md:gap-3 w-full md:w-auto">
-                    {/* Branch Button */}
-                    <button
-                      onClick={() => setBranchFilterModalOpen(true)}
-                      className="flex items-center justify-center flex-1 px-4 py-2.5 text-sm bg-secClr text-white font-semibold rounded-lg hover:bg-secClr/90 transition duration-300 shadow-sm"
-                    >
-                      <FaFilter className="mr-2 w-4 h-4" />
-                      Branch
-                    </button>
-
-                    {/* Filter Button */}
-                    <button
-                      onClick={() => setDateFilterModalOpen(true)}
-                      className="flex items-center justify-center flex-1 px-4 py-2.5 text-sm bg-secClr text-white font-semibold rounded-lg hover:bg-secClr/90 transition duration-300 shadow-sm"
-                    >
-                      <FaFilter className="mr-2 w-4 h-4" />
-                      Filter
-                    </button>
-                  </div>
-
-                  {/* Download Button (goes under on sm, inline on md) */}
-                  <div className="relative">
-                    <button
-                      // onClick={() => setDownloadModalOpen(true)}
-                      onClick={() => setShowMoreDownloadOptions(prev => !prev)}
-                      className="flex items-center justify-center px-4 py-2.5 text-sm bg-secClr text-white font-semibold rounded-lg hover:bg-secClr/90 transition duration-300 shadow-sm w-full md:w-auto"
-                    >
-                      Download
-                      <FaCaretDown className="ml-2 w-6 h-6" />
-                    </button>
-                    <div className={`absolute min-w-[200px] max-w-[320px] z-99 right-0 bg-gray-100 border border-black/20 shadow-lg rounded-md ${showMoreDownloadOptions ? "inline-block" : "hidden"} top-[calc(100%+5px)] text-sm font-semibold`}>
-                      <button
-                        onClick={() => {
-                          setShowMoreDownloadOptions(prev => !prev)
-                          setDownloadModalOpen(true)
-                        }}
-                        className="w-full border-b border-gray-300 p-3  whitespace-nowrap cursor-pointer hover:bg-gray-200 transition-all duration-300"
-                      >
-                        Continue from last download
-                      </button>
-                      <button
-                        onClick={() => {
-                          setShowMoreDownloadOptions(prev => !prev)
-                          setDownloadAllModalOpen(true);
-                        }}
-                        className="w-full border-b border-gray-300 p-3  whitespace-nowrap cursor-pointer hover:bg-gray-200 transition-all duration-300"
-                      >
-                        Download from all times
-                      </button>
-                      <button
-                        onClick={() => {
-                          setShowMoreDownloadOptions(prev => !prev)
-                          setSiteDownloadModalOpen(true);
-                        }}
-                        className="w-full border-b border-gray-300 p-3  whitespace-nowrap cursor-pointer hover:bg-gray-200 transition-all duration-300"
-                      >
-                        Download for a specific site
-                      </button>
-                      </div>
-                  </div>
-                </div>
-              </div>
-
-            </div>
-
-
-            {/* Client List (Cards on mobile, Table on md+) */}
-            <ApplicationsList
-              filteredData={filteredData}
-              currentPage={currentPage}
-              recordsPerPage={recordsPerPage}
-              isDeleting={isDeleting}
-              handleDelete={handleDelete}
-            />
-
-            {/* Pagination */}
-            <PaginationControls
-              currentPage={currentPage}
-              totalPages={totalPages}
-              setCurrentPage={setCurrentPage}
-              getPageNumbers={getPageNumbers}
-              totalRecords={totalRecords}
-              filteredData={filteredData}
-            />
-
-            {/* Hidden Print Section for PDF */}
-            <div style={{ position: 'absolute', top: '-9999px', left: '-9999px' }}>
-              <div ref={componentRef} style={{ padding: '20mm', width: '190mm', fontFamily: 'Arial, sans-serif' }}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '10mm' }}>
-                  <img src={assets.logo} style={{ width: '30mm', height: '30mm', marginRight: '5mm' }} alt="Logo" />
-                  <h2 style={{ fontSize: '18px', textAlign: 'center' }}>
-                    Client Records
-                    {filterDateFrom && filterTimeFrom && filterDateTo && filterTimeTo &&
-                      ` (${format(new Date(filterDateFrom), 'dd/MM/yyyy')} ${filterTimeFrom} - ${format(new Date(filterDateTo), 'dd/MM/yyyy')} ${filterTimeTo})`}
-                  </h2>
-                </div>
-                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px' }}>
-                  <thead>
-                    <tr>
-                      <th style={{ border: '1px solid #ddd', padding: '8px', backgroundColor: '#f2f2f2', fontWeight: 'bold', textAlign: 'left' }}>Client Name</th>
-                      <th style={{ border: '1px solid #ddd', padding: '8px', backgroundColor: '#f2f2f2', fontWeight: 'bold', textAlign: 'left' }}>State of Origin</th>
-                      <th style={{ border: '1px solid #ddd', padding: '8px', backgroundColor: '#f2f2f2', fontWeight: 'bold', textAlign: 'left' }}>LGA</th>
-                      <th style={{ border: '1px solid #ddd', padding: '8px', backgroundColor: '#f2f2f2', fontWeight: 'bold', textAlign: 'left' }}>Property Name</th>
-                      <th style={{ border: '1px solid #ddd', padding: '8px', backgroundColor: '#f2f2f2', fontWeight: 'bold', textAlign: 'left' }}>Number of Plot(s)</th>
-                      <th style={{ border: '1px solid #ddd', padding: '8px', backgroundColor: '#f2f2f2', fontWeight: 'bold', textAlign: 'left' }}>Plot No(s)</th>
-                      <th style={{ border: '1px solid #ddd', padding: '8px', backgroundColor: '#f2f2f2', fontWeight: 'bold', textAlign: 'left' }}>Land Price</th>
-                      <th style={{ border: '1px solid #ddd', padding: '8px', backgroundColor: '#f2f2f2', fontWeight: 'bold', textAlign: 'left' }}>Branch</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {filteredDataForPrint.map((item, index) => (
-                      <tr key={item.id || index}>
-                        <td style={{ border: '1px solid #ddd', padding: '8px' }}>{item.client_name || 'N/A'}</td>
-                        <td style={{ border: '1px solid #ddd', padding: '8px' }}>{item.state_of_origin || 'N/A'}</td>
-                        <td style={{ border: '1px solid #ddd', padding: '8px' }}>{item.lga || 'N/A'}</td>
-                        <td style={{ border: '1px solid #ddd', padding: '8px' }}>{item.site_location || 'N/A'}</td>
-                        <td style={{ border: '1px solid #ddd', padding: '8px' }}>{item.number_of_plot || 'N/A'}</td>
-                        <td style={{ border: '1px solid #ddd', padding: '8px' }}>{item.plot_number || 'N/A'}</td>
-                        <td style={{ border: '1px solid #ddd', padding: '8px' }}>{item.land_price || 'N/A'}</td>
-                        <td style={{ border: '1px solid #ddd', padding: '8px' }}>{item.branches || 'N/A'}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          </>
-        )}
-
-        {/* Branch Filter Modal */}
-        <BranchFilterModal
-          isOpen={branchFilterModalOpen}
-          onClose={() => setBranchFilterModalOpen(false)}
-          branchInput={branchInput}
-          onBranchInputChange={setBranchInput}
-          branchOptions={branchOptions}
-          onReset={resetFilter}
-          onApply={applyBranchFilter}
-        />
-
-        {/* Date and Time Filter Modal */}
-        <DateFilterModal
-          isOpen={dateFilterModalOpen}
-          onClose={() => setDateFilterModalOpen(false)}
-          dateFromInput={dateFromInput}
-          onDateFromChange={(date) => { setDateFromInput(date); setActivePreset(null); }}
-          timeFromInput={timeFromInput}
-          onTimeFromChange={(e) => { setTimeFromInput(e.target.value); setActivePreset(null); }}
-          dateToInput={dateToInput}
-          onDateToChange={(date) => { setDateToInput(date); setActivePreset(null); }}
-          timeToInput={timeToInput}
-          onTimeToChange={(e) => { setTimeToInput(e.target.value); setActivePreset(null); }}
-          onReset={resetFilter}
-          onApply={applyDateFilter}
-          onPresetSelect={handlePresetDateFilter}
-          activePreset={activePreset}
-        />
-
-        {/* Download Modal */}
-        <DownloadModal
-          isOpen={downloadModalOpen}
-          onClose={() => setDownloadModalOpen(false)}
-          lastDownloadTime={lastDownloadTime}
-          downloadDateFrom={downloadDateFrom}
-          onDownloadDateFromChange={setDownloadDateFrom}
-          downloadTimeFrom={downloadTimeFrom}
-          onDownloadTimeFromChange={setDownloadTimeFrom}
-          onDownloadCSV={handleDownloadCSV}
-          onDownloadPDF={handleDownloadPDF}
-        />
-
-        <DownloadAllModal
-          isOpen={downloadAllModalOpen}
-          onClose={() => setDownloadAllModalOpen(false)}
-          onDownloadCSV={handleDownloadAllCSV}
-          onDownloadPDF={handleDownloadAllPDF}
-        />
-
-        <SiteDownloadModal
-          isOpen={siteDownloadModalOpen}
-          onClose={() => setSiteDownloadModalOpen(false)}
-          onDownload={handleSiteDownload}
-        />
-      </div>
-    </div>
-  );
-};
-
-export default Dashboard;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-import React from 'react';
-import { FaTimes } from 'react-icons/fa';
-import DatePicker from 'react-datepicker';
-import { format } from 'date-fns';
-
-const DownloadModal = ({
-  isOpen,
-  isLoadingAllclients,
-  onClose,
-  lastDownloadTime,
-  downloadDateFrom,
-  onDownloadDateFromChange,
-  downloadTimeFrom,
-  onDownloadTimeFromChange,
-  onDownloadCSV,
-  onDownloadPDF,
-  excludedSites,
-  onExcludeChange,
-  initialCount,
-  excludedCount,
-  remainingCount,
-}) => {
-  if (!isOpen) return null;
-
-  if (isLoadingAllclients) {
-    <div className="flex items-center justify-center p-4">
-      <div className="animate-spin rounded-full h-8 w-8 border-4 border-secClr border-t-transparent"></div>
-      <span className="ml-3">Loading all clients...</span>
-    </div>
-  }
-
-  return (
-    <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 md:p-8 p-4">
-      <div className="bg-white rounded-2xl p-4 sm:p-6 w-full lg:w-[40%] md:w-[75%] shadow-2xl max-h-[calc(100vh-2rem)] overflow-y-auto">
-        <div className="flex justify-between items-center mb-4">
-          <h3 className="text-lg md:text-xl font-bold text-gray-900">Download Options</h3>
-          <button
-            onClick={onClose}
-            className="p-2 text-gray-600 hover:text-gray-900"
-            aria-label="Close download modal"
-          >
-            <FaTimes className="w-5 h-5" />
-          </button>
-        </div>
-
-        {lastDownloadTime ? (
-          <div className="text-center mb-6 py-4 font-semibold">
-            <p className="text-sm md:text-base text-gray-700">
-              Your last download was on:{' '}
-              <span className="font-semibold text-secClr">
-                {format(lastDownloadTime, 'dd/MM/yyyy HH:mm')}
-              </span>
-            </p>
-            <p className="text-sm text-gray-500 mt-1">
-              The next download will include all records since that time.
-            </p>
-            <div className="mt-6 text-start">
-              <label className="block text-sm md:text-base font-medium text-gray-700 mb-1 md:mb-2">Exclude Sites (comma-separated)</label>
-              <input
-                type="text"
-                value={excludedSites}
-                onChange={(e) => onExcludeChange(e.target.value)}
-                placeholder="e.g. siteA, siteB"
-                className="w-full px-3 py-2 md:px-4 md:py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-secClr text-sm md:text-base bg-gray-50"
-              />
-            </div>
-            <div className="mt-4 text-sm text-gray-600 flex items-center justify-between">
-              <p>Initial records: {initialCount}</p>
-              <p>Excluded: {excludedCount}</p>
-              <p>Remaining: {remainingCount}</p>
-            </div>
-          </div>
-        ) : (
-          <div className="flex flex-col gap-3 md:gap-4 mb-6">
-            <p className="text-center text-sm text-gray-600 bg-yellow-100 p-3 rounded-lg">
-              This is your first download. Please select a start date and time. Future downloads will automatically start from the time of your last download.
-            </p>
-            <div>
-              <label className="block text-sm md:text-base font-medium text-gray-700 mb-1 md:mb-2">Date From</label>
-              <DatePicker
-                selected={downloadDateFrom}
-                onChange={onDownloadDateFromChange}
-                dateFormat="dd-MM-yyyy"
-                placeholderText="Select start date"
-                className="w-full px-3 py-2 md:px-4 md:py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-secClr text-sm md:text-base bg-gray-50"
-                aria-label="Select download start date"
-              />
-            </div>
-            <div>
-              <label className="block text-sm md:text-base font-medium text-gray-700 mb-1 md:mb-2">Time From</label>
-              <input
-                type="time"
-                value={downloadTimeFrom || ''}
-                onChange={e => onDownloadTimeFromChange(e.target.value)}
-                className="w-full px-3 py-2 md:px-4 md:py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-secClr text-sm md:text-base bg-gray-50"
-                aria-label="Select download start time"
-              />
-            </div>
-          </div>
-        )}
-
-        <div className="md:flex grid grid-cols-2 justify-end gap-6 md:gap-3">
-          <button
-            onClick={onClose}
-            className="px-3 py-2 md:px-4 md:py-2 bg-gray-200 text-gray-800 font-semibold rounded-lg hover:bg-gray-300 transition duration-300 shadow-md w-full md:w-auto"
-            aria-label="Cancel download"
-          >
-            Cancel
-          </button>
-          <button
-            onClick={onDownloadCSV}
-            className="px-3 py-2 md:px-4 md:py-2 bg-secClr text-white font-semibold rounded-lg hover:bg-secClr/90 transition duration-300 shadow-md w-full md:w-auto"
-            aria-label="Download CSV"
-          >
-            Download as CSV
-          </button>
-          <button
-            onClick={onDownloadPDF}
-            className="col-span-2 px-3 py-2 md:px-4 md:py-2 bg-secClr text-white font-semibold rounded-lg hover:bg-secClr/90 transition duration-300 shadow-md w-full md:w-auto"
-            aria-label="Download PDF"
-          >
-            Download PDF
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-};
-
-export default DownloadModal;
-
-
-
-
-
-
-
-Task: Add Multi-Branch Exclusion to General Download
-
-   1. Update `Dashboard.jsx` State:
-       * I will create a new state variable, excludedBranches, initialized as an empty array []. This 
-         will store the keyWord of each branch the user wants to exclude.
-       * I will create a handler function, handleExcludeBranchChange(branchKey), that will add or     
-         remove a branch keyWord from the excludedBranches array.
-
-   2. Update `DownloadModal.jsx` UI:
-       * I will add a new dropdown (<select>) to the "General Download" section, populated with the   
-         branchOptions.
-       * I will add a display area below the dropdown to show the currently selected branches for     
-         exclusion.
-       * Each displayed branch name will have a "remove" button (<button>) next to it that, when      
-         clicked, will call handleExcludeBranchChange to remove that branch from the exclusion list.  
-
-   3. Update Filtering Logic in `Dashboard.jsx`:
-       * I will modify the main useEffect hook that calculates filteredDownloadData.
-       * In addition to filtering by excludedSites, I will add a new condition to also filter out any 
-         records where item.branches matches any of the titles corresponding to the keyWords in the   
-         excludedBranches array.
-       * This will also update the "Excluded" and "Remaining" counts automatically.
-
-
-
-
-       const branchOptions = [
-       "HQ - Onitsha",
-      Mgbuka",
-      Awka",
-      Asaba",
-      Owerri",
-      "Port Harcourt",
-      "Lagos Ajah",
-      : "Lagos Apapa",
-      : "Enugwu-Ukwu",
-      buja",
-      Abia",
-      "Nnewi",
-      "Enugu",
-  ];
+ // <form onSubmit={formik.handleSubmit} className="space-y-6">
+    //   {error && <div className="text-red-500 text-sm mb-4">{error}</div>}
+    //   <p className="font-semibold text-xl md:text-2xl text-center">Section 1: Client's Details</p>
+
+    //   {/* Image Upload */}
+    //   <div className="w-full">
+    //     <label htmlFor="image" className="block text-sm font-medium text-black/70">Upload Image</label>
+    //     <div className="mt-2 flex flex-col items-center justify-center px-6 pt-5 pb-6 border-2 border-secClr/50 border-dashed rounded-md relative">
+    //       {imagePreview ? (
+    //         <div className="flex flex-col items-center space-y-3">
+    //           <img
+    //             src={imagePreview}
+    //             alt="Uploaded Preview"
+    //             className="w-16 h-16 rounded-full object-cover border border-gray-300 shadow-sm"
+    //           />
+    //           <label
+    //             htmlFor="image"
+    //             className="cursor-pointer px-3 py-1 bg-secClr text-white text-sm rounded-md hover:bg-secClr/80"
+    //           >
+    //             Re-upload
+    //             <input
+    //               id="image"
+    //               name="image"
+    //               type="file"
+    //               className="sr-only"
+    //               onChange={handleImageChange}
+    //               accept="image/png,image/jpeg,image/gif"
+    //             />
+    //           </label>
+    //         </div>
+    //       ) : (
+    //         <div className="space-y-1 text-center flex flex-col items-center">
+    //           <svg
+    //             className="mx-auto h-12 w-12 text-secClr"
+    //             stroke="currentColor"
+    //             fill="none"
+    //             viewBox="0 0 48 48"
+    //             aria-hidden="true"
+    //           >
+    //             <path
+    //               d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02"
+    //               strokeWidth="2"
+    //               strokeLinecap="round"
+    //               strokeLinejoin="round"
+    //             />
+    //           </svg>
+    //           <div className="flex text-sm text-gray-600">
+    //             <label
+    //               htmlFor="image"
+    //               className="relative cursor-pointer bg-white rounded-md font-medium text-secClr hover:text-secClr flex"
+    //             >
+    //               <span className="text-center">Upload a file</span>
+    //               <input
+    //                 id="image"
+    //                 name="image"
+    //                 type="file"
+    //                 className="sr-only"
+    //                 onChange={handleImageChange}
+    //                 accept="image/png,image/jpeg,image/gif"
+    //               />
+    //             </label>
+    //           </div>
+    //           <p className="text-xs text-gray-500">PNG, JPG, GIF up to 10MB</p>
+    //         </div>
+    //       )}
+    //       {formik.touched.image && formik.errors.image ? (
+    //         <div className="text-xs text-red-500 mt-1">{formik.errors.image}</div>
+    //       ) : null}
+    //     </div>
+    //   </div>
+
+    //   <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
+    //     {/* Title */}
+    //     <div className="relative">
+    //       <label htmlFor="title" className="block text-sm font-medium text-black/70">Title</label>
+    //       <div className={parentClass}>
+    //         <MdTitle className={`text-secClr`} />
+    //         <select
+    //           name="title"
+    //           id="title"
+    //           className={inputClass}
+    //           {...formik.getFieldProps('title')} // Connects Formik handlers/value
+    //         >
+    //           <option value='' disabled>Select</option>
+    //           <option value='Mr'>Mr</option>
+    //           <option value='Mrs'>Mrs</option>
+    //           <option value='Miss'>Miss</option>
+    //         </select>
+    //       </div>
+    //       {formik.touched.title && formik.errors.title ? (
+    //         <div className="text-xs text-red-500 mt-1">{formik.errors.title}</div>
+    //       ) : null}
+    //     </div>
+
+    //     {/* First Name */}
+    //     <div className="relative">
+    //       <label htmlFor="firstName" className="block text-sm font-medium text-black/70">First Name</label>
+    //       <div className="relative">
+    //         <FaUser className={`absolute top-1/2 transform ${formik.errors.firstName ? "-translate-y-full" : "-translate-y-1/2"} left-3 text-secClr`} />
+    //         <input
+    //           type="text"
+    //           id="firstName"
+    //           className={parentClass}
+    //           {...formik.getFieldProps('firstName')} // Connects Formik handlers/value
+    //         />
+    //         {formik.touched.firstName && formik.errors.firstName ? (
+    //           <div className="text-xs text-red-500 mt-1">{formik.errors.firstName}</div>
+    //         ) : null}
+    //       </div>
+    //     </div>
+
+    //     {/* Middle Name */}
+    //     <div className="relative">
+    //       <label htmlFor="middleName" className="block text-sm font-medium text-black/70">Middle Name</label>
+    //       <div className="relative">
+    //         <FaUser className={`absolute top-1/2 transform ${formik.errors.middleName ? "-translate-y-full" : "-translate-y-1/2"} left-3 text-secClr`} />
+    //         <input
+    //           type="text"
+    //           id="middleName"
+    //           className={parentClass}
+    //           {...formik.getFieldProps('middleName')} // Connects Formik handlers/value
+    //         />
+    //         {formik.touched.middleName && formik.errors.middleName ? (
+    //           <div className="text-xs text-red-500 mt-1">{formik.errors.middleName}</div>
+    //         ) : null}
+    //       </div>
+    //     </div>
+
+    //     {/* Last Name */}
+    //     <div className="relative">
+    //       <label htmlFor="lastName" className="block text-sm font-medium text-black/70">Last Name</label>
+    //       <div className="relative">
+    //         <FaUser className={`absolute top-1/2 transform ${formik.errors.lastName ? "-translate-y-full" : "-translate-y-1/2"} left-3 text-secClr`} />
+    //         <input
+    //           type="text"
+    //           id="lastName"
+    //           className={parentClass}
+    //           {...formik.getFieldProps('lastName')} // Connects Formik handlers/value
+    //         />
+    //         {formik.touched.lastName && formik.errors.lastName ? (
+    //           <div className="text-xs text-red-500 mt-1">{formik.errors.lastName}</div>
+    //         ) : null}
+    //       </div>
+    //     </div>
+    //   </div>
+
+    //   {/* Address */}
+    //   <div className="relative">
+    //     <label htmlFor="address" className="block text-sm font-medium text-black/70">Address</label>
+    //     <div className="relative">
+    //       <FaAddressCard className={`absolute top-1/2 transform ${formik.errors.address ? "-translate-y-full" : "-translate-y-1/2"} left-3 text-secClr`} />
+    //       <input
+    //         type="text"
+    //         id="address"
+    //         className={parentClass}
+    //         {...formik.getFieldProps('address')} // Connects Formik handlers/value
+    //       />
+    //       {formik.touched.address && formik.errors.address ? (
+    //         <div className="text-xs text-red-500 mt-1">{formik.errors.address}</div>
+    //       ) : null}
+    //     </div>
+    //   </div>
+
+    //   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+    //     {/* Date of Birth */}
+    //     <div className="relative">
+    //       <label htmlFor="dateOfBirth" className="block text-sm font-medium text-black/70">Date of Birth</label>
+    //       <div className="relative">
+    //         <FaCalendarAlt className={`absolute top-1/2 transform ${formik.errors.dateOfBirth ? "-translate-y-full" : "-translate-y-1/2"} left-3 text-secClr z-10`} />
+    //         <DatePicker
+    //           selected={formik.values.dateOfBirth}
+    //           onChange={(date) => formik.setFieldValue('dateOfBirth', date)} // Use setFieldValue
+    //           onBlur={() => formik.setFieldTouched('dateOfBirth', true)} // Manually set touched on blur
+    //           dateFormat="dd-MM-yyyy"
+    //           placeholderText="DD-MM-YYYY"
+    //           className={parentClass}
+    //           showYearDropdown
+    //           yearDropdownItemNumber={100}
+    //           scrollableYearDropdown
+    //         />
+    //         {formik.touched.dateOfBirth && formik.errors.dateOfBirth ? (
+    //           <div className="text-xs text-red-500 mt-1">{formik.errors.dateOfBirth}</div>
+    //         ) : null}
+    //       </div>
+    //     </div>
+
+    //     {/* Nationality */}
+    //     <div className="relative">
+    //       <label htmlFor="nationality" className="block text-sm font-medium text-black/70">Nationality</label>
+    //       <div className="relative">
+    //         <FaFlag className={`absolute top-1/2 transform ${formik.errors.nationality ? "-translate-y-full" : "-translate-y-1/2"} left-3 text-secClr`} />
+    //         <input
+    //           type="text"
+    //           id="nationality"
+    //           className={parentClass}
+    //           {...formik.getFieldProps('nationality')} // Connects Formik handlers/value
+    //         />
+    //         {formik.touched.nationality && formik.errors.nationality ? (
+    //           <div className="text-xs text-red-500 mt-1">{formik.errors.nationality}</div>
+    //         ) : null}
+    //       </div>
+    //     </div>
+    //   </div>
+
+    //   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+    //     {/* Marital Status (Radio Buttons) */}
+    //     <div>
+    //       <label className="block text-sm font-medium text-black/70">Marital Status</label>
+    //       <div className="mt-2 flex gap-4">
+    //         {['Single', 'Married', 'Divorced'].map((status) => (
+    //           <label key={status} className="inline-flex items-center">
+    //             <input
+    //               type="radio"
+    //               name="maritalStatus"
+    //               value={status}
+    //               className="form-radio h-4 w-4 text-secClr"
+    //               checked={formik.values.maritalStatus === status}
+    //               onChange={formik.handleChange} // Connects Formik handler
+    //               onBlur={formik.handleBlur} // Connects Formik handler
+    //             />
+    //             <span className="ml-2 text-sm text-black/70">{status}</span>
+    //           </label>
+    //         ))}
+    //       </div>
+    //       {formik.touched.maritalStatus && formik.errors.maritalStatus ? (
+    //         <div className="text-xs text-red-500 mt-1">{formik.errors.maritalStatus}</div>
+    //       ) : null}
+    //     </div>
+
+    //     {/* Gender (Radio Buttons) */}
+    //     <div>
+    //       <label className="block text-sm font-medium text-black/70">Gender</label>
+    //       <div className="mt-2 flex gap-4">
+    //         {['Male', 'Female'].map((gender) => (
+    //           <label key={gender} className="inline-flex items-center">
+    //             <input
+    //               type="radio"
+    //               name="gender"
+    //               value={gender}
+    //               className="form-radio h-4 w-4 text-secClr"
+    //               checked={formik.values.gender === gender}
+    //               onChange={formik.handleChange} // Connects Formik handler
+    //               onBlur={formik.handleBlur} // Connects Formik handler
+    //             />
+    //             <span className="ml-2 text-sm text-black/70">{gender}</span>
+    //           </label>
+    //         ))}
+    //       </div>
+    //       {formik.touched.gender && formik.errors.gender ? (
+    //         <div className="text-xs text-red-500 mt-1">{formik.errors.gender}</div>
+    //       ) : null}
+    //     </div>
+    //   </div>
+
+    //   {/* Spouse Details (Conditional Rendering) */}
+    //   {formik.values.maritalStatus === 'Married' && (
+    //     <div>
+    //       <label className="block text-sm font-medium text-black/70">Spouse Details</label>
+    //       <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 mt-2">
+    //         {/* Spouse Title */}
+    //         <div className="relative">
+    //           <label htmlFor="spouseTitle" className="block text-sm font-medium text-black/70">Title</label>
+    //           <div className="relative">
+    //             <MdTitle className={`absolute top-1/2 transform ${formik.errors.spouseTitle ? "-translate-y-full" : "-translate-y-1/2"} left-3 text-secClr`} />
+    //             <select
+    //               id="spouseTitle"
+    //               className={parentClass}
+    //               {...formik.getFieldProps('spouseTitle')} // Connects Formik handlers/value
+    //             >
+    //               <option value='' disabled>Select</option>
+    //               <option value='Mr'>Mr</option>
+    //               <option value='Mrs'>Mrs</option>
+    //               <option value='Miss'>Miss</option>
+    //             </select>
+    //             {formik.touched.spouseTitle && formik.errors.spouseTitle ? (
+    //               <div className="text-xs text-red-500 mt-1">{formik.errors.spouseTitle}</div>
+    //             ) : null}
+    //           </div>
+    //         </div>
+
+    //         {/* Spouse First Name */}
+    //         <div className="relative">
+    //           <label htmlFor="spouseFirstName" className="block text-sm font-medium text-black/70">First Name</label>
+    //           <div className="relative">
+    //             <FaUser className={`absolute top-1/2 transform ${formik.errors.spouseFirstName ? "-translate-y-full" : "-translate-y-1/2"} left-3 text-secClr`} />
+    //             <input
+    //               type="text"
+    //               id="spouseFirstName"
+    //               className={parentClass}
+    //               {...formik.getFieldProps('spouseFirstName')} // Connects Formik handlers/value
+    //             />
+    //             {formik.touched.spouseFirstName && formik.errors.spouseFirstName ? (
+    //               <div className="text-xs text-red-500 mt-1">{formik.errors.spouseFirstName}</div>
+    //             ) : null}
+    //           </div>
+    //         </div>
+
+    //         {/* Spouse Middle Name */}
+    //         <div className="relative">
+    //           <label htmlFor="spouseMiddleName" className="block text-sm font-medium text-black/70">Middle Name</label>
+    //           <div className="relative">
+    //             <FaUser className={`absolute top-1/2 transform ${formik.errors.spouseMiddleName ? "-translate-y-full" : "-translate-y-1/2"} left-3 text-secClr`} />
+    //             <input
+    //               type="text"
+    //               id="spouseMiddleName"
+    //               className={parentClass}
+    //               {...formik.getFieldProps('spouseMiddleName')} // Connects Formik handlers/value
+    //             />
+    //             {formik.touched.spouseMiddleName && formik.errors.spouseMiddleName ? (
+    //               <div className="text-xs text-red-500 mt-1">{formik.errors.spouseMiddleName}</div>
+    //             ) : null}
+    //           </div>
+    //         </div>
+
+    //         {/* Spouse Last Name */}
+    //         <div className="relative">
+    //           <label htmlFor="spouseLastName" className="block text-sm font-medium text-black/70">Last Name</label>
+    //           <div className="relative">
+    //             <FaUser className={`absolute top-1/2 transform ${formik.errors.spouseLastName ? "-translate-y-full" : "-translate-y-1/2"} left-3 text-secClr`} />
+    //             <input
+    //               type="text"
+    //               id="spouseLastName"
+    //               className={parentClass}
+    //               {...formik.getFieldProps('spouseLastName')} // Connects Formik handlers/value
+    //             />
+    //             {formik.touched.spouseLastName && formik.errors.spouseLastName ? (
+    //               <div className="text-xs text-red-500 mt-1">{formik.errors.spouseLastName}</div>
+    //             ) : null}
+    //           </div>
+    //         </div>
+    //       </div>
+    //     </div>
+    //   )}
+
+    //   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+    //     {/* Country of Residence */}
+    //     <div className="relative">
+    //       <label htmlFor="countryOfResidence" className="block text-sm font-medium text-black/70">Country of Residence</label>
+    //       <div className="relative">
+    //         <BiGlobe className={`absolute top-1/2 transform ${formik.errors.countryOfResidence ? "-translate-y-full" : "-translate-y-1/2"} left-3 text-secClr`} />
+    //         <select
+    //           name="countryOfResidence"
+    //           id="countryOfResidence"
+    //           className={parentClass}
+    //           value={formik.values.countryOfResidence}
+    //           onChange={handleCountryChange} // Custom change handler
+    //           onBlur={formik.handleBlur}
+    //         >
+    //           {[
+    //             { value: '', label: loading.countries ? 'Loading countries...' : 'Select Country', disabled: true, key: 'country-placeholder' },
+    //             ...countries.map((country) => ({ value: country, label: country, key: country })),
+    //           ].map(({ key, value, label, disabled }) => (
+    //             <option key={key} value={value} disabled={disabled}>
+    //               {label}
+    //             </option>
+    //           ))}
+    //         </select>
+    //         {formik.touched.countryOfResidence && formik.errors.countryOfResidence ? (
+    //           <div className="text-xs text-red-500 mt-1">{formik.errors.countryOfResidence}</div>
+    //         ) : null}
+    //       </div>
+    //     </div>
+
+    //     {/* State of Origin */}
+    //     <div className="relative">
+    //       <label htmlFor="stateOfOrigin" className="block text-sm font-medium text-black/70">State of Origin</label>
+    //       <div className="relative">
+    //         <FaMapMarkerAlt className={`absolute top-1/2 transform ${formik.errors.stateOfOrigin ? "-translate-y-full" : "-translate-y-1/2"} left-3 text-secClr`} />
+    //         <select
+    //           name="stateOfOrigin"
+    //           id="stateOfOrigin"
+    //           className={parentClass}
+    //           value={formik.values.stateOfOrigin}
+    //           onChange={handleStateChange} // Custom change handler
+    //           onBlur={formik.handleBlur}
+    //           disabled={!formik.values.countryOfResidence || loading.states}
+    //         >
+    //           {[
+    //             {
+    //               value: '',
+    //               label: loading.states
+    //                 ? 'Loading states...'
+    //                 : !formik.values.countryOfResidence
+    //                   ? 'Select country first'
+    //                   : states.length === 0
+    //                     ? 'No states available'
+    //                     : 'Select State',
+    //               disabled: true,
+    //               key: 'state-placeholder',
+    //             },
+    //             ...states.map((state) => ({ value: state, label: state, key: state })),
+    //           ].map(({ key, value, label, disabled }) => (
+    //             <option key={key} value={value} disabled={disabled}>
+    //               {label}
+    //             </option>
+    //           ))}
+    //         </select>
+    //         {formik.touched.stateOfOrigin && formik.errors.stateOfOrigin ? (
+    //           <div className="text-xs text-red-500 mt-1">{formik.errors.stateOfOrigin}</div>
+    //         ) : null}
+    //       </div>
+    //     </div>
+    //   </div>
+
+    //   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+    //     {/* Town, Village, Local Government (LGA) */}
+    //     <div className="relative">
+    //       <label htmlFor="lga" className="block text-sm font-medium text-black/70">Town, Village, Local Government (LGA)</label>
+    //       <div className="relative">
+    //         <FaMapMarkerAlt className={`absolute top-1/2 transform ${formik.errors.lga ? "-translate-y-full" : "-translate-y-1/2"} left-3 text-secClr`} />
+    //         <input
+    //           type="text"
+    //           id="lga"
+    //           placeholder="Seperate the 3 entries with commas"
+    //           className={parentClass}
+    //           {...formik.getFieldProps('lga')} // Connects Formik handlers/value
+    //         />
+    //         {formik.touched.lga && formik.errors.lga ? (
+    //           <div className="text-xs text-red-500 mt-1">{formik.errors.lga}</div>
+    //         ) : null}
+    //       </div>
+    //     </div>
+
+    //     {/* Occupation */}
+    //     <div className="relative">
+    //       <label htmlFor="occupation" className="block text-sm font-medium text-black/70">Occupation</label>
+    //       <div className="relative">
+    //         <BiBriefcase className={`absolute top-1/2 transform ${formik.errors.occupation ? "-translate-y-full" : "-translate-y-1/2"} left-3 text-secClr`} />
+    //         <input
+    //           type="text"
+    //           id="occupation"
+    //           className={parentClass}
+    //           {...formik.getFieldProps('occupation')} // Connects Formik handlers/value
+    //         />
+    //         {formik.touched.occupation && formik.errors.occupation ? (
+    //           <div className="text-xs text-red-500 mt-1">{formik.errors.occupation}</div>
+    //         ) : null}
+    //       </div>
+    //     </div>
+    //   </div>
+
+    //   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+    //     {/* Language */}
+    //     <div className="relative">
+    //       <label htmlFor="language" className="block text-sm font-medium text-black/70">Language</label>
+    //       <div className="relative">
+    //         <FaLanguage className={`absolute top-1/2 transform ${formik.errors.language ? "-translate-y-full" : "-translate-y-1/2"} left-3 text-secClr`} />
+    //         <input
+    //           type="text"
+    //           id="language"
+    //           className={parentClass}
+    //           {...formik.getFieldProps('language')} // Connects Formik handlers/value
+    //         />
+    //         {formik.touched.language && formik.errors.language ? (
+    //           <div className="text-xs text-red-500 mt-1">{formik.errors.language}</div>
+    //         ) : null}
+    //       </div>
+    //     </div>
+
+    //     {/* Email Address */}
+    //     <div className="relative">
+    //       <label htmlFor="email" className="block text-sm font-medium text-black/70">Email Address</label>
+    //       <div className="relative">
+    //         <BiEnvelope className={`absolute top-1/2 transform ${formik.errors.email ? "-translate-y-full" : "-translate-y-1/2"} left-3 text-secClr`} />
+    //         <input
+    //           type="email"
+    //           id="email"
+    //           className={parentClass}
+    //           {...formik.getFieldProps('email')} // Connects Formik handlers/value
+    //         />
+    //         {formik.touched.email && formik.errors.email ? (
+    //           <div className="text-xs text-red-500 mt-1">{formik.errors.email}</div>
+    //         ) : null}
+    //       </div>
+    //     </div>
+    //   </div>
+
+    //   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+    //     {/* Mobile Number */}
+    //     <div className="relative">
+    //       <label htmlFor="mobileNumber" className="block text-sm font-medium text-black/70">Mobile Number</label>
+    //       <div className="relative">
+    //         <FaPhoneAlt className={`absolute top-1/2 transform ${formik.errors.mobileNumber ? "-translate-y-full" : "-translate-y-1/2"} left-3 text-secClr`} />
+    //         <input
+    //           type="tel"
+    //           id="mobileNumber"
+    //           className={parentClass}
+    //           placeholder={getMobilePlaceholder()}
+    //           {...formik.getFieldProps('mobileNumber')} // Connects Formik handlers/value
+    //         />
+    //         {formik.touched.mobileNumber && formik.errors.mobileNumber ? (
+    //           <div className="text-xs text-red-500 mt-1">{formik.errors.mobileNumber}</div>
+    //         ) : null}
+    //       </div>
+    //     </div>
+
+    //     {/* Telephone Number */}
+    //     <div className="relative">
+    //       <label htmlFor="telephoneNumber" className="block text-sm font-medium text-black/70">Telephone Number</label>
+    //       <div className="relative">
+    //         <FaPhoneAlt className={`absolute top-1/2 transform ${formik.errors.telephoneNumber ? "-translate-y-full" : "-translate-y-1/2"} left-3 text-secClr`} />
+    //         <input
+    //           type="tel"
+    //           id="telephoneNumber"
+    //           className={parentClass}
+    //           {...formik.getFieldProps('telephoneNumber')} // Connects Formik handlers/value
+    //         />
+    //         {formik.touched.telephoneNumber && formik.errors.telephoneNumber ? (
+    //           <div className="text-xs text-red-500 mt-1">{formik.errors.telephoneNumber}</div>
+    //         ) : null}
+    //       </div>
+    //     </div>
+    //   </div>
+
+    //   <div className="w-full flex justify-end mt-6">
+    //     <button
+    //       type="submit"
+    //       className="px-4 py-2 bg-secClr text-white rounded-md hover:bg-secClr/80"
+    //       disabled={formik.isSubmitting} // Disable button during submission
+    //     >
+    //       Next
+    //     </button>
+    //   </div>
+    // </form>

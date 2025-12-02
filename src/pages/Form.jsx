@@ -14,7 +14,7 @@ const Form = () => {
     middleName: '',
     lastName: '',
     address: '',
-    dateOfBirth: '',
+    dateOfBirth: null,
     nationality: '',
     maritalStatus: '',
     gender: '',
