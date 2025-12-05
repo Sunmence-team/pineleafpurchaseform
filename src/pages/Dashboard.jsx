@@ -329,6 +329,10 @@ const Dashboard = () => {
       keyWord: "ENUGU",
       title: "Enugu",
     },
+    {
+      keyWord: "AMUWOODOFLAG",
+      title: "Amuwo odofin Lagos",
+    },
   ];
 
   useEffect(() => {

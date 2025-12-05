@@ -33,6 +33,7 @@ const Section3 = ({ formData, setFormData, prevSection, nextSection }) => {
     'Abia',
     'Nnewi',
     'Enugu',
+    'Amuwo odofin Lagos',
   ];
 
   const validationSchema = Yup.object({
