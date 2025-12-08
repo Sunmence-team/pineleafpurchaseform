@@ -799,6 +799,8 @@ import { FaUser, FaAddressCard, FaCalendarAlt, FaFlag, FaVenusMars, FaMapMarkerA
 import { MdTitle } from 'react-icons/md';
 import { toast } from 'sonner';
 
+const COUNTRY_URL = import.meta.env.VITE_COUNTRY_BASE_URL;
+
 const Section1 = ({ formData, setFormData, nextSection }) => {
   const [imagePreview, setImagePreview] = useState(formData.image ? URL.createObjectURL(formData.image) : null);
   const [countries, setCountries] = useState([]);
@@ -821,21 +823,21 @@ const Section1 = ({ formData, setFormData, nextSection }) => {
       setError(null);
 
       try {
-        const response = await fetch('https://csc.sidsworld.co.in/api/countries');
+         const response = await fetch(`${COUNTRY_URL}/api/countries`);
         const result = await response.json();
 
-        if (!result.countries || result.countries.length === 0) {
+        if (!result || result.length === 0) {
           throw new Error('No countries found');
         }
 
-        const countryList = result.countries
+        const countryList = result
           .map(c => ({ name: c.name, id: c.id, iso2: c.iso2 }))
           .sort((a, b) => a.name.localeCompare(b.name));
 
         const codeMap = {};
         const idMap = {};
 
-        result.countries.forEach(c => {
+        result.forEach(c => {
           codeMap[c.name] = c.iso2;   // ISO code for phone validation
           idMap[c.name] = c.id;       // ID for states API
         });
@@ -864,11 +866,11 @@ const Section1 = ({ formData, setFormData, nextSection }) => {
         setError(null);
         const countryId = countryIdMap[formData.countryOfResidence];
         try {
-          const response = await fetch(`https://csc.sidsworld.co.in/api/states/${countryId}`);
+          const response = await fetch(`${COUNTRY_URL}/api/countries/${countryId}/states`);
           const result = await response.json();
           if (result.error) throw new Error(result.msg);
 
-          const stateList = result.states?.map((s) => s.name) || [];
+          const stateList = result?.map((s) => s.name) || [];
           setStates(stateList.sort());
         } catch (err) {
           console.error('Error fetching states:', err);
@@ -892,7 +894,6 @@ const Section1 = ({ formData, setFormData, nextSection }) => {
     const countryCode = getCountryCallingCode(countryCodeMap[country]);
     return `+${countryCode} XXXXXXXXXX`;
   };
-
 
   const validationSchema = Yup.object({
     image: Yup.mixed()
