@@ -36,6 +36,65 @@ import { TfiReload } from "react-icons/tfi";
 
 const API_URL = import.meta.env.VITE_API_BASE_URL;
 
+const branchOptions = [
+  {
+    keyWord: "HQ_ONI",
+    title: "HQ - Onitsha",
+  },
+  {
+    keyWord: "MGB",
+    title: "Mgbuka",
+  },
+  {
+    keyWord: "AWKA",
+    title: "Awka",
+  },
+  {
+    keyWord: "ASB",
+    title: "Asaba",
+  },
+  {
+    keyWord: "OWE",
+    title: "Owerri",
+  },
+  {
+    keyWord: "PORT_HAR",
+    title: "Port Harcourt",
+  },
+  {
+    keyWord: "LAG_AJAH",
+    title: "Lagos Ajah",
+  },
+  {
+    keyWord: "LAG_APP",
+    title: "Lagos Apapa",
+  },
+  {
+    keyWord: "ENU_UKW",
+    title: "Enugwu-Ukwu",
+  },
+  {
+    keyWord: "ABJ",
+    title: "Abuja",
+  },
+  {
+    keyWord: "ABIA",
+    title: "Abia",
+  },
+  {
+    keyWord: "NNEWI",
+    title: "Nnewi",
+  },
+  {
+    keyWord: "ENUGU",
+    title: "Enugu",
+  },
+  {
+    keyWord: "AMUWOODOFLAG",
+    title: "Amuwo odofin Lagos",
+  },
+];
+
 const Dashboard = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
@@ -276,65 +335,6 @@ const Dashboard = () => {
     downloadTimeFrom,
   ]);
   
-  const branchOptions = [
-    {
-      keyWord: "HQ_ONI",
-      title: "HQ - Onitsha",
-    },
-    {
-      keyWord: "MGB",
-      title: "Mgbuka",
-    },
-    {
-      keyWord: "AWKA",
-      title: "Awka",
-    },
-    {
-      keyWord: "ASB",
-      title: "Asaba",
-    },
-    {
-      keyWord: "OWE",
-      title: "Owerri",
-    },
-    {
-      keyWord: "PORT_HAR",
-      title: "Port Harcourt",
-    },
-    {
-      keyWord: "LAG_AJAH",
-      title: "Lagos Ajah",
-    },
-    {
-      keyWord: "LAG_APP",
-      title: "Lagos Apapa",
-    },
-    {
-      keyWord: "ENU_UKW",
-      title: "Enugwu-Ukwu",
-    },
-    {
-      keyWord: "ABJ",
-      title: "Abuja",
-    },
-    {
-      keyWord: "ABIA",
-      title: "Abia",
-    },
-    {
-      keyWord: "NNEWI",
-      title: "Nnewi",
-    },
-    {
-      keyWord: "ENUGU",
-      title: "Enugu",
-    },
-    {
-      keyWord: "AMUWOODOFLAG",
-      title: "Amuwo odofin Lagos",
-    },
-  ];
-
   useEffect(() => {
     const sitesToExclude = excludedSites.split(',').map(site => site.trim().toLowerCase()).filter(Boolean);
     const excludedBranchTitles = excludedBranches.map(key => {
@@ -353,7 +353,7 @@ const Dashboard = () => {
     });
 
     setFilteredDownloadData(filtered);
-  }, [excludedSites, excludedBranches, initialDownloadData, branchOptions]);
+  }, [excludedSites, excludedBranches, initialDownloadData]);
 
   const recordsPerPage = 10;
 
@@ -699,7 +699,7 @@ const Dashboard = () => {
 
   useEffect(() => {
     fetchApplications();
-  }, [token, currentPage, debouncedSearchQuery, recordsPerPage]);
+  }, [token, currentPage, debouncedSearchQuery, recordsPerPage, fetchApplications]);
 
   // Apply filters to allClients and paginate results
   useEffect(() => {
@@ -756,8 +756,11 @@ const Dashboard = () => {
     const isFilterActive = filterBranch || filterDateFrom || filterDateTo;
 
     if (isFilterActive) {
-      setTotalRecords(filtered.length);
-      setTotalPages(Math.ceil(filtered.length / recordsPerPage));
+      const nextRecords = filtered.length;
+      const nextPages = Math.ceil(filtered.length / recordsPerPage);
+      
+      setTotalRecords(prev => prev !== nextRecords ? nextRecords : prev);
+      setTotalPages(prev => prev !== nextPages ? nextPages : prev);
     }
 
     // Paginate the filtered data
@@ -768,7 +771,7 @@ const Dashboard = () => {
     );
 
     // setFilteredData(
-    //   debouncedSearchQuery.trim() ? allApplications : paginatedData
+    //    debouncedSearchQuery.trim() ? allApplications : paginatedData
     // );
     setFilteredData(
       debouncedSearchQuery.trim()
@@ -787,6 +790,7 @@ const Dashboard = () => {
     filterTimeTo,
     currentPage,
     debouncedSearchQuery,
+    recordsPerPage
   ]);
 
   // Apply branch filter
@@ -1697,7 +1701,7 @@ const Dashboard = () => {
                   aria-label="Refresh All Clients"
                 >
                   <TfiReload 
-                    className={`${loading || loadingAllClients && "animate-spin"} size-5`}
+                    className={`${(loading || loadingAllClients) && "animate-spin"} size-5`}
                   />
                   <span className="md:hidden inline">Reload Data</span>
                 </button>
@@ -1741,7 +1745,7 @@ const Dashboard = () => {
                       <FaCaretDown className="ml-2 w-6 h-6" />
                     </button>
                     <div
-                      className={`absolute min-w-[200px] max-w-[320px] z-99 right-0 bg-gray-100 border border-black/20 shadow-lg rounded-md ${
+                      className={`absolute min-w-[200px] max-w-[320px] z-[99] right-0 bg-gray-100 border border-black/20 shadow-lg rounded-md ${
                         showMoreDownloadOptions ? "inline-block" : "hidden"
                       } top-[calc(100%+5px)] text-sm font-semibold`}
                     >
