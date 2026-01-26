@@ -6,6 +6,7 @@ import 'react-datepicker/dist/react-datepicker.css';
 import { BiMoney, BiMap } from 'react-icons/bi';
 import { FaUser, FaCalendarAlt } from 'react-icons/fa';
 import { MdOutlineSignLanguage } from 'react-icons/md';
+import { formatNumberWithCommas, unformatNumber } from '../utilities/formatterUtility';
 
 const Section3 = ({ formData, setFormData, prevSection, nextSection }) => {
   const canvasRef = useRef(null);
@@ -37,7 +38,13 @@ const Section3 = ({ formData, setFormData, prevSection, nextSection }) => {
   ];
 
   const validationSchema = Yup.object({
-    clientDeclarationLandPrice: Yup.string().required('Land price is required'),
+    clientDeclarationLandPrice: Yup.string()
+      .required('Land price is required')
+      .transform((value) => unformatNumber(value)) // Unformat the number before validation
+      .test('is-numeric', 'Land price must be a valid number', (value) => {
+        return !isNaN(Number(value)) && Number(value) >= 0;
+      })
+      .typeError('Land price must be a number'),
     clientDeclarationNumberOfPlots: Yup.number()
       .required('Number of plots is required')
       .min(1, 'Number of plots must be at least 1'),
@@ -96,7 +103,7 @@ const Section3 = ({ formData, setFormData, prevSection, nextSection }) => {
   return (
     <Formik
       initialValues={{
-        clientDeclarationLandPrice: formData.clientDeclarationLandPrice || '',
+        clientDeclarationLandPrice: formData.clientDeclarationLandPrice ? formatNumberWithCommas(formData.clientDeclarationLandPrice) : '',
         clientDeclarationNumberOfPlots: formData.clientDeclarationNumberOfPlots || '',
         clientDeclarationSiteLocation: formData.clientDeclarationSiteLocation || '',
         clientDeclarationPlotNumber: formData.clientDeclarationPlotNumber || '',
@@ -107,7 +114,9 @@ const Section3 = ({ formData, setFormData, prevSection, nextSection }) => {
       }}
       validationSchema={validationSchema}
       onSubmit={(values) => {
-        setFormData({ ...formData, ...values });
+        // Unformat land price before saving
+        const unformattedLandPrice = unformatNumber(values.clientDeclarationLandPrice);
+        setFormData({ ...formData, ...values, clientDeclarationLandPrice: unformattedLandPrice });
         nextSection();
       }}
     >
@@ -161,6 +170,12 @@ const Section3 = ({ formData, setFormData, prevSection, nextSection }) => {
                   name="clientDeclarationLandPrice"
                   id="clientDeclarationLandPrice"
                   className={inputClass}
+                  value={values.clientDeclarationLandPrice}
+                  onChange={(e) => {
+                    const { value } = e.target;
+                    const unformattedValue = unformatNumber(value);
+                    setFieldValue('clientDeclarationLandPrice', formatNumberWithCommas(unformattedValue));
+                  }}
                 />
               </div>
               <ErrorMessage
