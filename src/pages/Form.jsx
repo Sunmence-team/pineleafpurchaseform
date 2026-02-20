@@ -6,7 +6,7 @@ import Section3 from "../section/Section3";
 import Section4 from "../section/Section4";
 
 const Form = () => {
-  const [currentSection, setCurrentSection] = useState(3);
+  const [currentSection, setCurrentSection] = useState(1);
   const [formData, setFormData] = useState({
     image: null,
     title: "",
