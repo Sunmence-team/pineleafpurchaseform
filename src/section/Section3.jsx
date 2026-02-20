@@ -1,4 +1,4 @@
-import React, { useRef } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import { Formik, Form, Field, ErrorMessage } from 'formik';
 import * as Yup from 'yup';
 import DatePicker from 'react-datepicker';
@@ -7,14 +7,30 @@ import { BiMoney, BiMap } from 'react-icons/bi';
 import { FaUser, FaCalendarAlt } from 'react-icons/fa';
 import { MdOutlineSignLanguage } from 'react-icons/md';
 import { formatNumberWithCommas, unformatNumber } from '../utilities/formatterUtility';
+import axios from 'axios';
 
 const Section3 = ({ formData, setFormData, prevSection, nextSection }) => {
   const canvasRef = useRef(null);
   const isDrawing = useRef(false);
   const lastTouch = useRef({ x: 0, y: 0 });
+  const [siteLocations, setSiteLocations] = useState([]);
 
-  // const inputClass =
-  //   'mt-1 block w-full rounded-md border border-gray-300 shadow-sm focus:border-secClr focus:ring-secClr text-sm sm:text-base py-2 sm:py-3 md:pl-10 pl-8 bg-white';
+  useEffect(() => {
+    const fetchSiteLocations = async () => {
+      try {
+        // Removed ?name=og so it fetches all properties
+        const response = await axios.get(`${import.meta.env.VITE_PROPERTY_BASE_URL}/api/properties/search`);
+        
+        if (response.data && response.data.data && Array.isArray(response.data.data.data)) {
+          setSiteLocations(response.data.data.data);
+        }
+      } catch (error) {
+        console.error('Error fetching site locations:', error);
+      }
+    };
+
+    fetchSiteLocations();
+  }, []);
 
   const parentClass = "mt-1 block w-full rounded-md border border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 h-[50px] px-2 flex items-center bg-white";
   const inputClass = "w-full focus:outline-0 text-sm h-full indent-2";
@@ -40,7 +56,7 @@ const Section3 = ({ formData, setFormData, prevSection, nextSection }) => {
   const validationSchema = Yup.object({
     clientDeclarationLandPrice: Yup.string()
       .required('Land price is required')
-      .transform((value) => unformatNumber(value)) // Unformat the number before validation
+      .transform((value) => unformatNumber(value))
       .test('is-numeric', 'Land price must be a valid number', (value) => {
         return !isNaN(Number(value)) && Number(value) >= 0;
       })
@@ -81,7 +97,6 @@ const Section3 = ({ formData, setFormData, prevSection, nextSection }) => {
     setFieldValue('clientDeclarationSignature', '');
   };
 
-  // Helper function to get canvas coordinates from touch or mouse events
   const getCanvasCoordinates = (event, canvas) => {
     const rect = canvas.getBoundingClientRect();
     const scaleX = canvas.width / rect.width;
@@ -114,7 +129,6 @@ const Section3 = ({ formData, setFormData, prevSection, nextSection }) => {
       }}
       validationSchema={validationSchema}
       onSubmit={(values) => {
-        // Unformat land price before saving
         const unformattedLandPrice = unformatNumber(values.clientDeclarationLandPrice);
         setFormData({ ...formData, ...values, clientDeclarationLandPrice: unformattedLandPrice });
         nextSection();
@@ -219,11 +233,18 @@ const Section3 = ({ formData, setFormData, prevSection, nextSection }) => {
               <div className={parentClass}>
                 <BiMap className="text-secClr" />
                 <Field
-                  type="text"
+                  as="select"
                   name="clientDeclarationSiteLocation"
                   id="clientDeclarationSiteLocation"
                   className={inputClass}
-                />
+                >
+                  <option value="">Select Site Location</option>
+                  {siteLocations.map((location) => (
+                    <option key={location.id} value={location.name}>
+                      {location.name}
+                    </option>
+                  ))}
+                </Field>
               </div>
               <ErrorMessage
                 name="clientDeclarationSiteLocation"
@@ -380,7 +401,7 @@ const Section3 = ({ formData, setFormData, prevSection, nextSection }) => {
                   ctx.closePath();
                   setFieldValue('clientDeclarationSignature', canvas.toDataURL());
                 }}
-                style={{ touchAction: 'none' }} // Prevent default touch actions like scrolling
+                style={{ touchAction: 'none' }}
               ></canvas>
               <div className="mt-2">
                 <button
