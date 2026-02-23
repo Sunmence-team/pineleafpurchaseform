@@ -9,6 +9,8 @@ import { MdOutlineSignLanguage } from 'react-icons/md';
 import { formatNumberWithCommas, unformatNumber } from '../utilities/formatterUtility';
 import axios from 'axios';
 
+const PROPERTY_URL = import.meta.env.VITE_PROPERTY_BASE_URL;
+
 const Section3 = ({ formData, setFormData, prevSection, nextSection }) => {
   const canvasRef = useRef(null);
   const dropdownRef = useRef(null);
@@ -22,7 +24,7 @@ const Section3 = ({ formData, setFormData, prevSection, nextSection }) => {
     const fetchSiteLocations = async () => {
       try {
         // Removed ?name=og so it fetches all properties
-        const response = await axios.get(`${import.meta.env.VITE_PROPERTY_BASE_URL}/api/properties/search`);
+        const response = await axios.get(`${PROPERTY_URL}/api/properties/search`);
         
         if (response.data && response.data.data && Array.isArray(response.data.data.data)) {
           setSiteLocations(response.data.data.data);
