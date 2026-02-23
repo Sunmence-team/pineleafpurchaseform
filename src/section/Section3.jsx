@@ -23,8 +23,7 @@ const Section3 = ({ formData, setFormData, prevSection, nextSection }) => {
   useEffect(() => {
     const fetchSiteLocations = async () => {
       try {
-        // Removed ?name=og so it fetches all properties
-        const response = await axios.get(`${PROPERTY_URL}/api/properties/search`);
+        const response = await axios.get(`${PROPERTY_URL}/api/properties/search?name=${searchTerm}`);
         
         if (response.data && response.data.data && Array.isArray(response.data.data.data)) {
           setSiteLocations(response.data.data.data);
@@ -35,7 +34,7 @@ const Section3 = ({ formData, setFormData, prevSection, nextSection }) => {
     };
 
     fetchSiteLocations();
-  }, []);
+  }, [searchTerm]);
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -47,10 +46,6 @@ const Section3 = ({ formData, setFormData, prevSection, nextSection }) => {
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
-
-  const filteredLocations = siteLocations.filter((location) =>
-    location.name.toLowerCase().includes(searchTerm.toLowerCase())
-  );
 
   const parentClass = "mt-1 block w-full rounded-md border border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 h-[50px] px-2 flex items-center bg-white";
   const inputClass = "w-full focus:outline-0 text-sm h-full indent-2";
@@ -270,8 +265,8 @@ const Section3 = ({ formData, setFormData, prevSection, nextSection }) => {
               </div>
               {showDropdown && searchTerm && (
                 <div className="absolute z-20 w-full bg-white border border-gray-300 mt-1 max-h-60 overflow-auto rounded-md shadow-lg">
-                  {filteredLocations.length > 0 ? (
-                    filteredLocations.map((location) => (
+                  {siteLocations.length > 0 ? (
+                    siteLocations.map((location) => (
                       <div
                         key={location.id}
                         className="px-4 py-2 hover:bg-secClr hover:text-white cursor-pointer transition-colors duration-200 text-sm"
