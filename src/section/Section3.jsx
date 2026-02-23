@@ -240,7 +240,7 @@ const Section3 = ({ formData, setFormData, prevSection, nextSection }) => {
                   id="clientDeclarationSiteLocation"
                   className={inputClass}
                 >
-                  <option value="">Select Site Location</option>
+                  <option value="" selected disabled>Select Site Location</option>
                   {siteLocations.map((location) => (
                     <option key={location.id} value={location.name}>
                       {location.name}
