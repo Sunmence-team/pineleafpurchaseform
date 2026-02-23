@@ -11,9 +11,12 @@ import axios from 'axios';
 
 const Section3 = ({ formData, setFormData, prevSection, nextSection }) => {
   const canvasRef = useRef(null);
+  const dropdownRef = useRef(null);
   const isDrawing = useRef(false);
   const lastTouch = useRef({ x: 0, y: 0 });
   const [siteLocations, setSiteLocations] = useState([]);
+  const [searchTerm, setSearchTerm] = useState(formData.clientDeclarationSiteLocation || '');
+  const [showDropdown, setShowDropdown] = useState(false);
 
   useEffect(() => {
     const fetchSiteLocations = async () => {
@@ -31,6 +34,21 @@ const Section3 = ({ formData, setFormData, prevSection, nextSection }) => {
 
     fetchSiteLocations();
   }, []);
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setShowDropdown(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const filteredLocations = siteLocations.filter((location) =>
+    location.name.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   const parentClass = "mt-1 block w-full rounded-md border border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 h-[50px] px-2 flex items-center bg-white";
   const inputClass = "w-full focus:outline-0 text-sm h-full indent-2";
@@ -223,7 +241,7 @@ const Section3 = ({ formData, setFormData, prevSection, nextSection }) => {
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
-            <div className="relative">
+            <div className="relative" ref={dropdownRef}>
               <label
                 htmlFor="clientDeclarationSiteLocation"
                 className="block text-sm sm:text-base font-medium text-gray-700 mb-1 sm:mb-2"
@@ -232,20 +250,43 @@ const Section3 = ({ formData, setFormData, prevSection, nextSection }) => {
               </label>
               <div className={parentClass}>
                 <BiMap className="text-secClr" />
-                <Field
-                  as="select"
-                  name="clientDeclarationSiteLocation"
+                <input
+                  type="text"
                   id="clientDeclarationSiteLocation"
+                  placeholder="Search Site Location..."
                   className={inputClass}
-                >
-                  <option value="">Select Site Location</option>
-                  {siteLocations.map((location) => (
-                    <option key={location.id} value={location.name}>
-                      {location.name}
-                    </option>
-                  ))}
-                </Field>
+                  value={searchTerm}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    setSearchTerm(value);
+                    setFieldValue('clientDeclarationSiteLocation', value);
+                    setShowDropdown(true);
+                  }}
+                  onFocus={() => setShowDropdown(true)}
+                  autoComplete="off"
+                />
               </div>
+              {showDropdown && searchTerm && (
+                <div className="absolute z-20 w-full bg-white border border-gray-300 mt-1 max-h-60 overflow-auto rounded-md shadow-lg">
+                  {filteredLocations.length > 0 ? (
+                    filteredLocations.map((location) => (
+                      <div
+                        key={location.id}
+                        className="px-4 py-2 hover:bg-secClr hover:text-white cursor-pointer transition-colors duration-200 text-sm"
+                        onClick={() => {
+                          setFieldValue('clientDeclarationSiteLocation', location.name);
+                          setSearchTerm(location.name);
+                          setShowDropdown(false);
+                        }}
+                      >
+                        {location.name}
+                      </div>
+                    ))
+                  ) : (
+                    <div className="px-4 py-2 text-gray-500 text-sm">No results found</div>
+                  )}
+                </div>
+              )}
               <ErrorMessage
                 name="clientDeclarationSiteLocation"
                 component="div"
