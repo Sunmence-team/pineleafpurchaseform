@@ -22,19 +22,25 @@ const Section3 = ({ formData, setFormData, prevSection, nextSection }) => {
   const [isValidSelection, setIsValidSelection] = useState(!!formData.clientDeclarationSiteLocation);
 
   useEffect(() => {
-    const fetchSiteLocations = async () => {
-      try {
-        const response = await axios.get(`${PROPERTY_URL}/api/properties/search?name=${searchTerm}`);
-        
-        if (response.data && response.data.data && Array.isArray(response.data.data.data)) {
-          setSiteLocations(response.data.data.data);
-        }
-      } catch (error) {
-        console.error('Error fetching site locations:', error);
+    const delayDebounceFn = setTimeout(() => {
+      if (searchTerm.trim() !== "") {
+        const fetchSiteLocations = async () => {
+          try {
+            const response = await axios.get(`${PROPERTY_URL}/api/properties/search?name=${searchTerm}`);
+            
+            if (response.data && response.data.data && Array.isArray(response.data.data.data)) {
+              setSiteLocations(response.data.data.data);
+            }
+          } catch (error) {
+            console.error('Error fetching site locations:', error);
+          }
+        };
+    
+        fetchSiteLocations();
       }
-    };
+    }, 300)
 
-    fetchSiteLocations();
+    return () => clearTimeout(delayDebounceFn);
   }, [searchTerm]);
 
   useEffect(() => {
@@ -289,7 +295,8 @@ const Section3 = ({ formData, setFormData, prevSection, nextSection }) => {
                       <div
                         key={location.id}
                         className="px-4 py-2 hover:bg-secClr hover:text-white cursor-pointer transition-colors duration-200 text-sm"
-                        onClick={() => {
+                        onMouseDown={(e) => {
+                          e.preventDefault();
                           setFieldValue('clientDeclarationSiteLocation', location.name);
                           setSearchTerm(location.name);
                           setIsValidSelection(true);
