@@ -19,7 +19,7 @@ const Section3 = ({ formData, setFormData, prevSection, nextSection }) => {
   const [siteLocations, setSiteLocations] = useState([]);
   const [searchTerm, setSearchTerm] = useState(formData.clientDeclarationSiteLocation || '');
   const [showDropdown, setShowDropdown] = useState(false);
-  const [isValidSelection, setIsValidSelection] = useState(false);
+  const [isValidSelection, setIsValidSelection] = useState(!!formData.clientDeclarationSiteLocation);
 
   useEffect(() => {
     const fetchSiteLocations = async () => {
@@ -67,6 +67,7 @@ const Section3 = ({ formData, setFormData, prevSection, nextSection }) => {
     'Nnewi',
     'Enugu',
     'Amuwo odofin Lagos',
+    'Ebonyi',
   ];
 
   const validationSchema = Yup.object({
@@ -80,7 +81,12 @@ const Section3 = ({ formData, setFormData, prevSection, nextSection }) => {
     clientDeclarationNumberOfPlots: Yup.number()
       .required('Number of plots is required')
       .min(1, 'Number of plots must be at least 1'),
-    clientDeclarationSiteLocation: Yup.string().required('Site location is required'),
+    clientDeclarationSiteLocation: Yup.string()
+      .required('Site location is required')
+      .test('is-valid-location', 'Please select a valid property from the list', function(value) {
+      // This ensures the value in Formik's state is actually one of the fetched properties
+      return siteLocations.some(loc => loc.name === value);
+    }),
     clientDeclarationPlotNumber: Yup.string()
       .trim()
       .required('Plot number is required')
