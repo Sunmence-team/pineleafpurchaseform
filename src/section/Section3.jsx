@@ -19,6 +19,7 @@ const Section3 = ({ formData, setFormData, prevSection, nextSection }) => {
   const [siteLocations, setSiteLocations] = useState([]);
   const [searchTerm, setSearchTerm] = useState(formData.clientDeclarationSiteLocation || '');
   const [showDropdown, setShowDropdown] = useState(false);
+  const [isValidSelection, setIsValidSelection] = useState(false);
 
   useEffect(() => {
     const fetchSiteLocations = async () => {
@@ -243,21 +244,33 @@ const Section3 = ({ formData, setFormData, prevSection, nextSection }) => {
                 htmlFor="clientDeclarationSiteLocation"
                 className="block text-sm sm:text-base font-medium text-gray-700 mb-1 sm:mb-2"
               >
-                Site Location
+                Property Name
               </label>
               <div className={parentClass}>
                 <BiMap className="text-secClr" />
                 <input
                   type="text"
                   id="clientDeclarationSiteLocation"
-                  placeholder="Search Site Location..."
+                  placeholder="Search property name..."
                   className={inputClass}
                   value={searchTerm}
                   onChange={(e) => {
                     const value = e.target.value;
                     setSearchTerm(value);
-                    setFieldValue('clientDeclarationSiteLocation', value);
+                    // Important: Mark as invalid because they are currently typing, 
+                    // and haven't clicked a suggestion yet.
+                    setIsValidSelection(false); 
+                    setFieldValue('clientDeclarationSiteLocation', ''); 
                     setShowDropdown(true);
+                  }}
+                  onBlur={() => {
+                    // Optional: Clear search term if they click away without selecting
+                    setTimeout(() => {
+                      if (!isValidSelection) {
+                        setSearchTerm('');
+                        setFieldValue('clientDeclarationSiteLocation', '');
+                      }
+                    }, 200);
                   }}
                   onFocus={() => setShowDropdown(true)}
                   autoComplete="off"
@@ -273,6 +286,7 @@ const Section3 = ({ formData, setFormData, prevSection, nextSection }) => {
                         onClick={() => {
                           setFieldValue('clientDeclarationSiteLocation', location.name);
                           setSearchTerm(location.name);
+                          setIsValidSelection(true);
                           setShowDropdown(false);
                         }}
                       >
