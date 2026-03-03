@@ -1,11 +1,10 @@
 @import "tailwindcss";
 
-
 @theme {
-  --color-pryClr: #E6FFF6;
-  --color-secClr: #2F5318;
-  --color-trdClr: #A5D6A7;
-  --color-tetClr: #F5DD00;
+  --color-pryClr: #e6fff6;
+  --color-secClr: #2f5318;
+  --color-trdClr: #a5d6a7;
+  --color-tetClr: #f5dd00;
 }
 
 .react-datepicker-wrapper {
@@ -18,4 +17,12 @@
 
 .react-datepicker__input-container input {
   width: 100% !important;
+}
+
+.styled-scrollbar::-webkit-scrollbar {
+  @apply w-1;
+}
+
+.styled-scrollbar::-webkit-scrollbar-thumb {
+  @apply bg-secClr/20 rounded-full;
 }
