@@ -22,17 +22,19 @@ import {
   subMonths,
 } from "date-fns";
 import jsPDF from "jspdf";
-import assets from "../assets/assests";
-import logo from "../assets/logo.png";
+import assets from "../../assets/assests";
+import logo from "../../assets/logo.png";
 import autoTable from "jspdf-autotable";
-import BranchFilterModal from "../components/modals/BranchFilterModal";
-import DateFilterModal from "../components/modals/DateFilterModal";
-import DownloadModal from "../components/modals/DownloadModal";
-import DownloadAllModal from "../components/modals/DownloadAllModal";
-import SiteDownloadModal from "../components/modals/SiteDownloadModal";
-import ApplicationsList from "../components/ApplicationsList";
-import PaginationControls from "../components/PaginationControls";
+import BranchFilterModal from "../../components/modals/BranchFilterModal";
+import DateFilterModal from "../../components/modals/DateFilterModal";
+import DownloadModal from "../../components/modals/DownloadModal";
+import DownloadAllModal from "../../components/modals/DownloadAllModal";
+import SiteDownloadModal from "../../components/modals/SiteDownloadModal";
+import ApplicationsList from "../../components/ApplicationsList";
+import PaginationControls from "../../components/PaginationControls";
 import { TfiReload } from "react-icons/tfi";
+import { FaBars, FaX } from "react-icons/fa6";
+import SideNav from "../../components/SideNav";
 
 const API_URL = import.meta.env.VITE_API_BASE_URL;
 
@@ -101,9 +103,10 @@ const Dashboard = () => {
   const [totalRecords, setTotalRecords] = useState(0);
 
   const [allClients, setAllClients] = useState([]);
-  const [loadingPaginated, setLoadingPaginated] = useState(false);
   const [loadingAllClients, setLoadingAllClients] = useState(false);
   const [allClientsFetched, setAllClientsFetched] = useState(false);
+
+  const [openMenu, setOpenMenu] = useState(false);
 
   const [allApplications, setAllApplications] = useState([]);
   const [filteredData, setFilteredData] = useState([]);
@@ -127,6 +130,7 @@ const Dashboard = () => {
   const [downloadTimeFrom, setDownloadTimeFrom] = useState(null);
   const [lastDownloadTime, setLastDownloadTime] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [isGettingBranches] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [filteredDataForPrint, _setFilteredDataForPrint] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
@@ -204,7 +208,6 @@ const Dashboard = () => {
   };
 
   useEffect(() => {
-    // This useEffect needs to check selectedSiteLocationForDownload and siteLocationLastDownload
     if (debouncedSiteLocation && siteLocationLastDownload) {
       const filterFrom = new Date(siteLocationLastDownload);
       const data = allClients.filter(item => {
@@ -391,7 +394,7 @@ const Dashboard = () => {
       const token = localStorage.getItem("token");
       try {
         if (!token) {
-          window.location.href = "/#/login";
+          // window.location.href = "/login";
           return;
         }
 
@@ -411,7 +414,7 @@ const Dashboard = () => {
           toast.info("Session expired!. Logging out...");
           setTimeout(() => {
             localStorage.removeItem("token");
-            window.location.href = "/#/login";
+            // window.location.href = "/login";
           }, 500);
         }
       }
@@ -498,7 +501,7 @@ const Dashboard = () => {
 
     const token = localStorage.getItem("token");
     if (!token) {
-      window.location.href = "/#/login";
+      // window.location.href = "/login";
       return;
     }
 
@@ -510,7 +513,7 @@ const Dashboard = () => {
       let lastPage = 1;
 
       do {
-        const payload = { page, per_page: 100 }; // Increase page size to reduce requests
+        const payload = { page, per_page: 200 }; // Increase page size to reduce requests
         const response = await axios.post(
           `${API_URL}/api/all_clients`,
           payload,
@@ -545,7 +548,7 @@ const Dashboard = () => {
         toast.info("Session expired!. Logging out...");
         setTimeout(() => {
           localStorage.removeItem("token");
-          window.location.href = "/#/login";
+          // window.location.href = "/login";
         }, 500);
       }
     } finally {
@@ -556,7 +559,7 @@ const Dashboard = () => {
   // Fetch paginated applications or search results
   const fetchApplications = useCallback(async () => {
     if (!token) {
-      window.location.href = "/#/login";
+      // window.location.href = "/login";
       return;
     }
 
@@ -571,7 +574,7 @@ const Dashboard = () => {
     try {
       if (!token) {
         toast.error("Please log in to view the dashboard.", { id: toastId });
-        window.location.href = "/#/login";
+        // window.location.href = "/login";
         setLoading(false);
         return;
       }
@@ -682,7 +685,7 @@ const Dashboard = () => {
         toast.info("Session expired!. Logging out...");
         setTimeout(() => {
           localStorage.removeItem("token");
-          window.location.href = "/#/login";
+          // window.location.href = "/login";
         }, 500);
       }
     } finally {
@@ -912,7 +915,7 @@ const Dashboard = () => {
     try {
       const token = localStorage.getItem("token");
       if (!token) {
-        window.location.href = "/#/login";
+        // window.location.href = "/login";
         return;
       }
 
@@ -933,7 +936,7 @@ const Dashboard = () => {
         toast.info("Session expired!. Logging out...");
         setTimeout(() => {
           localStorage.removeItem("token");
-          window.location.href = "/#/login";
+          // window.location.href = "/login";
         }, 500);
       }
     }
@@ -1357,7 +1360,7 @@ const Dashboard = () => {
         toast.info("Session expired!. Logging out...");
         setTimeout(() => {
           localStorage.removeItem("token");
-          window.location.href = "/#/login";
+          // window.location.href = "/login";
         }, 500);
       }
     }
@@ -1599,7 +1602,7 @@ const Dashboard = () => {
       const token = localStorage.getItem("token");
       if (!token) {
         toast.error("Please log in to perform this action.", { id: toastId });
-        window.location.href = "/#/login";
+        // window.location.href = "/login";
         setIsDeleting(false);
         return;
       }
@@ -1643,7 +1646,7 @@ const Dashboard = () => {
         toast.info("Session expired!. Logging out...");
         setTimeout(() => {
           localStorage.removeItem("token");
-          window.location.href = "/#/login";
+          // window.location.href = "/login";
         }, 500);
       }
     } finally {
@@ -1652,7 +1655,15 @@ const Dashboard = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-100 flex flex-col p-0 md:p-5">
+    <div className="min-h-screen bg-gray-100 flex flex-col p-0 md:p-5 relative">
+      {openMenu && (
+        <SideNav 
+          openMenu={openMenu}
+          setOpenMenu={setOpenMenu}
+          branches={branchOptions}
+          isLoading={isGettingBranches}
+        />
+      )}
       <div className="mx-auto bg-white rounded-2xl shadow-2xl p-4 md:p-5 w-full py-8 transition-all duration-300">
         {loading && (
           <div className="flex justify-center items-center min-h-[200px]">
@@ -1665,6 +1676,13 @@ const Dashboard = () => {
             <div className="flex flex-col gap-4 lg:flex-row lg:items-center md:justify-between mb-4 md:mb-6 border-b border-gray-200 pb-2 md:pb-4">
               {/* Logo + Title */}
               <div className="flex items-center gap-2 md:gap-3">
+                <button
+                  type="button"
+                  onClick={() => setOpenMenu(true)}
+                  className="text-2xl cursor-pointer"
+                >
+                  <FaBars />
+                </button>
                 <img
                   src={assets.logo}
                   className="w-8 h-8 md:w-10 md:h-10"

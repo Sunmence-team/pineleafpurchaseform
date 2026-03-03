@@ -1,12 +1,13 @@
 import { Route, Routes } from "react-router-dom"
 import Form from "./pages/Form"
 import Login from "./pages/Login"
-import Dashboard from "./pages/Dashboard"
+import Dashboard from "./pages/dashboard/Dashboard"
 import { Toaster } from "sonner"
 import ViewClient from "./pages/View"
 import EditClient from "./pages/Edit"
 import Success from "./pages/Success"
 import { useEffect } from "react"
+import BranchBreakDown from "./pages/dashboard/BranchBreakDown"
 
 function App() {
 
@@ -43,6 +44,10 @@ function App() {
         <Route
           path="/dashboard"
           element={<Dashboard />}
+        />
+        <Route
+          path="/dashboard/branch/:branch"
+          element={<BranchBreakDown />}
         />
         <Route
           path="/view-client/:id"
