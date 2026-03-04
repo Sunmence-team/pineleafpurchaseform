@@ -418,13 +418,13 @@ const BranchBreakDown = () => {
 
                 {/* Stats Summary */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div className="bg-white p-6 rounded-xl shadow-sm border boder-secClr/20">
+                  <div className="bg-white p-6 rounded-xl shadow-sm border border-secClr/20">
                     <p className="text-sm text-gray-500 font-medium">
                       Total Entries
                     </p>
                     <h3 className="text-2xl font-bold">{fullFilteredData.length}</h3>
                   </div>
-                  <div className="bg-white p-6 rounded-xl shadow-sm border boder-secClr/20">
+                  <div className="bg-white p-6 rounded-xl shadow-sm border border-secClr/20">
                     <p className="text-sm text-gray-500 font-medium">
                       Last Download
                     </p>
@@ -434,7 +434,7 @@ const BranchBreakDown = () => {
                         : "Never"}
                     </h3>
                   </div>
-                  <div className="bg-white p-6 rounded-xl shadow-sm border boder-secClr/20">
+                  <div className="bg-white p-6 rounded-xl shadow-sm border border-secClr/20">
                     <p className="text-sm text-gray-500 font-medium">
                       Selected Branch
                     </p>
