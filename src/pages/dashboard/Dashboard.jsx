@@ -1674,7 +1674,7 @@ const Dashboard = () => {
           <>
             {/* Header */}
             <div className="flex flex-col gap-4 lg:flex-row lg:items-center md:justify-between mb-4 md:mb-6 border-b border-gray-200 pb-2 md:pb-4">
-              {/* Logo + Title */}
+              {/* Sidebar Trigger + Logo + Title */}
               <div className="flex items-center gap-2 md:gap-3">
                 <button
                   type="button"

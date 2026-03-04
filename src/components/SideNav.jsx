@@ -56,7 +56,7 @@ const SideNav = ({ openMenu, setOpenMenu, branches, isLoading }) => {
                 <NavLink
                   to={`/dashboard/branch/${branch.keyWord}`}
                   className={({ isActive }) =>
-                    `h-10 flex items-center px-4 last:border-b-0 border-b border-secClr/30 text-xs ${isActive ? "bg-secClr" : "hover:bg-secClr/30"}`
+                    `h-10 flex items-center px-4 last:border-b-0 border-b border-secClr/30 text-xs ${isActive ? "bg-secClr text-white" : "hover:bg-secClr/30"}`
                   }
                 >
                   {branch.title}
