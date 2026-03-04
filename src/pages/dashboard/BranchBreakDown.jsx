@@ -85,7 +85,7 @@ const BranchBreakDown = () => {
     setLoadingAllClients(true);
     const token = localStorage.getItem("token");
     try {
-      const response = await axios.get(`${API_URL}/api/all_clients`, {
+      const response = await axios.post(`${API_URL}/api/all_clients`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       const clients =
