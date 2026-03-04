@@ -33,6 +33,7 @@ const SideNav = ({ openMenu, setOpenMenu, branches, isLoading }) => {
             className={({ isActive }) =>
               `py-3 text-sm flex items-center px-4 rounded-md font-medium ${isActive ? "bg-secClr text-white" : ""}`
             }
+            onClick={() => setOpenMenu(false)}
           >
             Dashboard
           </NavLink>
@@ -58,6 +59,7 @@ const SideNav = ({ openMenu, setOpenMenu, branches, isLoading }) => {
                   className={({ isActive }) =>
                     `h-10 flex items-center px-4 last:border-b-0 border-b border-secClr/30 text-xs ${isActive ? "bg-secClr text-white" : "hover:bg-secClr/30"}`
                   }
+                  onClick={() => setOpenMenu(false)}
                 >
                   {branch.title}
                 </NavLink>
