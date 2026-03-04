@@ -48,7 +48,8 @@ const BranchBreakDown = () => {
     loadingApplications,
   } = useClients();
 
-  const [filteredData, setFilteredData] = useState([]);
+  const [fullFilteredData, setFullFilteredData] = useState([]);
+  const [paginatedData, setPaginatedData] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [debouncedSearchQuery, setDebouncedSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
@@ -117,8 +118,17 @@ const BranchBreakDown = () => {
       );
     }
 
-    setFilteredData(data);
+    setFullFilteredData(data);
   }, [allClients, branchTitle, debouncedSearchQuery]);
+
+  useEffect(() => {
+    const startIndex = (currentPage - 1) * recordsPerPage;
+    const paginated = fullFilteredData.slice(
+      startIndex,
+      startIndex + recordsPerPage
+    );
+    setPaginatedData(paginated);
+  }, [fullFilteredData, currentPage, recordsPerPage]);
 
   const updateDownloadTime = async (downloadTime) => {
     const token = localStorage.getItem("token");
@@ -214,7 +224,7 @@ const BranchBreakDown = () => {
   };
 
   const handleDownloadAll = (type) => {
-    const data = filteredData;
+    const data = fullFilteredData;
     if (data.length === 0) return toast.error("No records to download");
 
     const filename = `all_records_${branchKey}_${format(new Date(), "yyyyMMdd_HHmm")}`;
@@ -243,7 +253,7 @@ const BranchBreakDown = () => {
       filterFrom.setHours(hours, minutes, 0, 0);
     }
 
-    const data = filteredData.filter((item) => {
+    const data = fullFilteredData.filter((item) => {
       const createdDate = item.created_at ? parseISO(item.created_at) : null;
       return createdDate && createdDate >= filterFrom;
     });
@@ -260,7 +270,7 @@ const BranchBreakDown = () => {
     toast.success("Download started");
   };
 
-  const totalPages = Math.ceil(filteredData.length / recordsPerPage);
+  const totalPages = Math.ceil(fullFilteredData.length / recordsPerPage);
 
   return (
     <div className="flex flex-col md:flex-row min-h-screen bg-gray-100">
@@ -407,7 +417,7 @@ const BranchBreakDown = () => {
                     <p className="text-sm text-gray-500 font-medium">
                       Total Entries
                     </p>
-                    <h3 className="text-2xl font-bold">{filteredData.length}</h3>
+                    <h3 className="text-2xl font-bold">{fullFilteredData.length}</h3>
                   </div>
                   <div className="bg-white p-6 rounded-xl shadow-sm border-l-4 border-blue-500">
                     <p className="text-sm text-gray-500 font-medium">
@@ -430,7 +440,7 @@ const BranchBreakDown = () => {
                 {/* List */}
                 <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
                   <ApplicationsList
-                    filteredData={filteredData}
+                    filteredData={paginatedData}
                     currentPage={currentPage}
                     recordsPerPage={recordsPerPage}
                     isDeleting={false}
@@ -443,8 +453,8 @@ const BranchBreakDown = () => {
                   currentPage={currentPage}
                   totalPages={totalPages}
                   setCurrentPage={setCurrentPage}
-                  totalRecords={filteredData.length}
-                  filteredData={filteredData}
+                  totalRecords={fullFilteredData.length}
+                  filteredData={paginatedData}
                   getPageNumbers={() => {
                     const pages = [];
                     if (totalPages <= 3) {
