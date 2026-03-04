@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from "react";
+import React, { useState, useEffect } from "react";
 import {
   FaFilter,
   FaSearch,
@@ -169,7 +169,6 @@ const Dashboard = () => {
   const [loadingSiteDownloadTime, setLoadingSiteDownloadTime] = useState(false);
   const [siteLocation, setSiteLocation] = useState('');
   const [debouncedSiteLocation, setDebouncedSiteLocation] = useState('');
-  const componentRef = useRef();
 
   useEffect(() => {
     const handler = setTimeout(() => {
