@@ -35,6 +35,7 @@ import PaginationControls from "../../components/PaginationControls";
 import { TfiReload } from "react-icons/tfi";
 import { FaBars, FaX } from "react-icons/fa6";
 import SideNav from "../../components/SideNav";
+import { useClients } from "../../context/ClientsContext";
 
 const API_URL = import.meta.env.VITE_API_BASE_URL;
 
@@ -98,17 +99,24 @@ const branchOptions = [
 ];
 
 const Dashboard = () => {
+  const {
+    allClients,
+    loadingAllClients,
+    allClientsFetched,
+    fetchAllClients,
+    applications,
+    loadingApplications,
+    fetchApplications,
+    totalPages,
+    setTotalPages,
+    totalRecords,
+    setTotalRecords,
+    removeClient,
+  } = useClients();
+
   const [currentPage, setCurrentPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
-  const [totalRecords, setTotalRecords] = useState(0);
-
-  const [allClients, setAllClients] = useState([]);
-  const [loadingAllClients, setLoadingAllClients] = useState(false);
-  const [allClientsFetched, setAllClientsFetched] = useState(false);
-
   const [openMenu, setOpenMenu] = useState(false);
 
-  const [allApplications, setAllApplications] = useState([]);
   const [filteredData, setFilteredData] = useState([]);
   const [filterDateFrom, setFilterDateFrom] = useState(null);
   const [filterTimeFrom, setFilterTimeFrom] = useState(null);
@@ -271,7 +279,7 @@ const Dashboard = () => {
       return;
     }
     setSelectedBranchForDownload(branchKey);
-    setLoadingBranchDownloadTime(true); // Set loading to true
+    setLoadingBranchDownloadTime(true); 
     const token = localStorage.getItem("token");
     try {
       const response = await axios.get(
@@ -289,13 +297,13 @@ const Dashboard = () => {
       }
     } catch (error) {
       if (error.response && error.response.status === 404) {
-        setBranchLastDownload(null); // Explicitly set to null on 404
+        setBranchLastDownload(null); 
       } else {
         console.error("Error fetching branch last download time:", error);
         toast.error("Could not fetch last download time for this branch.");
       }
     } finally {
-      setLoadingBranchDownloadTime(false); // Set loading to false regardless of outcome
+      setLoadingBranchDownloadTime(false);
     }
   };
 
@@ -328,7 +336,7 @@ const Dashboard = () => {
         return createdDate >= filterFrom && createdDate <= filterTo;
       });
       setInitialDownloadData(data);
-      setFilteredDownloadData(data); // Initially, filtered is the same as initial
+      setFilteredDownloadData(data);
     }
   }, [
     downloadModalOpen,
@@ -360,7 +368,6 @@ const Dashboard = () => {
 
   const recordsPerPage = 10;
 
-  // Debounce search query
   useEffect(() => {
     const handler = setTimeout(() => {
       setDebouncedSearchQuery(searchQuery);
@@ -372,7 +379,6 @@ const Dashboard = () => {
     };
   }, [searchQuery]);
 
-  // Prevent background scrolling when modals are open
   useEffect(() => {
     if (dateFilterModalOpen || branchFilterModalOpen || downloadModalOpen || siteDownloadModalOpen) {
       document.body.style.overflow = "hidden";
@@ -390,13 +396,10 @@ const Dashboard = () => {
   ]);
 
   useEffect(() => {
-    const fetchLastDownloadTime = async () => {
+    const fetchLastDownloadTimeData = async () => {
       const token = localStorage.getItem("token");
       try {
-        if (!token) {
-          // window.location.href = "/login";
-          return;
-        }
+        if (!token) return;
 
         const response = await axios.get(`${API_URL}/api/admin/download-date`, {
           headers: {
@@ -405,7 +408,6 @@ const Dashboard = () => {
         });
 
         if (response.status === 200 && response.data.data.downloaded_date) {
-          // console.log("response.data.downloaded_date",response.data.data.downloaded_date)
           setLastDownloadTime(new Date(response.data.data.downloaded_date));
         }
       } catch (error) {
@@ -414,301 +416,24 @@ const Dashboard = () => {
           toast.info("Session expired!. Logging out...");
           setTimeout(() => {
             localStorage.removeItem("token");
-            // window.location.href = "/login";
           }, 500);
         }
       }
     };
 
-    fetchLastDownloadTime();
+    fetchLastDownloadTimeData();
   }, []);
 
-  // Add this function before fetchAllClients
-  const parseApplicationsResponse = (response) => {
-    let applications = [];
-    let meta = {};
-
-    if (response.data && Array.isArray(response.data.data)) {
-      applications = response.data.data;
-      meta = response.data.meta || {};
-    } else if (response.data && Array.isArray(response.data.applications)) {
-      applications = response.data.applications;
-      meta = response.data.meta || {};
-    } else if (response.data && Array.isArray(response.data.clients)) {
-      applications = response.data.clients;
-      meta = response.data.meta || {};
-    } else if (Array.isArray(response.data)) {
-      applications = response.data;
-    } else {
-      console.error("Unexpected response structure:", response.data);
-      throw new Error(
-        "Response data is not an array or does not contain an array of clients"
-      );
-    }
-
-    // Map the applications
-    const mappedApplications = applications.map((item) => ({
-      id: item.id || "",
-      client_name: item.client_name || "",
-      email: item.email || "",
-      mobile_number: item.mobile_number || "",
-      branches: item.branches || "",
-      created_at: item.created_at || "",
-      address: item.address || "",
-      country: item.country || "",
-      declaration_date: item.declaration_date || "",
-      declaration_name: item.declaration_name || "",
-      dob: item.dob || "",
-      first_name: item.first_name || "",
-      first_name_of_spouse: item.first_name_of_spouse || "",
-      gender: item.gender || "",
-      land_price: item.land_price || "",
-      language: item.language || "",
-      last_name: item.last_name || "",
-      last_name_of_spouse: item.last_name_of_spouse || "",
-      lga: item.lga || "",
-      marital_status: item.marital_status || "",
-      middle_name: item.middle_name || "",
-      middle_name_of_spouse: item.middle_name_of_spouse || "",
-      nationality: item.nationality || "",
-      next_of_kin_address: item.next_of_kin_address || "",
-      next_of_kin_email: item.next_of_kin_email || "",
-      next_of_kin_full_name: item.next_of_kin_full_name || "",
-      next_of_kin_mobile_number: item.next_of_kin_mobile_number || "",
-      number_of_plot: item.number_of_plot || "",
-      occupation: item.occupation || "",
-      personal_picture: item.personal_picture || "",
-      plot_number: item.plot_number || "",
-      referral_date: item.referral_date || "",
-      referral_email: item.referral_email || "",
-      referral_name: item.referral_name || "",
-      referral_number: item.referral_number || "",
-      signature: item.signature || "",
-      site_location: item.site_location || "",
-      state_of_origin: item.state_of_origin || "",
-      telephone_number: item.telephone_number || "",
-      title: item.title || "",
-      title_of_spouse: item.title_of_spouse || "",
-      updated_at: item.updated_at || "",
-    }));
-
-    return { applications: mappedApplications, meta };
-  };
-
-  // Fetch all clients for CSV and PDF download and filtering
-  const fetchAllClients = useCallback(async () => {
-    if (allClientsFetched || loadingAllClients) return; // Prevent duplicate calls
-
-    const token = localStorage.getItem("token");
-    if (!token) {
-      // window.location.href = "/login";
-      return;
-    }
-
-    setLoadingAllClients(true);
-
-    try {
-      let allData = [];
-      let page = 1;
-      let lastPage = 1;
-
-      do {
-        const payload = { page, per_page: 200 }; // Increase page size to reduce requests
-        const response = await axios.post(
-          `${API_URL}/api/all_clients`,
-          payload,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-              "Content-Type": "application/json",
-            },
-          }
-        );
-
-        const { applications, meta } = parseApplicationsResponse(response); // Extract to shared function
-        allData.push(...applications); // More efficient than spread
-
-        lastPage = meta.last_page || 1;
-        page += 1;
-
-        // Add progress indication
-        console.log(
-          `Loaded ${allData.length} clients (page ${page - 1}/${lastPage})`
-        );
-      } while (page <= lastPage);
-
-      setAllClients(allData);
-      setAllClientsFetched(true);
-      toast.success(`Loaded clients`);
-    } catch (error) {
-      console.error("Error fetching all clients:", error);
-      toast.error("Failed to load all clients");
-
-      if (axios.isAxiosError(error) && error.response?.status === 401) {
-        toast.info("Session expired!. Logging out...");
-        setTimeout(() => {
-          localStorage.removeItem("token");
-          // window.location.href = "/login";
-        }, 500);
-      }
-    } finally {
-      setLoadingAllClients(false);
-    }
-  }, [allClientsFetched, loadingAllClients]);
-
-  // Fetch paginated applications or search results
-  const fetchApplications = useCallback(async () => {
-    if (!token) {
-      // window.location.href = "/login";
-      return;
-    }
-
-    // Don't fetch if search query is empty and filters are active
-    // (filters work on allClients, not search results)
-    if (!debouncedSearchQuery.trim() && (filterBranch || filterDateFrom)) {
-      return;
-    }
-
-    const toastId = toast.loading("Loading applications...");
-    setLoading(true);
-    try {
-      if (!token) {
-        toast.error("Please log in to view the dashboard.", { id: toastId });
-        // window.location.href = "/login";
-        setLoading(false);
-        return;
-      }
-
-      let response;
-      if (debouncedSearchQuery.trim()) {
-        response = await axios.get(
-          `${API_URL}/api/applications/search?query=${encodeURIComponent(
-            debouncedSearchQuery
-          )}`,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-              "Content-Type": "application/json",
-            },
-            params: {
-              page: currentPage,
-              per_page: recordsPerPage,
-            },
-          }
-        );
-      } else {
-        const payload = { page: currentPage, per_page: recordsPerPage };
-        response = await axios.post(`${API_URL}/api/all_clients`, payload, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-        });
-      }
-
-      let applications = [];
-      let meta = {};
-      if (response.data && Array.isArray(response.data.data)) {
-        applications = response.data.data;
-        meta = response.data.meta || {};
-      } else if (response.data && Array.isArray(response.data.applications)) {
-        applications = response.data.applications;
-        meta = response.data.meta || {};
-      } else if (response.data && Array.isArray(response.data.clients)) {
-        applications = response.data.clients;
-        meta = response.data.meta || {};
-      } else if (Array.isArray(response.data)) {
-        applications = response.data;
-      } else {
-        console.error("Unexpected response structure:", response.data);
-        throw new Error(
-          "Response data is not an array or does not contain an array of clients"
-        );
-      }
-
-      const mappedApplications = applications.map((item) => ({
-        id: item.id || "",
-        client_name: item.client_name || "",
-        email: item.email || "",
-        mobile_number: item.mobile_number || "",
-        branches: item.branches || "",
-        created_at: item.created_at || "",
-        address: item.address || "",
-        country: item.country || "",
-        declaration_date: item.declaration_date || "",
-        declaration_name: item.declaration_name || "",
-        dob: item.dob || "",
-        first_name: item.first_name || "",
-        first_name_of_spouse: item.first_name_of_spouse || "",
-        gender: item.gender || "",
-        land_price: item.land_price || "",
-        language: item.language || "",
-        last_name: item.last_name || "",
-        last_name_of_spouse: item.last_name_of_spouse || "",
-        lga: item.lga || "",
-        marital_status: item.marital_status || "",
-        middle_name: item.middle_name || "",
-        middle_name_of_spouse: item.middle_name_of_spouse || "",
-        nationality: item.nationality || "",
-        next_of_kin_address: item.next_of_kin_address || "",
-        next_of_kin_email: item.next_of_kin_email || "",
-        next_of_kin_full_name: item.next_of_kin_full_name || "",
-        next_of_kin_mobile_number: item.next_of_kin_mobile_number || "",
-        number_of_plot: item.number_of_plot || "",
-        occupation: item.occupation || "",
-        personal_picture: item.personal_picture || "",
-        plot_number: item.plot_number || "",
-        referral_date: item.referral_date || "",
-        referral_email: item.referral_email || "",
-        referral_name: item.referral_name || "",
-        referral_number: item.referral_number || "",
-        signature: item.signature || "",
-        site_location: item.site_location || "",
-        state_of_origin: item.state_of_origin || "",
-        telephone_number: item.telephone_number || "",
-        title: item.title || "",
-        title_of_spouse: item.title_of_spouse || "",
-        updated_at: item.updated_at || "",
-      }));
-
-      setAllApplications(mappedApplications);
-      setTotalPages(meta.last_page || 1);
-      setTotalRecords(meta.total || applications.length);
-      toast.success("Applications loaded successfully!", { id: toastId });
-    } catch (error) {
-      console.error("Error fetching applications:", error);
-      toast.error(
-        "Failed to fetch applications: " + (error.message || "Unknown error"),
-        { id: toastId }
-      );
-      if (axios.isAxiosError(error) && error.response?.status === 401) {
-        toast.info("Session expired!. Logging out...");
-        setTimeout(() => {
-          localStorage.removeItem("token");
-          // window.location.href = "/login";
-        }, 500);
-      }
-    } finally {
-      setLoading(false);
-    }
-  }, [
-    token,
-    currentPage,
-    debouncedSearchQuery,
-    recordsPerPage,
-    filterBranch,
-    filterDateFrom,
-  ]);
-
   useEffect(() => {
-    fetchApplications();
-  }, [token, currentPage, debouncedSearchQuery, recordsPerPage, fetchApplications]);
+    // Only fetch applications if filters are NOT active
+    if (!filterBranch && !filterDateFrom && !filterDateTo) {
+      fetchApplications(currentPage, recordsPerPage, debouncedSearchQuery);
+    }
+  }, [currentPage, debouncedSearchQuery, recordsPerPage, filterBranch, filterDateFrom, filterDateTo, fetchApplications]);
 
-  // Apply filters to allClients and paginate results
   useEffect(() => {
     let filtered = [...allClients];
 
-    // Apply branch filter
     if (filterBranch) {
       filtered = filtered.filter(
         (item) =>
@@ -718,7 +443,6 @@ const Dashboard = () => {
       );
     }
 
-    // Apply date and time filters
     if (filterDateFrom && filterTimeFrom) {
       const filterFrom = new Date(filterDateFrom);
       const [hours, minutes] = filterTimeFrom.split(":").map(Number);
@@ -743,60 +467,45 @@ const Dashboard = () => {
       });
     }
 
-    // Sort by created_at in descending order
     filtered = filtered.sort((a, b) => {
-      const dateA = a.created_at
-        ? new Date(parseISO(a.created_at))
-        : new Date(0);
-      const dateB = b.created_at
-        ? new Date(parseISO(b.created_at))
-        : new Date(0);
+      const dateA = a.created_at ? new Date(parseISO(a.created_at)) : new Date(0);
+      const dateB = b.created_at ? new Date(parseISO(b.created_at)) : new Date(0);
       return dateB - dateA;
     });
 
-    // Update total records and pages
-    // // Update total records and pages ONLY if a filter is active
     const isFilterActive = filterBranch || filterDateFrom || filterDateTo;
 
     if (isFilterActive) {
       const nextRecords = filtered.length;
       const nextPages = Math.ceil(filtered.length / recordsPerPage);
       
-      setTotalRecords(prev => prev !== nextRecords ? nextRecords : prev);
-      setTotalPages(prev => prev !== nextPages ? nextPages : prev);
+      if (totalRecords !== nextRecords) setTotalRecords(nextRecords);
+      if (totalPages !== nextPages) setTotalPages(nextPages);
     }
 
-    // Paginate the filtered data
     const startIndex = (currentPage - 1) * recordsPerPage;
     const paginatedData = filtered.slice(
       startIndex,
       startIndex + recordsPerPage
     );
 
-    // setFilteredData(
-    //    debouncedSearchQuery.trim() ? allApplications : paginatedData
-    // );
-    setFilteredData(
-      debouncedSearchQuery.trim()
-        ? allApplications
-        : filterBranch || filterDateFrom || filterTimeTo
-        ? paginatedData
-        : allApplications
-    );
+    setFilteredData(isFilterActive ? paginatedData : applications);
   }, [
     allClients,
-    allApplications,
+    applications,
     filterBranch,
     filterDateFrom,
     filterTimeFrom,
     filterDateTo,
     filterTimeTo,
     currentPage,
-    debouncedSearchQuery,
-    recordsPerPage
+    recordsPerPage,
+    totalRecords,
+    totalPages,
+    setTotalRecords,
+    setTotalPages
   ]);
 
-  // Apply branch filter
   const applyBranchFilter = () => {
     const seenBranch = branchOptions.some(
       (option) => option.title === branchInput
@@ -811,7 +520,6 @@ const Dashboard = () => {
     toast.success("Branch filter applied successfully!");
   };
 
-  // Apply date and time filter
   const applyDateFilterWithValues = (dateFrom, timeFrom, dateTo, timeTo) => {
     if (!dateFrom || !timeFrom || !dateTo || !timeTo) {
       toast.error("Please provide both date and time for filtering.");
@@ -844,7 +552,6 @@ const Dashboard = () => {
     setActivePreset(preset);
     let startDate;
     let endDate;
-
     const now = new Date();
 
     switch (preset) {
@@ -880,17 +587,13 @@ const Dashboard = () => {
         return;
     }
 
-    // Set the inputs in the modal for visual feedback
     setDateFromInput(startDate);
     setTimeFromInput("00:00");
     setDateToInput(endDate);
     setTimeToInput("23:59");
-
-    // Apply the filter
     applyDateFilterWithValues(startDate, "00:00", endDate, "23:59");
   };
 
-  // Reset all filters
   const resetFilter = () => {
     setFilterDateFrom(null);
     setFilterTimeFrom(null);
@@ -914,10 +617,7 @@ const Dashboard = () => {
   const updateLastDownloadTime = async (downloadTime) => {
     try {
       const token = localStorage.getItem("token");
-      if (!token) {
-        // window.location.href = "/login";
-        return;
-      }
+      if (!token) return;
 
       await axios.put(
         `${API_URL}/api/applications/download-date`,
@@ -936,13 +636,11 @@ const Dashboard = () => {
         toast.info("Session expired!. Logging out...");
         setTimeout(() => {
           localStorage.removeItem("token");
-          // window.location.href = "/login";
         }, 500);
       }
     }
   };
 
-  // Download CSV
   const handleDownloadCSV = (downloadMode) => {
     const downloadStartTime = new Date();
     let filterFrom;
@@ -984,24 +682,14 @@ const Dashboard = () => {
     }
 
     const sortedForDownload = dataToDownload.sort((a, b) => {
-      const dateA = a.created_at
-        ? new Date(parseISO(a.created_at))
-        : new Date(0);
-      const dateB = b.created_at
-        ? new Date(parseISO(b.created_at))
-        : new Date(0);
+      const dateA = a.created_at ? new Date(parseISO(a.created_at)) : new Date(0);
+      const dateB = b.created_at ? new Date(parseISO(b.created_at)) : new Date(0);
       return dateB - dateA;
     });
 
     const headers = [
-      "Client Name",
-      "State of Origin",
-      "LGA",
-      "Property Name",
-      "Number of Plot(s)",
-      "Plot No(s)",
-      "Land Price",
-      "Branch",
+      "Client Name", "State of Origin", "LGA", "Property Name",
+      "Number of Plot(s)", "Plot No(s)", "Land Price", "Branch",
     ];
 
     const rows = sortedForDownload.map((item) =>
@@ -1017,18 +705,12 @@ const Dashboard = () => {
       ].map((field) => `"${String(field).replace(/"/g, '""')}"`)
     );
 
-    const csvContent = [headers, ...rows]
-      .map((row) => row.join(","))
-      .join("\n");
-
+    const csvContent = [headers, ...rows].map((row) => row.join(",")).join("\n");
     const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
-    link.setAttribute(
-      "download",
-      `clients_${format(new Date(), "yyyy-MM-dd_HH-mm")}.csv`
-    );
+    link.setAttribute("download", `clients_${format(new Date(), "yyyy-MM-dd_HH-mm")}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -1036,7 +718,7 @@ const Dashboard = () => {
 
     if (downloadMode === 'branch') {
       updateBranchDownloadTime(selectedBranchForDownload, downloadStartTime);
-    } else { // This is for 'general' mode
+    } else {
       setLastDownloadTime(downloadStartTime);
       updateLastDownloadTime(downloadStartTime);
     }
@@ -1085,22 +767,13 @@ const Dashboard = () => {
     }
 
     const sortedForDownload = dataToDownload.sort((a, b) => {
-      const dateA = a.created_at
-        ? new Date(parseISO(a.created_at))
-        : new Date(0);
-      const dateB = b.created_at
-        ? new Date(parseISO(b.created_at))
-        : new Date(0);
+      const dateA = a.created_at ? new Date(parseISO(a.created_at)) : new Date(0);
+      const dateB = b.created_at ? new Date(parseISO(b.created_at)) : new Date(0);
       return dateB - dateA;
     });
 
     try {
-      const pdf = new jsPDF({
-        orientation: "portrait",
-        unit: "mm",
-        format: "a4",
-      });
-
+      const pdf = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
       const pageWidth = pdf.internal.pageSize.getWidth();
       const margin = 15;
       let yPosition = margin;
@@ -1114,32 +787,11 @@ const Dashboard = () => {
 
       if (filterFrom) {
         pdf.setFontSize(12);
-        pdf.text(
-          `(${format(filterFrom, "dd/MM/yyyy HH:mm")} - ${format(
-            downloadStartTime,
-            "dd/MM/yyyy HH:mm"
-          )})`,
-          pageWidth / 2,
-          yPosition,
-          { align: "center" }
-        );
+        pdf.text(`(${format(filterFrom, "dd/MM/yyyy HH:mm")} - ${format(downloadStartTime, "dd/MM/yyyy HH:mm")})`, pageWidth / 2, yPosition, { align: "center" });
         yPosition += 15;
       }
 
-      const tableHead = [
-        [
-          "S/N",
-          "Client Name",
-          "State of Origin",
-          "LGA",
-          "Property Name",
-          "No. of Plot(s)",
-          "Plot No(s)",
-          "Land Price",
-          "Branch",
-        ],
-      ];
-
+      const tableHead = [["S/N", "Client Name", "State of Origin", "LGA", "Property Name", "No. of Plot(s)", "Plot No(s)", "Land Price", "Branch"]];
       const tableBody = sortedForDownload.map((item, index) => [
         index + 1,
         item.client_name || "N/A",
@@ -1157,31 +809,10 @@ const Dashboard = () => {
         head: tableHead,
         body: tableBody,
         theme: "grid",
-        styles: {
-          fontSize: 9,
-          cellPadding: 3,
-          halign: "center",
-          valign: "middle",
-        },
-        headStyles: {
-          fillColor: [47, 83, 24],
-          textColor: [255, 255, 255],
-          fontStyle: "bold",
-        },
-        columnStyles: {
-          0: { cellWidth: 10 },
-          1: { cellWidth: 35 },
-          2: { cellWidth: 17.5 },
-          3: { cellWidth: 17.5 },
-          4: { cellWidth: 35 },
-          5: { cellWidth: 15 },
-          6: { cellWidth: 15 },
-          7: { cellWidth: 17.5 },
-          8: { cellWidth: 17.5 },
-        },
-        alternateRowStyles: {
-          fillColor: [245, 245, 245],
-        },
+        styles: { fontSize: 9, cellPadding: 3, halign: "center", valign: "middle" },
+        headStyles: { fillColor: [47, 83, 24], textColor: [255, 255, 255], fontStyle: "bold" },
+        columnStyles: { 0: { cellWidth: 10 }, 1: { cellWidth: 35 }, 2: { cellWidth: 17.5 }, 3: { cellWidth: 17.5 }, 4: { cellWidth: 35 }, 5: { cellWidth: 15 }, 6: { cellWidth: 15 }, 7: { cellWidth: 17.5 }, 8: { cellWidth: 17.5 } },
+        alternateRowStyles: { fillColor: [245, 245, 245] },
         margin: { left: margin, right: margin },
       });
 
@@ -1189,7 +820,7 @@ const Dashboard = () => {
 
       if (downloadMode === 'branch') {
         updateBranchDownloadTime(selectedBranchForDownload, downloadStartTime);
-      } else { // This is for 'general' mode
+      } else {
         setLastDownloadTime(downloadStartTime);
         updateLastDownloadTime(downloadStartTime);
       }
@@ -1202,79 +833,41 @@ const Dashboard = () => {
   };
 
   const handleDownloadAllCSV = () => {
-    const sortedForDownload = allClients.sort((a, b) => {
-      const dateA = a.created_at
-        ? new Date(parseISO(a.created_at))
-        : new Date(0);
-      const dateB = b.created_at
-        ? new Date(parseISO(b.created_at))
-        : new Date(0);
+    const sortedForDownload = [...allClients].sort((a, b) => {
+      const dateA = a.created_at ? new Date(parseISO(a.created_at)) : new Date(0);
+      const dateB = b.created_at ? new Date(parseISO(b.created_at)) : new Date(0);
       return dateB - dateA;
     });
 
-    const headers = [
-      "Client Name",
-      "State of Origin",
-      "LGA",
-      "Property Name",
-      "Number of Plot(s)",
-      "Plot No(s)",
-      "Land Price",
-      "Branch",
-    ];
-
+    const headers = ["Client Name", "State of Origin", "LGA", "Property Name", "Number of Plot(s)", "Plot No(s)", "Land Price", "Branch"];
     const rows = sortedForDownload.map((item) =>
-      [
-        item.client_name || "",
-        item.state_of_origin || "",
-        item.lga || "",
-        item.site_location || "",
-        item.number_of_plot || "",
-        item.plot_number || "",
-        item.land_price || "",
-        item.branches || "",
-      ].map((field) => `"${String(field).replace(/"/g, '""')}"`)
+      [item.client_name || "", item.state_of_origin || "", item.lga || "", item.site_location || "", item.number_of_plot || "", item.plot_number || "", item.land_price || "", item.branches || ""]
+      .map((field) => `"${String(field).replace(/"/g, '""')}"`)
     );
 
-    const csvContent = [headers, ...rows]
-      .map((row) => row.join(","))
-      .join("\n");
-
+    const csvContent = [headers, ...rows].map((row) => row.join(",")).join("\n");
     const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
-    link.setAttribute(
-      "download",
-      `all_clients_${format(new Date(), "yyyy-MM-dd_HH-mm")}.csv`
-    );
+    link.setAttribute("download", `all_clients_${format(new Date(), "yyyy-MM-dd_HH-mm")}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
-
     setDownloadAllModalOpen(false);
     toast.success("CSV downloaded successfully!");
   };
 
   const handleDownloadAllPDF = async () => {
-    const sortedForDownload = allClients.sort((a, b) => {
-      const dateA = a.created_at
-        ? new Date(parseISO(a.created_at))
-        : new Date(0);
-      const dateB = b.created_at
-        ? new Date(parseISO(b.created_at))
-        : new Date(0);
+    const sortedForDownload = [...allClients].sort((a, b) => {
+      const dateA = a.created_at ? new Date(parseISO(a.created_at)) : new Date(0);
+      const dateB = b.created_at ? new Date(parseISO(b.created_at)) : new Date(0);
       return dateB - dateA;
     });
 
     try {
-      const pdf = new jsPDF({
-        orientation: "portrait",
-        unit: "mm",
-        format: "a4",
-      });
-
+      const pdf = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
       const pageWidth = pdf.internal.pageSize.getWidth();
       const margin = 15;
       let yPosition = margin;
@@ -1283,25 +876,10 @@ const Dashboard = () => {
       yPosition += 35;
 
       pdf.setFontSize(18);
-      pdf.text("All Client Records", pageWidth / 2, yPosition, {
-        align: "center",
-      });
+      pdf.text("All Client Records", pageWidth / 2, yPosition, { align: "center" });
       yPosition += 15;
 
-      const tableHead = [
-        [
-          "S/N",
-          "Client Name",
-          "State of Origin",
-          "LGA",
-          "Property Name",
-          "No. of Plot(s)",
-          "Plot No(s)",
-          "Land Price",
-          "Branch",
-        ],
-      ];
-
+      const tableHead = [["S/N", "Client Name", "State of Origin", "LGA", "Property Name", "No. of Plot(s)", "Plot No(s)", "Land Price", "Branch"]];
       const tableBody = sortedForDownload.map((item, index) => [
         index + 1,
         item.client_name || "N/A",
@@ -1319,59 +897,25 @@ const Dashboard = () => {
         head: tableHead,
         body: tableBody,
         theme: "grid",
-        styles: {
-          fontSize: 9,
-          cellPadding: 3,
-          halign: "center",
-          valign: "middle",
-        },
-        headStyles: {
-          fillColor: [47, 83, 24],
-          textColor: [255, 255, 255],
-          fontStyle: "bold",
-        },
-        columnStyles: {
-          0: { cellWidth: 10 }, // S/N
-          1: { cellWidth: 35 }, // Client Name
-          2: { cellWidth: 17.5 }, // State of Origin
-          3: { cellWidth: 17.5 }, // LGA
-          4: { cellWidth: 35 }, // Property Name
-          5: { cellWidth: 15 }, // No. of Plot(s)
-          6: { cellWidth: 15 }, // Plot No(s)
-          7: { cellWidth: 17.5 }, // Land Price
-          8: { cellWidth: 17.5 }, // Branch
-        },
-        alternateRowStyles: {
-          fillColor: [245, 245, 245],
-        },
+        styles: { fontSize: 9, cellPadding: 3, halign: "center", valign: "middle" },
+        headStyles: { fillColor: [47, 83, 24], textColor: [255, 255, 255], fontStyle: "bold" },
+        columnStyles: { 0: { cellWidth: 10 }, 1: { cellWidth: 35 }, 2: { cellWidth: 17.5 }, 3: { cellWidth: 17.5 }, 4: { cellWidth: 35 }, 5: { cellWidth: 15 }, 6: { cellWidth: 15 }, 7: { cellWidth: 17.5 }, 8: { cellWidth: 17.5 } },
+        alternateRowStyles: { fillColor: [245, 245, 245] },
         margin: { left: margin, right: margin },
       });
 
       pdf.save(`all_clients_${format(new Date(), "yyyy-MM-dd_HH-mm")}.pdf`);
-
       setDownloadAllModalOpen(false);
       toast.success("PDF downloaded successfully!");
     } catch (error) {
       console.error("Error generating PDF:", error);
-      toast.error(
-        "Failed to generate PDF: " + (error.message || "Unknown error")
-      );
-      if (axios.isAxiosError(error) && error.response?.status === 401) {
-        toast.info("Session expired!. Logging out...");
-        setTimeout(() => {
-          localStorage.removeItem("token");
-          // window.location.href = "/login";
-        }, 500);
-      }
+      toast.error("Failed to generate PDF: " + (error.message || "Unknown error"));
     }
   };
 
   const handleSiteDownload = (format, siteLocation) => {
-    if (format === 'csv') {
-      handleSiteDownloadCSV(siteLocation);
-    } else {
-      handleSiteDownloadPDF(siteLocation);
-    }
+    if (format === 'csv') handleSiteDownloadCSV(siteLocation);
+    else handleSiteDownloadPDF(siteLocation);
   };
 
   const handleSiteDownloadCSV = (siteLocation) => {
@@ -1400,43 +944,18 @@ const Dashboard = () => {
       return;
     }
     
-    // ... rest of CSV generation logic is the same ...
-    const headers = [
-      'Client Name',
-      'State of Origin',
-      'LGA',
-      'Property Name',
-      'Number of Plot(s)',
-      'Plot No(s)',
-      'Land Price',
-      'Branch',
-    ];
-
+    const headers = ['Client Name', 'State of Origin', 'LGA', 'Property Name', 'Number of Plot(s)', 'Plot No(s)', 'Land Price', 'Branch'];
     const rows = dataToDownload.map((item) =>
-      [
-        item.client_name || "",
-        item.state_of_origin || "",
-        item.lga || "",
-        item.site_location || "",
-        item.number_of_plot || "",
-        item.plot_number || "",
-        item.land_price || "",
-        item.branches || "",
-      ].map((field) => `"${String(field).replace(/"/g, '""')}"`)
+      [item.client_name || "", item.state_of_origin || "", item.lga || "", item.site_location || "", item.number_of_plot || "", item.plot_number || "", item.land_price || "", item.branches || ""]
+      .map((field) => `"${String(field).replace(/"/g, '""')}"`)
     );
 
-    const csvContent = [headers, ...rows]
-      .map((row) => row.join(","))
-      .join("\n");
-
+    const csvContent = [headers, ...rows].map((row) => row.join(",")).join("\n");
     const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
-    link.setAttribute(
-      "download",
-      `clients_${siteLocation.replace(/ /g, "_")}_${format(new Date(), "yyyy-MM-dd_HH-mm")}.csv`
-    );
+    link.setAttribute("download", `clients_${siteLocation.replace(/ /g, "_")}_${format(new Date(), "yyyy-MM-dd_HH-mm")}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -1474,12 +993,7 @@ const Dashboard = () => {
     }
     
     try {
-      const pdf = new jsPDF({
-        orientation: "portrait",
-        unit: "mm",
-        format: "a4",
-      });
-
+      const pdf = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
       const pageWidth = pdf.internal.pageSize.getWidth();
       const margin = 15;
       let yPosition = margin;
@@ -1493,32 +1007,11 @@ const Dashboard = () => {
 
       if (filterFrom) {
         pdf.setFontSize(12);
-        pdf.text(
-          `(${format(filterFrom, "dd/MM/yyyy HH:mm")} - ${format(
-            downloadStartTime,
-            "dd/MM/yyyy HH:mm"
-          )})`,
-          pageWidth / 2,
-          yPosition,
-          { align: "center" }
-        );
+        pdf.text(`(${format(filterFrom, "dd/MM/yyyy HH:mm")} - ${format(downloadStartTime, "dd/MM/yyyy HH:mm")})`, pageWidth / 2, yPosition, { align: "center" });
         yPosition += 15;
       }
 
-      const tableHead = [
-        [
-          "S/N",
-          "Client Name",
-          "State of Origin",
-          "LGA",
-          "Property Name",
-          "No. of Plot(s)",
-          "Plot No(s)",
-          "Land Price",
-          "Branch",
-        ],
-      ];
-
+      const tableHead = [["S/N", "Client Name", "State of Origin", "LGA", "Property Name", "No. of Plot(s)", "Plot No(s)", "Land Price", "Branch"]];
       const tableBody = dataToDownload.map((item, index) => [
         index + 1,
         item.client_name || "N/A",
@@ -1536,38 +1029,14 @@ const Dashboard = () => {
         head: tableHead,
         body: tableBody,
         theme: "grid",
-        styles: {
-          fontSize: 9,
-          cellPadding: 3,
-          halign: "center",
-          valign: "middle",
-        },
-        headStyles: {
-          fillColor: [47, 83, 24],
-          textColor: [255, 255, 255],
-          fontStyle: "bold",
-        },
-        columnStyles: {
-          0: { cellWidth: 10 },
-          1: { cellWidth: 35 },
-          2: { cellWidth: 17.5 },
-          3: { cellWidth: 17.5 },
-          4: { cellWidth: 35 },
-          5: { cellWidth: 15 },
-          6: { cellWidth: 15 },
-          7: { cellWidth: 17.5 },
-          8: { cellWidth: 17.5 },
-        },
-        alternateRowStyles: {
-          fillColor: [245, 245, 245],
-        },
+        styles: { fontSize: 9, cellPadding: 3, halign: "center", valign: "middle" },
+        headStyles: { fillColor: [47, 83, 24], textColor: [255, 255, 255], fontStyle: "bold" },
+        columnStyles: { 0: { cellWidth: 10 }, 1: { cellWidth: 35 }, 2: { cellWidth: 17.5 }, 3: { cellWidth: 17.5 }, 4: { cellWidth: 35 }, 5: { cellWidth: 15 }, 6: { cellWidth: 15 }, 7: { cellWidth: 17.5 }, 8: { cellWidth: 17.5 } },
+        alternateRowStyles: { fillColor: [245, 245, 245] },
         margin: { left: margin, right: margin },
       });
 
-      pdf.save(
-        `clients_${siteLocation.replace(/ /g, "_")}_${format(new Date(), "yyyy-MM-dd_HH-mm")}.pdf`
-      );
-
+      pdf.save(`clients_${siteLocation.replace(/ /g, "_")}_${format(new Date(), "yyyy-MM-dd_HH-mm")}.pdf`);
       updateBranchDownloadTime(siteLocation, downloadStartTime);
       setSiteDownloadModalOpen(false);
       toast.success("PDF downloaded successfully!");
@@ -1580,9 +1049,7 @@ const Dashboard = () => {
   const getPageNumbers = () => {
     const pages = [];
     if (totalPages <= 3) {
-      for (let i = 1; i <= totalPages; i++) {
-        pages.push(i);
-      }
+      for (let i = 1; i <= totalPages; i++) pages.push(i);
     } else if (currentPage === 1) {
       pages.push(1, 2, 3);
     } else if (currentPage === totalPages) {
@@ -1595,59 +1062,37 @@ const Dashboard = () => {
 
   const handleDelete = async (id) => {
     if (!id) return;
-
     const toastId = toast.loading("Deleting entry...");
     setIsDeleting(true);
     try {
       const token = localStorage.getItem("token");
       if (!token) {
         toast.error("Please log in to perform this action.", { id: toastId });
-        // window.location.href = "/login";
         setIsDeleting(false);
         return;
       }
 
       const response = await axios.delete(`${API_URL}/api/applications/${id}`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
+        headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
       });
 
       if (response.status === 200 || response.status === 204) {
         toast.success("Client entry deleted successfully!", { id: toastId });
-
-        setAllClients((prevClients) =>
-          prevClients.filter((client) => client.id !== id)
-        );
-
-        setAllApplications((prevApps) =>
-          prevApps.filter((app) => app.id !== id)
-        );
-
+        removeClient(id);
         if (filteredData.length === 1 && currentPage > 1) {
           setCurrentPage(currentPage - 1);
-        } else {
-          fetchApplications();
+        } else if (!filterBranch && !filterDateFrom && !filterDateTo) {
+          fetchApplications(currentPage, recordsPerPage, debouncedSearchQuery);
         }
       } else {
-        toast.error(`Failed to delete client. Status: ${response.status}`, {
-          id: toastId,
-        });
+        toast.error(`Failed to delete client. Status: ${response.status}`, { id: toastId });
       }
     } catch (error) {
       console.error("Error deleting client:", error);
-      toast.error(
-        "Failed to delete client: " +
-          (error.response?.data?.message || error.message || "Unknown error"),
-        { id: toastId }
-      );
+      toast.error("Failed to delete client: " + (error.response?.data?.message || error.message || "Unknown error"), { id: toastId });
       if (axios.isAxiosError(error) && error.response?.status === 401) {
         toast.info("Session expired!. Logging out...");
-        setTimeout(() => {
-          localStorage.removeItem("token");
-          // window.location.href = "/login";
-        }, 500);
+        setTimeout(() => localStorage.removeItem("token"), 500);
       }
     } finally {
       setIsDeleting(false);
@@ -1656,46 +1101,30 @@ const Dashboard = () => {
 
   return (
     <div className="min-h-screen bg-gray-100 flex flex-col p-0 md:p-5 relative">
-      {openMenu && (
-        <SideNav 
-          openMenu={openMenu}
-          setOpenMenu={setOpenMenu}
-          branches={branchOptions}
-          isLoading={isGettingBranches}
-        />
-      )}
+      <SideNav 
+        openMenu={openMenu}
+        setOpenMenu={setOpenMenu}
+        branches={branchOptions}
+        isLoading={isGettingBranches}
+      />
       <div className="mx-auto bg-white rounded-2xl shadow-2xl p-4 md:p-5 w-full py-8 transition-all duration-300">
-        {loading && (
+        {(loading || loadingApplications) && (
           <div className="flex justify-center items-center min-h-[200px]">
             <div className="animate-spin rounded-full h-12 w-12 border-4 border-secClr border-t-transparent"></div>
           </div>
         )}
-        {!loading && (
+        {!(loading || loadingApplications) && (
           <>
-            {/* Header */}
             <div className="flex flex-col gap-4 lg:flex-row lg:items-center md:justify-between mb-4 md:mb-6 border-b border-gray-200 pb-2 md:pb-4">
-              {/* Sidebar Trigger + Logo + Title */}
               <div className="flex items-center gap-2 md:gap-3">
-                <button
-                  type="button"
-                  onClick={() => setOpenMenu(true)}
-                  className="text-2xl cursor-pointer"
-                >
+                <button type="button" onClick={() => setOpenMenu(true)} className="text-2xl cursor-pointer">
                   <FaBars />
                 </button>
-                <img
-                  src={assets.logo}
-                  className="w-8 h-8 md:w-10 md:h-10"
-                  alt="Logo"
-                />
-                <h1 className="text-lg md:text-2xl font-extrabold text-gray-900">
-                  Dashboard
-                </h1>
+                <img src={assets.logo} className="w-8 h-8 md:w-10 md:h-10" alt="Logo" />
+                <h1 className="text-lg md:text-2xl font-extrabold text-gray-900">Dashboard</h1>
               </div>
 
-              {/* Search + Buttons */}
               <div className="flex flex-col md:flex-row gap-2 md:gap-3 w-full lg:w-[65%]">
-                {/* Search */}
                 <div className="relative flex-1">
                   <input
                     type="text"
@@ -1703,428 +1132,58 @@ const Dashboard = () => {
                     onChange={(e) => setSearchQuery(e.target.value)}
                     placeholder="Search clients..."
                     className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-secClr text-sm md:text-base"
-                    aria-label="Search clients"
                   />
                   <FaSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4 md:w-5 md:h-5" />
                 </div>
 
                 <button
                   onClick={() => {
-                    setAllClientsFetched(false);
-                    // fetchAllClients();
-                    fetchApplications();
+                    fetchAllClients(true);
+                    fetchApplications(currentPage, recordsPerPage, debouncedSearchQuery);
                   }}
-                  disabled={loading || loadingAllClients}
-                  className="h-[45px] md:w-[45px] cursor-pointer flex gap-2 items-center justify-center text-sm bg-secClr text-white font-semibold rounded-lg hover:bg-secClr/90 transition duration-300 shadow-sm disabled:cursor-not-allowed disabled:opacity-50"
-                  aria-label="Refresh All Clients"
+                  disabled={loading || loadingAllClients || loadingApplications}
+                  className="h-[45px] md:w-[45px] cursor-pointer flex gap-2 items-center justify-center text-sm bg-secClr text-white font-semibold rounded-lg hover:bg-secClr/90 transition duration-300 shadow-sm disabled:opacity-50"
                 >
-                  <TfiReload 
-                    className={`${(loading || loadingAllClients) && "animate-spin"} size-5`}
-                  />
+                  <TfiReload className={`${(loading || loadingAllClients || loadingApplications) && "animate-spin"} size-5`} />
                   <span className="md:hidden inline">Reload Data</span>
                 </button>
 
-                {/* Buttons wrapper */}
-                <div className="flex flex-col md:flex-row gap-2 md:gap-3 w-full md:w-auto">                  {/* Branch + Filter row (sm only) */}
+                <div className="flex flex-col md:flex-row gap-2 md:gap-3 w-full md:w-auto">
                   <div className="flex flex-row gap-2 md:gap-3 w-full md:w-auto">
-                    {/* Branch Button */}
-                    <button
-                      onClick={() => {
-                        fetchAllClients();
-                        setBranchFilterModalOpen(true);
-                      }}
-                      className="flex items-center justify-center flex-1 px-4 py-2.5 text-sm bg-secClr text-white font-semibold rounded-lg hover:bg-secClr/90 transition duration-300 shadow-sm"
-                    >
-                      <FaFilter className="mr-2 w-4 h-4" />
-                      Branch
+                    <button onClick={() => { fetchAllClients(); setBranchFilterModalOpen(true); }} className="flex items-center justify-center flex-1 px-4 py-2.5 text-sm bg-secClr text-white font-semibold rounded-lg hover:bg-secClr/90 transition duration-300 shadow-sm">
+                      <FaFilter className="mr-2 w-4 h-4" /> Branch
                     </button>
-
-                    {/* Filter Button */}
-                    <button
-                      onClick={() => setDateFilterModalOpen(true)}
-                      className="flex items-center justify-center flex-1 px-4 py-2.5 text-sm bg-secClr text-white font-semibold rounded-lg hover:bg-secClr/90 transition duration-300 shadow-sm"
-                    >
-                      <FaFilter className="mr-2 w-4 h-4" />
-                      Filter
+                    <button onClick={() => setDateFilterModalOpen(true)} className="flex items-center justify-center flex-1 px-4 py-2.5 text-sm bg-secClr text-white font-semibold rounded-lg hover:bg-secClr/90 transition duration-300 shadow-sm">
+                      <FaFilter className="mr-2 w-4 h-4" /> Filter
                     </button>
                   </div>
 
-                  {/* Download Button (goes under on sm, inline on md) */}
                   <div className="relative">
-                    <button
-                      // onClick={() => setDownloadModalOpen(true)}
-                      onClick={() => {
-                        fetchAllClients();
-                        setShowMoreDownloadOptions((prev) => !prev);
-                      }}
-                      className="flex items-center justify-center px-4 h-[45px] text-sm bg-secClr text-white font-semibold rounded-lg hover:bg-secClr/90 transition duration-300 shadow-sm w-full md:w-auto"
-                    >
-                      Download
-                      <FaCaretDown className="ml-2 w-6 h-6" />
+                    <button onClick={() => { fetchAllClients(); setShowMoreDownloadOptions((prev) => !prev); }} className="flex items-center justify-center px-4 h-[45px] text-sm bg-secClr text-white font-semibold rounded-lg hover:bg-secClr/90 transition duration-300 shadow-sm w-full md:w-auto">
+                      Download <FaCaretDown className="ml-2 w-6 h-6" />
                     </button>
-                    <div
-                      className={`absolute min-w-[200px] max-w-[320px] z-[99] right-0 bg-gray-100 border border-black/20 shadow-lg rounded-md ${
-                        showMoreDownloadOptions ? "inline-block" : "hidden"
-                      } top-[calc(100%+5px)] text-sm font-semibold`}
-                    >
-                      <button
-                        onClick={() => {
-                          if (!allClientsFetched) {
-                            fetchAllClients();
-                          }
-                          setShowMoreDownloadOptions(false);
-                          setDownloadModalOpen(true);
-                        }}
-                        className="w-full border-b border-gray-300 p-3  whitespace-nowrap cursor-pointer hover:bg-gray-200 transition-all duration-300"
-                      >
-                        Continue from last download
-                      </button>
-                      <button
-                        onClick={() => {
-                          if (!allClientsFetched) {
-                            fetchAllClients();
-                          }
-                          setShowMoreDownloadOptions(false);
-                          setDownloadAllModalOpen(true);
-                        }}
-                        className="w-full border-b border-gray-300 p-3  whitespace-nowrap cursor-pointer hover:bg-gray-200 transition-all duration-300"
-                      >
-                        Download from all times
-                      </button>
-                      <button
-                        onClick={() => {
-                          if (!allClientsFetched) {
-                            fetchAllClients();
-                          }
-                          setShowMoreDownloadOptions(false);
-                          setSiteDownloadModalOpen(true);
-                        }}
-                        className="w-full border-b border-gray-300 p-3  whitespace-nowrap cursor-pointer hover:bg-gray-200 transition-all duration-300"
-                      >
-                        Download for a specific site
-                      </button>
-                    </div>
+                    {showMoreDownloadOptions && (
+                      <div className="absolute right-0 mt-2 min-w-[200px] bg-white border border-gray-200 rounded-lg shadow-xl z-50 text-sm font-semibold overflow-hidden">
+                        <button onClick={() => { if (!allClientsFetched) fetchAllClients(); setShowMoreDownloadOptions(false); setDownloadModalOpen(true); }} className="w-full text-left p-3 border-b border-gray-100 hover:bg-gray-50 transition">Continue from last download</button>
+                        <button onClick={() => { if (!allClientsFetched) fetchAllClients(); setShowMoreDownloadOptions(false); setDownloadAllModalOpen(true); }} className="w-full text-left p-3 border-b border-gray-100 hover:bg-gray-50 transition">Download from all times</button>
+                        <button onClick={() => { if (!allClientsFetched) fetchAllClients(); setShowMoreDownloadOptions(false); setSiteDownloadModalOpen(true); }} className="w-full text-left p-3 hover:bg-gray-50 transition">Download for a specific site</button>
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
             </div>
 
-            {/* Client List (Cards on mobile, Table on md+) */}
-            <ApplicationsList
-              filteredData={filteredData}
-              currentPage={currentPage}
-              recordsPerPage={recordsPerPage}
-              isDeleting={isDeleting}
-              handleDelete={handleDelete}
-            />
-
-            {/* Pagination */}
-            <PaginationControls
-              currentPage={currentPage}
-              totalPages={totalPages}
-              setCurrentPage={setCurrentPage}
-              getPageNumbers={getPageNumbers}
-              totalRecords={totalRecords}
-              filteredData={filteredData}
-            />
-
-            {/* Hidden Print Section for PDF */}
-            <div
-              style={{ position: "absolute", top: "-9999px", left: "-9999px" }}
-            >
-              <div
-                ref={componentRef}
-                style={{
-                  padding: "20mm",
-                  width: "190mm",
-                  fontFamily: "Arial, sans-serif",
-                }}
-              >
-                <div
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    marginBottom: "10mm",
-                  }}
-                >
-                  <img
-                    src={assets.logo}
-                    style={{
-                      width: "30mm",
-                      height: "30mm",
-                      marginRight: "5mm",
-                    }}
-                    alt="Logo"
-                  />
-                  <h2 style={{ fontSize: "18px", textAlign: "center" }}>
-                    Client Records
-                    {filterDateFrom &&
-                      filterTimeFrom &&
-                      filterDateTo &&
-                      filterTimeTo &&
-                      ` (${format(
-                        new Date(filterDateFrom),
-                        "dd/MM/yyyy"
-                      )} ${filterTimeFrom} - ${format(
-                        new Date(filterDateTo),
-                        "dd/MM/yyyy"
-                      )} ${filterTimeTo})`}
-                  </h2>
-                </div>
-                <table
-                  style={{
-                    width: "100%",
-                    borderCollapse: "collapse",
-                    fontSize: "12px",
-                  }}
-                >
-                  <thead>
-                    <tr>
-                      <th
-                        style={{
-                          border: "1px solid #ddd",
-                          padding: "8px",
-                          backgroundColor: "#f2f2f2",
-                          fontWeight: "bold",
-                          textAlign: "left",
-                        }}
-                      >
-                        Client Name
-                      </th>
-                      <th
-                        style={{
-                          border: "1px solid #ddd",
-                          padding: "8px",
-                          backgroundColor: "#f2f2f2",
-                          fontWeight: "bold",
-                          textAlign: "left",
-                        }}
-                      >
-                        State of Origin
-                      </th>
-                      <th
-                        style={{
-                          border: "1px solid #ddd",
-                          padding: "8px",
-                          backgroundColor: "#f2f2f2",
-                          fontWeight: "bold",
-                          textAlign: "left",
-                        }}
-                      >
-                        LGA
-                      </th>
-                      <th
-                        style={{
-                          border: "1px solid #ddd",
-                          padding: "8px",
-                          backgroundColor: "#f2f2f2",
-                          fontWeight: "bold",
-                          textAlign: "left",
-                        }}
-                      >
-                        Property Name
-                      </th>
-                      <th
-                        style={{
-                          border: "1px solid #ddd",
-                          padding: "8px",
-                          backgroundColor: "#f2f2f2",
-                          fontWeight: "bold",
-                          textAlign: "left",
-                        }}
-                      >
-                        Number of Plot(s)
-                      </th>
-                      <th
-                        style={{
-                          border: "1px solid #ddd",
-                          padding: "8px",
-                          backgroundColor: "#f2f2f2",
-                          fontWeight: "bold",
-                          textAlign: "left",
-                        }}
-                      >
-                        Plot No(s)
-                      </th>
-                      <th
-                        style={{
-                          border: "1px solid #ddd",
-                          padding: "8px",
-                          backgroundColor: "#f2f2f2",
-                          fontWeight: "bold",
-                          textAlign: "left",
-                        }}
-                      >
-                        Land Price
-                      </th>
-                      <th
-                        style={{
-                          border: "1px solid #ddd",
-                          padding: "8px",
-                          backgroundColor: "#f2f2f2",
-                          fontWeight: "bold",
-                          textAlign: "left",
-                        }}
-                      >
-                        Branch
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {filteredDataForPrint.map((item, index) => (
-                      <tr key={item.id || index}>
-                        <td
-                          style={{ border: "1px solid #ddd", padding: "8px" }}
-                        >
-                          {item.client_name || "N/A"}
-                        </td>
-                        <td
-                          style={{ border: "1px solid #ddd", padding: "8px" }}
-                        >
-                          {item.state_of_origin || "N/A"}
-                        </td>
-                        <td
-                          style={{ border: "1px solid #ddd", padding: "8px" }}
-                        >
-                          {item.lga || "N/A"}
-                        </td>
-                        <td
-                          style={{ border: "1px solid #ddd", padding: "8px" }}
-                        >
-                          {item.site_location || "N/A"}
-                        </td>
-                        <td
-                          style={{ border: "1px solid #ddd", padding: "8px" }}
-                        >
-                          {item.number_of_plot || "N/A"}
-                        </td>
-                        <td
-                          style={{ border: "1px solid #ddd", padding: "8px" }}
-                        >
-                          {item.plot_number || "N/A"}
-                        </td>
-                        <td
-                          style={{ border: "1px solid #ddd", padding: "8px" }}
-                        >
-                          {item.land_price || "N/A"}
-                        </td>
-                        <td
-                          style={{ border: "1px solid #ddd", padding: "8px" }}
-                        >
-                          {item.branches || "N/A"}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
+            <ApplicationsList filteredData={filteredData} currentPage={currentPage} recordsPerPage={recordsPerPage} isDeleting={isDeleting} handleDelete={handleDelete} />
+            <PaginationControls currentPage={currentPage} totalPages={totalPages} setCurrentPage={setCurrentPage} getPageNumbers={getPageNumbers} totalRecords={totalRecords} filteredData={filteredData} />
           </>
         )}
 
-        {/* Branch Filter Modal */}
-        <BranchFilterModal
-          isLoadingAllclients={loadingAllClients}
-          isOpen={branchFilterModalOpen}
-          onClose={() => setBranchFilterModalOpen(false)}
-          branchInput={branchInput}
-          onBranchInputChange={setBranchInput}
-          branchOptions={branchOptions}
-          onReset={resetFilter}
-          onApply={applyBranchFilter}
-        />
-
-        {/* Date and Time Filter Modal */}
-        <DateFilterModal
-          isLoadingAllclients={loadingAllClients}
-          isOpen={dateFilterModalOpen}
-          onClose={() => setDateFilterModalOpen(false)}
-          dateFromInput={dateFromInput}
-          onDateFromChange={(date) => {
-            setDateFromInput(date);
-            setActivePreset(null);
-          }}
-          timeFromInput={timeFromInput}
-          onTimeFromChange={(e) => {
-            setTimeFromInput(e.target.value);
-            setActivePreset(null);
-          }}
-          dateToInput={dateToInput}
-          onDateToChange={(date) => {
-            setDateToInput(date);
-            setActivePreset(null);
-          }}
-          timeToInput={timeToInput}
-          onTimeToChange={(e) => {
-            setTimeToInput(e.target.value);
-            setActivePreset(null);
-          }}
-          onReset={resetFilter}
-          onApply={applyDateFilter}
-          onPresetSelect={handlePresetDateFilter}
-          activePreset={activePreset}
-        />
-
-        {/* Download Modal */}
-        <DownloadModal
-          isLoadingAllclients={loadingAllClients}
-          isOpen={downloadModalOpen}
-          onClose={() => setDownloadModalOpen(false)}
-          lastDownloadTime={lastDownloadTime}
-          branchLastDownload={branchLastDownload}
-          downloadDateFrom={downloadDateFrom}
-          onDownloadDateFromChange={setDownloadDateFrom}
-          downloadTimeFrom={downloadTimeFrom}
-          onDownloadTimeFromChange={setDownloadTimeFrom}
-          onDownloadCSV={handleDownloadCSV}
-          onDownloadPDF={handleDownloadPDF}
-          excludedSites={excludedSites}
-          onExcludeChange={setExcludedSites}
-          excludedBranches={excludedBranches}
-          onExcludeBranchChange={handleExcludeBranchChange}
-          initialCount={initialDownloadData.length}
-          excludedCount={
-            initialDownloadData.length - filteredDownloadData.length
-          }
-          remainingCount={filteredDownloadData.length}
-          branchOptions={branchOptions}
-          onBranchSelect={handleBranchSelectForDownload}
-          selectedBranch={selectedBranchForDownload}
-          branchStartDate={branchStartDate}
-          setBranchStartDate={setBranchStartDate}
-          branchStartTime={branchStartTime}
-          setBranchStartTime={setBranchStartTime}
-          branchInitialCount={branchInitialData.length}
-          loadingBranchDownloadTime={loadingBranchDownloadTime}
-          onModalCloseCleanup={onModalCloseCleanup}
-        />
-
-        <DownloadAllModal
-          isLoadingAllclients={loadingAllClients}
-          isOpen={downloadAllModalOpen}
-          onClose={() => setDownloadAllModalOpen(false)}
-          onDownloadCSV={handleDownloadAllCSV}
-          onDownloadPDF={handleDownloadAllPDF}
-        />
-
-        <SiteDownloadModal
-          isOpen={siteDownloadModalOpen}
-          onClose={() => setSiteDownloadModalOpen(false)}
-          onDownload={handleSiteDownload}
-          onSiteSelect={handleSiteLocationSelectForDownload}
-          siteLastDownload={siteLocationLastDownload}
-          siteStartDate={siteLocationStartDate}
-          setSiteStartDate={setSiteLocationStartDate}
-          siteStartTime={siteLocationStartTime}
-          setSiteStartTime={setSiteLocationStartTime}
-          newRecordsCount={newRecordsForSite.length}
-          loadingSiteTime={loadingSiteDownloadTime}
-          onModalCloseCleanup={onSiteModalCloseCleanup}
-          siteLocation={siteLocation}
-          onSiteLocationChange={setSiteLocation}
-          debouncedSiteLocation={debouncedSiteLocation}
-        />
+        <BranchFilterModal isLoadingAllclients={loadingAllClients} isOpen={branchFilterModalOpen} onClose={() => setBranchFilterModalOpen(false)} branchInput={branchInput} onBranchInputChange={setBranchInput} branchOptions={branchOptions} onReset={resetFilter} onApply={applyBranchFilter} />
+        <DateFilterModal isLoadingAllclients={loadingAllClients} isOpen={dateFilterModalOpen} onClose={() => setDateFilterModalOpen(false)} dateFromInput={dateFromInput} onDateFromChange={(date) => { setDateFromInput(date); setActivePreset(null); }} timeFromInput={timeFromInput} onTimeFromChange={(e) => { setTimeFromInput(e.target.value); setActivePreset(null); }} dateToInput={dateToInput} onDateToChange={(date) => { setDateToInput(date); setActivePreset(null); }} timeToInput={timeToInput} onTimeToChange={(e) => { setTimeToInput(e.target.value); setActivePreset(null); }} onReset={resetFilter} onApply={applyDateFilter} onPresetSelect={handlePresetDateFilter} activePreset={activePreset} />
+        <DownloadModal isLoadingAllclients={loadingAllClients} isOpen={downloadModalOpen} onClose={() => setDownloadModalOpen(false)} lastDownloadTime={lastDownloadTime} branchLastDownload={branchLastDownload} downloadDateFrom={downloadDateFrom} onDownloadDateFromChange={setDownloadDateFrom} downloadTimeFrom={downloadTimeFrom} onDownloadTimeFromChange={setDownloadTimeFrom} onDownloadCSV={handleDownloadCSV} onDownloadPDF={handleDownloadPDF} excludedSites={excludedSites} onExcludeChange={setExcludedSites} excludedBranches={excludedBranches} onExcludeBranchChange={handleExcludeBranchChange} initialCount={initialDownloadData.length} excludedCount={initialDownloadData.length - filteredDownloadData.length} remainingCount={filteredDownloadData.length} branchOptions={branchOptions} onBranchSelect={handleBranchSelectForDownload} selectedBranch={selectedBranchForDownload} branchStartDate={branchStartDate} setBranchStartDate={setBranchStartDate} branchStartTime={branchStartTime} setBranchStartTime={setBranchStartTime} branchInitialCount={branchInitialData.length} loadingBranchDownloadTime={loadingBranchDownloadTime} onModalCloseCleanup={onModalCloseCleanup} />
+        <DownloadAllModal isLoadingAllclients={loadingAllClients} isOpen={downloadAllModalOpen} onClose={() => setDownloadAllModalOpen(false)} onDownloadCSV={handleDownloadAllCSV} onDownloadPDF={handleDownloadAllPDF} />
+        <SiteDownloadModal isOpen={siteDownloadModalOpen} onClose={() => setSiteDownloadModalOpen(false)} onDownload={handleSiteDownload} onSiteSelect={handleSiteLocationSelectForDownload} siteLastDownload={siteLocationLastDownload} siteStartDate={siteLocationStartDate} setSiteStartDate={setSiteLocationStartDate} siteStartTime={siteLocationStartTime} setSiteStartTime={setSiteLocationStartTime} newRecordsCount={newRecordsForSite.length} loadingSiteTime={loadingSiteDownloadTime} onModalCloseCleanup={onSiteModalCloseCleanup} siteLocation={siteLocation} onSiteLocationChange={setSiteLocation} debouncedSiteLocation={debouncedSiteLocation} />
       </div>
     </div>
   );
