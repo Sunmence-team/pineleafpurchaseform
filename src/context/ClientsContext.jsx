@@ -1,0 +1,204 @@
+import React, { createContext, useContext, useState, useCallback } from "react";
+import axios from "axios";
+import { toast } from "sonner";
+
+const ClientsContext = createContext();
+
+const API_URL = import.meta.env.VITE_API_BASE_URL;
+
+export const ClientsProvider = ({ children }) => {
+  const [allClients, setAllClients] = useState([]);
+  const [loadingAllClients, setLoadingAllClients] = useState(false);
+  const [allClientsFetched, setAllClientsFetched] = useState(false);
+  
+  // For paginated/search results
+  const [applications, setApplications] = useState([]);
+  const [loadingApplications, setLoadingApplications] = useState(false);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalRecords, setTotalRecords] = useState(0);
+
+  const parseApplicationsResponse = (response) => {
+    let applications = [];
+    let meta = {};
+
+    if (response.data && Array.isArray(response.data.data)) {
+      applications = response.data.data;
+      meta = response.data.meta || {};
+    } else if (response.data && Array.isArray(response.data.applications)) {
+      applications = response.data.applications;
+      meta = response.data.meta || {};
+    } else if (response.data && Array.isArray(response.data.clients)) {
+      applications = response.data.clients;
+      meta = response.data.meta || {};
+    } else if (Array.isArray(response.data)) {
+      applications = response.data;
+    } else {
+      console.error("Unexpected response structure:", response.data);
+      throw new Error(
+        "Response data is not an array or does not contain an array of clients"
+      );
+    }
+
+    const mappedApplications = applications.map((item) => ({
+      id: item.id || "",
+      client_name: item.client_name || "",
+      email: item.email || "",
+      mobile_number: item.mobile_number || "",
+      branches: item.branches || "",
+      created_at: item.created_at || "",
+      address: item.address || "",
+      country: item.country || "",
+      declaration_date: item.declaration_date || "",
+      declaration_name: item.declaration_name || "",
+      dob: item.dob || "",
+      first_name: item.first_name || "",
+      first_name_of_spouse: item.first_name_of_spouse || "",
+      gender: item.gender || "",
+      land_price: item.land_price || "",
+      language: item.language || "",
+      last_name: item.last_name || "",
+      last_name_of_spouse: item.last_name_of_spouse || "",
+      lga: item.lga || "",
+      marital_status: item.marital_status || "",
+      middle_name: item.middle_name || "",
+      middle_name_of_spouse: item.middle_name_of_spouse || "",
+      nationality: item.nationality || "",
+      next_of_kin_address: item.next_of_kin_address || "",
+      next_of_kin_email: item.next_of_kin_email || "",
+      next_of_kin_full_name: item.next_of_kin_full_name || "",
+      next_of_kin_mobile_number: item.next_of_kin_mobile_number || "",
+      number_of_plot: item.number_of_plot || "",
+      occupation: item.occupation || "",
+      personal_picture: item.personal_picture || "",
+      plot_number: item.plot_number || "",
+      referral_date: item.referral_date || "",
+      referral_email: item.referral_email || "",
+      referral_name: item.referral_name || "",
+      referral_number: item.referral_number || "",
+      signature: item.signature || "",
+      site_location: item.site_location || "",
+      state_of_origin: item.state_of_origin || "",
+      telephone_number: item.telephone_number || "",
+      title: item.title || "",
+      title_of_spouse: item.title_of_spouse || "",
+      updated_at: item.updated_at || "",
+    }));
+
+    return { applications: mappedApplications, meta };
+  };
+
+  const fetchAllClients = useCallback(async (force = false) => {
+    if ((allClientsFetched && !force) || loadingAllClients) return;
+
+    const token = localStorage.getItem("token");
+    if (!token) return;
+
+    setLoadingAllClients(true);
+
+    try {
+      let allData = [];
+      let page = 1;
+      let lastPage = 1;
+
+      do {
+        const payload = { page, per_page: 200 };
+        const response = await axios.post(
+          `${API_URL}/api/all_clients`,
+          payload,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json",
+            },
+          }
+        );
+
+        const { applications, meta } = parseApplicationsResponse(response);
+        allData.push(...applications);
+
+        lastPage = meta.last_page || 1;
+        page += 1;
+
+        console.log(`Loaded ${allData.length} clients (page ${page - 1}/${lastPage})`);
+      } while (page <= lastPage);
+
+      setAllClients(allData);
+      setAllClientsFetched(true);
+      toast.success("Client data synchronized");
+    } catch (error) {
+      console.error("Error fetching all clients:", error);
+      toast.error("Failed to load all clients");
+    } finally {
+      setLoadingAllClients(false);
+    }
+  }, [allClientsFetched, loadingAllClients]);
+
+  const fetchApplications = useCallback(async (page, perPage, query = "") => {
+    const token = localStorage.getItem("token");
+    if (!token) return;
+
+    setLoadingApplications(true);
+    try {
+      let response;
+      if (query.trim()) {
+        response = await axios.get(
+          `${API_URL}/api/applications/search?query=${encodeURIComponent(query)}`,
+          {
+            headers: { Authorization: `Bearer ${token}` },
+            params: { page, per_page: perPage },
+          }
+        );
+      } else {
+        const payload = { page, per_page: perPage };
+        response = await axios.post(`${API_URL}/api/all_clients`, payload, {
+          headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+        });
+      }
+
+      const { applications: mappedApps, meta } = parseApplicationsResponse(response);
+      setApplications(mappedApps);
+      setTotalPages(meta.last_page || 1);
+      setTotalRecords(meta.total || mappedApps.length);
+    } catch (error) {
+      console.error("Error fetching applications:", error);
+      toast.error("Failed to fetch applications");
+    } finally {
+      setLoadingApplications(false);
+    }
+  }, []);
+
+  const removeClient = (id) => {
+    setAllClients((prev) => prev.filter((client) => client.id !== id));
+    setApplications((prev) => prev.filter((app) => app.id !== id));
+  };
+
+  return (
+    <ClientsContext.Provider
+      value={{
+        allClients,
+        loadingAllClients,
+        allClientsFetched,
+        fetchAllClients,
+        applications,
+        loadingApplications,
+        fetchApplications,
+        totalPages,
+        setTotalPages,
+        totalRecords,
+        setTotalRecords,
+        removeClient,
+        setAllClients,
+      }}
+    >
+      {children}
+    </ClientsContext.Provider>
+  );
+};
+
+export const useClients = () => {
+  const context = useContext(ClientsContext);
+  if (!context) {
+    throw new Error("useClients must be used within a ClientsProvider");
+  }
+  return context;
+};
