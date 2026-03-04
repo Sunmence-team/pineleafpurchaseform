@@ -94,6 +94,10 @@ const BranchBreakDown = () => {
       fetchAllClients();
     }
     fetchLastDownloadTime();
+    // Reset view state when branch changes
+    setCurrentPage(1);
+    setSearchQuery("");
+    setDebouncedSearchQuery("");
   }, [fetchAllClients, allClientsFetched, fetchLastDownloadTime, branchKey]);
 
   useEffect(() => {
@@ -297,7 +301,8 @@ const BranchBreakDown = () => {
 
         <main className="flex-1 overflow-y-auto p-4 md:p-8">
           <div className="w-full space-y-6">
-            {(loadingAllClients || loadingApplications) && (
+            {(loadingAllClients ||
+             loadingApplications) && (
               <div className="flex justify-center items-center min-h-[200px]">
                 <div className="animate-spin rounded-full h-12 w-12 border-4 border-secClr border-t-transparent"></div>
               </div>
