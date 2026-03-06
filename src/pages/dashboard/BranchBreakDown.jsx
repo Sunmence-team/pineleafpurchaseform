@@ -346,7 +346,7 @@ const BranchBreakDown = () => {
                         </button>
 
                         {showDownloadOptions && (
-                          <div className="absolute right-0 mt-2 w-64 bg-white border border-gray-200 rounded-lg shadow-xl z-20 overflow-hidden">
+                          <div className="absolute right-0 mt-2 w-64 bg-white border border-gray-200 rounded-lg shadow-xl z-20">
                             <div className="p-3 border-b border-gray-100 bg-gray-50">
                               <p className="text-xs font-bold text-gray-500 uppercase">
                                 Download All
