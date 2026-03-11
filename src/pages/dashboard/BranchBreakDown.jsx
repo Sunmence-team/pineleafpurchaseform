@@ -150,15 +150,8 @@ const BranchBreakDown = () => {
 
   const generateCSV = (data, filename) => {
     const headers = [
-      "Client Name",
-      "State of Origin",
-      "LGA",
-      "Property Name",
-      "Number of Plot(s)",
-      "Plot No(s)",
-      "Land Price",
-      "Branch",
-      "Created At",
+      "Client Name", "State of Origin", "LGA", "Property Name",
+      "Number of Plot(s)", "Plot No(s)", "Land Price", "Branch",
     ];
 
     const rows = data.map((item) =>
@@ -171,7 +164,6 @@ const BranchBreakDown = () => {
         item.plot_number || "",
         item.land_price || "",
         item.branches || "",
-        item.created_at || "",
       ].map((field) => `"${String(field).replace(/"/g, '""')}"`),
     );
 
@@ -188,13 +180,14 @@ const BranchBreakDown = () => {
     document.body.removeChild(link);
   };
 
-  const generatePDF = (data, filename, title) => {
+  const generatePDF = (data, filename, title, filterFrom = null, downloadStartTime = null) => {
     const pdf = new jsPDF({
       orientation: "portrait",
       unit: "mm",
       format: "a4",
     });
     const pageWidth = pdf.internal.pageSize.getWidth();
+    const margin = 15;
     let yPosition = 15;
 
     pdf.addImage(logo, "PNG", 15, yPosition, 30, 30);
@@ -202,18 +195,41 @@ const BranchBreakDown = () => {
 
     pdf.setFontSize(18);
     pdf.text(title, pageWidth / 2, yPosition, { align: "center" });
-    yPosition += 15;
+    yPosition += 10;
+
+    if (filterFrom && downloadStartTime) {
+      pdf.setFontSize(12);
+      pdf.text(`(${format(filterFrom, "dd/MM/yyyy HH:mm")} - ${format(downloadStartTime, "dd/MM/yyyy HH:mm")})`, pageWidth / 2, yPosition, { align: "center" });
+      yPosition += 15;
+    }
+
+
+    if (filterFrom && downloadStartTime) {
+      pdf.setFontSize(12);
+      pdf.text(`(${format(filterFrom, "dd/MM/yyyy HH:mm")} - ${format(downloadStartTime, "dd/MM/yyyy HH:mm")})`, pageWidth / 2, yPosition, { align: "center" });
+      yPosition += 15;
+    }
+
+
+    if (filterFrom && downloadStartTime) {
+      pdf.setFontSize(12);
+      pdf.text(`(${format(filterFrom, "dd/MM/yyyy HH:mm")} - ${format(downloadStartTime, "dd/MM/yyyy HH:mm")})`, pageWidth / 2, yPosition, { align: "center" });
+      yPosition += 15;
+    }
 
     const tableHead = [
-      ["S/N", "Client Name", "Property", "Plots", "Price", "Date"],
+      ["S/N", "Client Name", "State of Origin", "LGA", "Property Name", "No. of Plot(s)", "Plot No(s)", "Land Price", "Branch"]
     ];
     const tableBody = data.map((item, index) => [
       index + 1,
       item.client_name || "N/A",
+      item.state_of_origin || "N/A",
+      item.lga || "N/A",
       item.site_location || "N/A",
       item.number_of_plot || "N/A",
-      item.land_price ? item.land_price.toLocaleString() : "N/A",
-      item.created_at ? format(parseISO(item.created_at), "dd/MM/yyyy") : "N/A",
+      item.plot_number || "N/A",
+      item.land_price ? item.land_price.toLocaleString("en-NG") : "N/A",
+      item.branches || "N/A",
     ]);
 
     autoTable(pdf, {
@@ -221,7 +237,21 @@ const BranchBreakDown = () => {
       head: tableHead,
       body: tableBody,
       theme: "grid",
-      headStyles: { fillColor: [47, 83, 24] },
+      styles: { fontSize: 7, cellPadding: 2, halign: "center", valign: "middle" },
+      headStyles: { fillColor: [47, 83, 24], textColor: [255, 255, 255], fontStyle: "bold" },
+      columnStyles: { 
+        0: { cellWidth: 8 }, 
+        1: { cellWidth: 30 }, 
+        2: { cellWidth: 20 }, 
+        3: { cellWidth: 20 }, 
+        4: { cellWidth: 30 }, 
+        5: { cellWidth: 12 }, 
+        6: { cellWidth: 15 }, 
+        7: { cellWidth: 20 }, 
+        8: { cellWidth: 25 } 
+      },
+      alternateRowStyles: { fillColor: [245, 245, 245] },
+      margin: { left: margin, right: margin },
     });
 
     pdf.save(filename);
