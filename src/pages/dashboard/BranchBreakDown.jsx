@@ -203,20 +203,6 @@ const BranchBreakDown = () => {
       yPosition += 15;
     }
 
-
-    if (filterFrom && downloadStartTime) {
-      pdf.setFontSize(12);
-      pdf.text(`(${format(filterFrom, "dd/MM/yyyy HH:mm")} - ${format(downloadStartTime, "dd/MM/yyyy HH:mm")})`, pageWidth / 2, yPosition, { align: "center" });
-      yPosition += 15;
-    }
-
-
-    if (filterFrom && downloadStartTime) {
-      pdf.setFontSize(12);
-      pdf.text(`(${format(filterFrom, "dd/MM/yyyy HH:mm")} - ${format(downloadStartTime, "dd/MM/yyyy HH:mm")})`, pageWidth / 2, yPosition, { align: "center" });
-      yPosition += 15;
-    }
-
     const tableHead = [
       ["S/N", "Client Name", "State of Origin", "LGA", "Property Name", "No. of Plot(s)", "Plot No(s)", "Land Price", "Branch"]
     ];
@@ -297,7 +283,7 @@ const BranchBreakDown = () => {
 
     const filename = `new_records_${branchKey}_${format(new Date(), "yyyyMMdd_HHmm")}`;
     if (type === "csv") generateCSV(data, `${filename}.csv`);
-    else generatePDF(data, `${filename}.pdf`, `New Records - ${branchTitle}`);
+    else generatePDF(data, `${filename}.pdf`, `New Records - ${branchTitle}`, filterFrom, downloadStartTime);
 
     updateDownloadTime(downloadStartTime);
     setShowDownloadOptions(false);
