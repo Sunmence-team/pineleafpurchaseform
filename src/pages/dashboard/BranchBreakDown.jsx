@@ -46,6 +46,7 @@ const BranchBreakDown = () => {
     allClientsFetched,
     fetchAllClients,
     loadingApplications,
+    removeClient,
   } = useClients();
 
   const [fullFilteredData, setFullFilteredData] = useState([]);
@@ -58,6 +59,7 @@ const BranchBreakDown = () => {
   const [showDownloadOptions, setShowDownloadOptions] = useState(false);
   const [branchLastDownload, setBranchLastDownload] = useState(null);
   const [loadingDownloadTime, setLoadingDownloadTime] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   // For first-time download
   const [startDate, setStartDate] = useState(null);
@@ -290,6 +292,43 @@ const BranchBreakDown = () => {
     toast.success("Download started");
   };
 
+  const handleDelete = async (id) => {
+    if (!id) return;
+    const toastId = toast.loading("Deleting entry...");
+    setIsDeleting(true);
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        toast.error("Please log in to perform this action.", { id: toastId });
+        setIsDeleting(false);
+        return;
+      }
+
+      const response = await axios.delete(`${API_URL}/api/applications/${id}`, {
+        headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+      });
+
+      if (response.status === 200 || response.status === 204) {
+        toast.success("Client entry deleted successfully!", { id: toastId });
+        removeClient(id);
+        if (paginatedData.length === 1 && currentPage > 1) {
+          setCurrentPage(currentPage - 1);
+        }
+      } else {
+        toast.error(`Failed to delete client. Status: ${response.status}`, { id: toastId });
+      }
+    } catch (error) {
+      console.error("Error deleting client:", error);
+      toast.error("Failed to delete client: " + (error.response?.data?.message || error.message || "Unknown error"), { id: toastId });
+      if (axios.isAxiosError(error) && error.response?.status === 401) {
+        toast.info("Session expired!. Logging out...");
+        setTimeout(() => localStorage.removeItem("token"), 500);
+      }
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
   const totalPages = Math.ceil(fullFilteredData.length / recordsPerPage);
 
   return (
@@ -464,8 +503,8 @@ const BranchBreakDown = () => {
                     filteredData={paginatedData}
                     currentPage={currentPage}
                     recordsPerPage={recordsPerPage}
-                    isDeleting={false}
-                    handleDelete={() => {}}
+                    isDeleting={isDeleting}
+                    handleDelete={handleDelete}
                   />
                 </div>
 
