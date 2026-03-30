@@ -96,6 +96,10 @@ const branchOptions = [
     keyWord: "AMUWOODOFLAG",
     title: "Amuwo odofin Lagos",
   },
+  {
+    keyWord: "NKPOR",
+    title: "Nkpor",
+  },
 ];
 
 const Dashboard = () => {
