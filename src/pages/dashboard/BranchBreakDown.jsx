@@ -33,6 +33,8 @@ const branchOptions = [
   { keyWord: "NNEWI", title: "Nnewi" },
   { keyWord: "ENUGU", title: "Enugu" },
   { keyWord: "AMUWOODOFLAG", title: "Amuwo odofin Lagos" },
+  { keyWord: "EBONYI", title: "Ebonyi" },
+  { keyWord: "NKPOR", title: "Nkpor" },
 ];
 
 const BranchBreakDown = () => {
