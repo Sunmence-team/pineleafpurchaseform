@@ -14,6 +14,8 @@ import ViewUser from "./pages/dashboard/hmanagement/users/ViewUser"
 import ManageProperties from "./pages/dashboard/hmanagement/houses/ManageProperties"
 import CreateProperties from "./pages/dashboard/hmanagement/houses/CreateProperties"
 import ViewProperty from "./pages/dashboard/hmanagement/houses/ViewProperty"
+import ManageApplicants from "./pages/dashboard/hmanagement/users/applicants/ManageApplicants"
+import ViewApplicant from "./pages/dashboard/hmanagement/users/applicants/ViewApplicant"
 
 function App() {
 
@@ -87,6 +89,14 @@ function App() {
           <Route
             path="/dashboard/manage/listings/:id/view"
             element={<ViewProperty />}
+          />
+          <Route
+            path="/dashboard/manage/applicants"
+            element={<ManageApplicants />}
+          />
+          <Route
+            path="/dashboard/manage/applicants/:id/view"
+            element={<ViewApplicant />}
           />
         </Routes>
       </ClientsProvider>

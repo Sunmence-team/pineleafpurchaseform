@@ -5,7 +5,7 @@ import { toast } from "sonner";
 import assets from "../../../../assets/assests";
 import api, { getErrorMessage } from "../../../../utilities/api";
 
-const HM_API_URL = import.meta.env.VITE_HM_BASE_URL;
+const HM_STORAGE_API_URL = import.meta.env.VITE_HM_STORAGE_BASE_URL;
 
 const ViewProperty = () => {
   const token = localStorage.getItem("token");
@@ -80,12 +80,7 @@ const ViewProperty = () => {
             <FaArrowLeft className="text-gray-600" />
           </button>
           <img src={assets.logo} className="w-10 h-10" alt="Logo" />
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">
-              Property Details
-            </h1>
-            <p className="text-sm text-gray-500">ID: {id}</p>
-          </div>
+          <h1 className="text-2xl font-bold text-gray-900">Property Details</h1>
         </div>
 
         <div className="space-y-10">
@@ -99,7 +94,7 @@ const ViewProperty = () => {
                 {property.images.map((img, idx) => (
                   <img
                     key={idx}
-                    src={`${HM_API_URL}api/${img}`}
+                    src={`${HM_STORAGE_API_URL}${img}`}
                     alt={`${property.name} - ${idx}`}
                     className="w-full h-48 object-cover rounded-xl border border-gray-100 shadow-sm"
                   />

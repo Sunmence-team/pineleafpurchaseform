@@ -111,7 +111,7 @@ const CreateProperties = () => {
       if (isEditMode) {
         // Many APIs require _method="PUT" for FormData with PUT
         formData.append("_method", "PUT");
-        await api.put(`/api/properties/${id}`, formData, {
+        await api.post(`/api/properties/${id}`, formData, {
             headers: { 
                 Authorization: `Bearer ${token}`,
                 "Content-Type": "multipart/form-data" 

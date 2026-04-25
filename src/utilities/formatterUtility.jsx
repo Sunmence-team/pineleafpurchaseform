@@ -51,3 +51,27 @@ export const formatNumberWithCommas = (value) => {
 export const unformatNumber = (value) => {
   return value.replace(/\D/g, '');
 };
+
+
+
+export function formatUnderScores(
+  input,
+  { reverse = false, capitalize = false } = {},
+) {
+  if (reverse) {
+    // Replace spaces with underscores
+    return input.trim().replace(/\s+/g, "_");
+  }
+
+  // Original logic: Replace underscores with spaces
+  let formatted = input.replace(/_/g, " ");
+
+  if (capitalize) {
+    formatted = formatted
+      .split(" ")
+      .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(" ");
+  }
+
+  return formatted;
+}

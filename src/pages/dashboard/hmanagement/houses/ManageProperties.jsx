@@ -114,10 +114,10 @@ const ManageProperties = () => {
       key: "action",
       render: (item) => (
         <ActionCell
-          rowId={item.uuid}
-          onView={() => navigate(`/dashboard/manage/listings/${item.uuid}/view`)}
-          onEdit={() => navigate(`/dashboard/manage/listings/${item.uuid}/edit`)}
-          onDelete={() => setPropertyToDelete(item.uuid)}
+          rowId={item.id}
+          onView={() => navigate(`/dashboard/manage/listings/${item.id}/view`)}
+          onEdit={() => navigate(`/dashboard/manage/listings/${item.id}/edit`)}
+          onDelete={() => setPropertyToDelete(item.id)}
           canView
         />
       ),
@@ -143,7 +143,7 @@ const ManageProperties = () => {
           </button>
           <img src={assets.logo} alt="Logo" className="w-10 h-10" />
           <h1 className="text-xl font-bold text-gray-900 ps-6 truncate">
-            Manage Properties
+            Manage Listings
           </h1>
         </header>
 
@@ -163,7 +163,7 @@ const ManageProperties = () => {
               onClick={() => navigate("/dashboard/manage/listings/create")}
               className="flex items-center gap-2 bg-secClr text-white px-4 py-2 rounded-lg transition"
             >
-              <FaPlus /> Create Property
+              <FaPlus /> Create New Listing
             </button>
           </div>
 

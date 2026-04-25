@@ -7,6 +7,7 @@ import api, { getErrorMessage } from "../../../../utilities/api";
 
 const ViewUser = () => {
   const { id } = useParams();
+  const token = localStorage.getItem("token");
   const navigate = useNavigate();
   const location = useLocation();
   const [user, setUser] = useState(location.state || null);
@@ -17,7 +18,11 @@ const ViewUser = () => {
       const fetchUser = async () => {
         setIsLoading(true);
         try {
-          const response = await api.get(`/users/${id}`, {});
+          const response = await api.get(`/api/users/${id}`, {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          });
           setUser(response.data.data || response.data);
         } catch (err) {
           const msg = getErrorMessage(err);

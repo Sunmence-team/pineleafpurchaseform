@@ -12,8 +12,8 @@ const SideNav = ({ openMenu, setOpenMenu, branches, isLoading }) => {
 
   const houseManagementNavigation = [
     {
-      name: "Overview",
-      relativeRoute: "overview",
+      name: "Manage Applicants",
+      relativeRoute: "manage/applicants",
     },
     {
       name: "Manage Users",

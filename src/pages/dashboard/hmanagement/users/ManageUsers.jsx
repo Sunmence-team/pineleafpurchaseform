@@ -10,53 +10,55 @@ import api, { getErrorMessage } from "../../../../utilities/api";
 import { toast } from "sonner";
 
 const ManageUsers = () => {
-    const token = localStorage.getItem("token");
-    const [openMenu, setOpenMenu] = useState(false);
-    const [users, setUsers] = useState([]);
-    const [isLoading, setIsLoading] = useState(false);
-    const [error, setError] = useState(null);
-    const navigate = useNavigate();
+  const token = localStorage.getItem("token");
+  const [openMenu, setOpenMenu] = useState(false);
+  const [users, setUsers] = useState([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const navigate = useNavigate();
 
-    // Pagination state
-    const [currentPage, setCurrentPage] = useState(1);
-    const [itemsPerPage, setItemsPerPage] = useState(10);
-    const [totalItems, setTotalItems] = useState(0);
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
+  const [totalItems, setTotalItems] = useState(0);
 
-    const fetchUsers = async () => {
-        setIsLoading(true);
-        setError(null);
-        try {
-            const response = await api.get("/api/users", {
-                headers: {
-                    Authorization: `Bearer ${token}`
-                },
-                params: {
-                    page: currentPage,
-                    limit: itemsPerPage,
-                },
-            });
-            const { data, total } = response.data.data;
-            setUsers(data);
-            setTotalItems(total);
-        } catch (err) {
-            const msg = getErrorMessage(err);
-            setError(msg);
-            toast.error(msg);
-        } finally {
-            setIsLoading(false);
-        }
-    };
+  const fetchUsers = async () => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const response = await api.get("/api/users", {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        params: {
+          page: currentPage,
+          limit: itemsPerPage,
+        },
+      });
+      const { data, total } = response.data.data;
+      setUsers(data);
+      setTotalItems(total);
+    } catch (err) {
+      const msg = getErrorMessage(err);
+      setError(msg);
+      toast.error(msg);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
-    useEffect(() => {
-        fetchUsers();
-    }, [currentPage, itemsPerPage]);
+  useEffect(() => {
+    fetchUsers();
+  }, [currentPage, itemsPerPage]);
 
   const columns = [
     {
       label: "Name",
       key: "name",
       render: (item) => (
-        <span className="capitalize">{item.firstname} {item.lastname}</span>
+        <span className="capitalize">
+          {item.firstname} {item.lastname}
+        </span>
       ),
     },
     {
@@ -66,6 +68,10 @@ const ManageUsers = () => {
     {
       label: "Phone",
       key: "phone",
+    },
+    {
+      label: "Country",
+      key: "country",
     },
     {
       label: "Action",
@@ -129,4 +135,3 @@ const ManageUsers = () => {
 };
 
 export default ManageUsers;
-
