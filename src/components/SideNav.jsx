@@ -19,6 +19,10 @@ const SideNav = ({ openMenu, setOpenMenu, branches, isLoading }) => {
       name: "Manage Users",
       relativeRoute: "manage/users",
     },
+    {
+      name: "Manage Listings",
+      relativeRoute: "manage/listings",
+    },
   ];
 
   return (
@@ -38,7 +42,7 @@ const SideNav = ({ openMenu, setOpenMenu, branches, isLoading }) => {
             <FaX />
           </button>
         </div>
-        <ul className="flex flex-col pe-1 gap-4 h-[88%] overflow-y-scroll styled-scrollbar border">
+        <ul className="flex flex-col pe-1 gap-4 h-[88%] overflow-y-scroll styled-scrollbar">
           <NavLink
             to={"/dashboard"}
             end
@@ -82,7 +86,7 @@ const SideNav = ({ openMenu, setOpenMenu, branches, isLoading }) => {
               </div>
             )}
           </div>
-          <div className="">
+          <div className="space-y-2">
             <div
               className={`flex items-center gap-3 w-full text-black px-4 py-3 cursor-pointer text-sm rounded-md ${openDropHMMenu ? "bg-secClr text-white" : ""}`}
               title={"branches"}

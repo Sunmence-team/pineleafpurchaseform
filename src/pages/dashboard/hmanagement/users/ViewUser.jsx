@@ -17,10 +17,7 @@ const ViewUser = () => {
       const fetchUser = async () => {
         setIsLoading(true);
         try {
-          // Following the pattern of using POST for detail if that's what's expected
-          // but trying GET first as it's more standard for "users/:id"
-          // The user mentioned "post req to 'users/8'" so I'll use POST as requested
-          const response = await api.post(`/users/${id}`, {});
+          const response = await api.get(`/users/${id}`, {});
           setUser(response.data.data || response.data);
         } catch (err) {
           const msg = getErrorMessage(err);
@@ -75,10 +72,7 @@ const ViewUser = () => {
             <FaArrowLeft className="text-gray-600" />
           </button>
           <img src={assets.logo} className="w-10 h-10" alt="Logo" />
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">User Details</h1>
-            <p className="text-sm text-gray-500">ID: {id}</p>
-          </div>
+          <h1 className="text-2xl font-bold text-gray-900">User Details</h1>
         </div>
 
         <div className="space-y-10">

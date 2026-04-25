@@ -11,6 +11,9 @@ import BranchBreakDown from "./pages/dashboard/BranchBreakDown"
 import { ClientsProvider } from "./context/ClientsContext"
 import ManageUsers from "./pages/dashboard/hmanagement/users/ManageUsers"
 import ViewUser from "./pages/dashboard/hmanagement/users/ViewUser"
+import ManageProperties from "./pages/dashboard/hmanagement/houses/ManageProperties"
+import CreateProperties from "./pages/dashboard/hmanagement/houses/CreateProperties"
+import ViewProperty from "./pages/dashboard/hmanagement/houses/ViewProperty"
 
 function App() {
 
@@ -68,6 +71,22 @@ function App() {
           <Route
             path="/dashboard/manage/users/:id/view"
             element={<ViewUser />}
+          />
+          <Route
+            path="/dashboard/manage/listings"
+            element={<ManageProperties />}
+          />
+          <Route
+            path="/dashboard/manage/listings/create"
+            element={<CreateProperties />}
+          />
+          <Route
+            path="/dashboard/manage/listings/:id/edit"
+            element={<CreateProperties />}
+          />
+          <Route
+            path="/dashboard/manage/listings/:id/view"
+            element={<ViewProperty />}
           />
         </Routes>
       </ClientsProvider>
