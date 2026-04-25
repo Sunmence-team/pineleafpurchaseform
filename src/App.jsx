@@ -9,6 +9,8 @@ import Success from "./pages/Success"
 import { useEffect } from "react"
 import BranchBreakDown from "./pages/dashboard/BranchBreakDown"
 import { ClientsProvider } from "./context/ClientsContext"
+import ManageUsers from "./pages/dashboard/hmanagement/users/ManageUsers"
+import ViewUser from "./pages/dashboard/hmanagement/users/ViewUser"
 
 function App() {
 
@@ -58,6 +60,14 @@ function App() {
           <Route
             path="/edit-client/:id"
             element={<EditClient />}
+          />
+          <Route
+            path="/dashboard/manage/users"
+            element={<ManageUsers />}
+          />
+          <Route
+            path="/dashboard/manage/users/:id/view"
+            element={<ViewUser />}
           />
         </Routes>
       </ClientsProvider>

@@ -36,71 +36,9 @@ import { TfiReload } from "react-icons/tfi";
 import { FaBars, FaX } from "react-icons/fa6";
 import SideNav from "../../components/SideNav";
 import { useClients } from "../../context/ClientsContext";
+import { branchOptions } from "../../lib/branchList";
 
 const API_URL = import.meta.env.VITE_API_BASE_URL;
-
-const branchOptions = [
-  {
-    keyWord: "HQ_ONI",
-    title: "HQ - Onitsha",
-  },
-  {
-    keyWord: "MGB",
-    title: "Mgbuka",
-  },
-  {
-    keyWord: "AWKA",
-    title: "Awka",
-  },
-  {
-    keyWord: "ASB",
-    title: "Asaba",
-  },
-  {
-    keyWord: "OWE",
-    title: "Owerri",
-  },
-  {
-    keyWord: "PORT_HAR",
-    title: "Port Harcourt",
-  },
-  {
-    keyWord: "LAG_AJAH",
-    title: "Lagos Ajah",
-  },
-  {
-    keyWord: "LAG_APP",
-    title: "Lagos Apapa",
-  },
-  {
-    keyWord: "ENU_UKW",
-    title: "Enugwu-Ukwu",
-  },
-  {
-    keyWord: "ABJ",
-    title: "Abuja",
-  },
-  {
-    keyWord: "ABIA",
-    title: "Abia",
-  },
-  {
-    keyWord: "NNEWI",
-    title: "Nnewi",
-  },
-  {
-    keyWord: "ENUGU",
-    title: "Enugu",
-  },
-  {
-    keyWord: "AMUWOODOFLAG",
-    title: "Amuwo odofin Lagos",
-  },
-  {
-    keyWord: "NKPOR",
-    title: "Nkpor",
-  },
-];
 
 const Dashboard = () => {
   const {

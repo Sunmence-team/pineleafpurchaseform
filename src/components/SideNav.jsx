@@ -8,6 +8,18 @@ const SideNav = ({ openMenu, setOpenMenu, branches, isLoading }) => {
   if (!openMenu) return null;
 
   const [openDropMenu, setOpenDropMenu] = useState(false);
+  const [openDropHMMenu, setOpenDropHMMenu] = useState(false);
+
+  const houseManagementNavigation = [
+    {
+      name: "Overview",
+      relativeRoute: "overview",
+    },
+    {
+      name: "Manage Users",
+      relativeRoute: "manage/users",
+    },
+  ];
 
   return (
     <div className="fixed top-0 left-0 z-99999 w-full h-full bg-black/50">
@@ -26,7 +38,7 @@ const SideNav = ({ openMenu, setOpenMenu, branches, isLoading }) => {
             <FaX />
           </button>
         </div>
-        <ul className="flex flex-col pe-1 gap-4 h-[88%] overflow-y-scroll styled-scrollbar">
+        <ul className="flex flex-col pe-1 gap-4 h-[88%] overflow-y-scroll styled-scrollbar border">
           <NavLink
             to={"/dashboard"}
             end
@@ -37,35 +49,72 @@ const SideNav = ({ openMenu, setOpenMenu, branches, isLoading }) => {
           >
             Dashboard
           </NavLink>
-          <div
-            className={`flex items-center gap-3 w-full text-black px-4 py-3 cursor-pointer text-sm rounded-md ${openDropMenu ? "bg-secClr text-white" : ""}`}
-            title={"branches"}
-            onClick={() => setOpenDropMenu(!openDropMenu)}
-          >
-            <div className={`flex items-center w-full h-full gap-2`}>
-              <span>Branches</span>
+          <div className="space-y-2">
+            <div
+              className={`flex items-center gap-3 w-full text-black px-4 py-3 cursor-pointer text-sm rounded-md ${openDropMenu ? "bg-secClr text-white" : ""}`}
+              title={"branches"}
+              onClick={() => setOpenDropMenu(!openDropMenu)}
+            >
+              <div className={`flex items-center w-full h-full gap-2`}>
+                <span>Branches</span>
+              </div>
+              <IoChevronDown
+                className={`transition-transform ${
+                  openDropMenu ? "rotate-180" : ""
+                }`}
+              />
             </div>
-            <IoChevronDown
-              className={`transition-transform ${
-                openDropMenu ? "rotate-180" : ""
-              }`}
-            />
+            {openDropMenu && (
+              <div
+                className={`border-l border-secClr/30 lg:pl-2 flex flex-col`}
+              >
+                {branches.map((branch) => (
+                  <NavLink
+                    to={`/dashboard/branch/${branch.keyWord}`}
+                    className={({ isActive }) =>
+                      `h-10 flex items-center px-4 last:border-b-0 border-b border-secClr/30 text-xs ${isActive ? "bg-secClr text-white" : "hover:bg-secClr/30"}`
+                    }
+                    onClick={() => setOpenMenu(false)}
+                  >
+                    {branch.title}
+                  </NavLink>
+                ))}
+              </div>
+            )}
           </div>
-          {openDropMenu && (
-            <div className={`border-l border-secClr/30 lg:pl-2 flex flex-col`}>
-              {branches.map((branch) => (
-                <NavLink
-                  to={`/dashboard/branch/${branch.keyWord}`}
-                  className={({ isActive }) =>
-                    `h-10 flex items-center px-4 last:border-b-0 border-b border-secClr/30 text-xs ${isActive ? "bg-secClr text-white" : "hover:bg-secClr/30"}`
-                  }
-                  onClick={() => setOpenMenu(false)}
-                >
-                  {branch.title}
-                </NavLink>
-              ))}
+          <div className="">
+            <div
+              className={`flex items-center gap-3 w-full text-black px-4 py-3 cursor-pointer text-sm rounded-md ${openDropHMMenu ? "bg-secClr text-white" : ""}`}
+              title={"branches"}
+              onClick={() => setOpenDropHMMenu(!openDropHMMenu)}
+            >
+              <div className={`flex items-center w-full h-full gap-2`}>
+                <span>House Platform Management</span>
+              </div>
+              <IoChevronDown
+                className={`transition-transform ${
+                  openDropHMMenu ? "rotate-180" : ""
+                }`}
+              />
             </div>
-          )}
+            {openDropHMMenu && (
+              <div
+                className={`border-l border-secClr/30 lg:pl-2 flex flex-col`}
+              >
+                {houseManagementNavigation.map((nav) => (
+                  <NavLink
+                    to={`/dashboard/${nav.relativeRoute}`}
+                    className={({ isActive }) =>
+                      `h-10 flex items-center px-4 last:border-b-0 border-b border-secClr/30 text-xs ${isActive ? "bg-secClr text-white" : "hover:bg-secClr/30"}`
+                    }
+                    onClick={() => setOpenMenu(false)}
+                  >
+                    {nav.name}
+                  </NavLink>
+                ))}
+              </div>
+            )}
+          </div>
         </ul>
       </div>
     </div>

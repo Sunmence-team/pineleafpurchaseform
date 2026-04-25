@@ -15,27 +15,9 @@ import PaginationControls from "../../components/PaginationControls";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import { useClients } from "../../context/ClientsContext";
+import { branchOptions } from "../../lib/branchList";
 
 const API_URL = import.meta.env.VITE_API_BASE_URL;
-
-const branchOptions = [
-  { keyWord: "HQ_ONI", title: "HQ - Onitsha" },
-  { keyWord: "MGB", title: "Mgbuka" },
-  { keyWord: "AWKA", title: "Awka" },
-  { keyWord: "ASB", title: "Asaba" },
-  { keyWord: "OWE", title: "Owerri" },
-  { keyWord: "PORT_HAR", title: "Port Harcourt" },
-  { keyWord: "LAG_AJAH", title: "Lagos Ajah" },
-  { keyWord: "LAG_APP", title: "Lagos Apapa" },
-  { keyWord: "ENU_UKW", title: "Enugwu-Ukwu" },
-  { keyWord: "ABJ", title: "Abuja" },
-  { keyWord: "ABIA", title: "Abia" },
-  { keyWord: "NNEWI", title: "Nnewi" },
-  { keyWord: "ENUGU", title: "Enugu" },
-  { keyWord: "AMUWOODOFLAG", title: "Amuwo odofin Lagos" },
-  { keyWord: "EBONYI", title: "Ebonyi" },
-  { keyWord: "NKPOR", title: "Nkpor" },
-];
 
 const BranchBreakDown = () => {
   const { branch: branchKey } = useParams();

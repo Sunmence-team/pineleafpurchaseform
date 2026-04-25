@@ -20,6 +20,16 @@ export const formatISODateToCustom = (isoString) => {
     return `${day}/${month}/${year} ${hours}:${minutes}:${seconds}${ampm}`;
 };
 
+
+export const formatterUtility = (amount, noSign = false, currencyType = "naira") => {
+  if (amount === null || amount === undefined) {
+    return "";
+  }
+  const pickedSign = currencyType === "naira" ? "₦" : currencyType === "euro" ? "€" : currencyType === "dollar" ? "$" : "₦"
+  const sign = noSign ? "" : pickedSign;
+  return `${sign}${amount.toLocaleString("en-NG")}`;
+};
+
 /**
  * Formats a number with thousands separators.
  * @param value - The number or string to format.
