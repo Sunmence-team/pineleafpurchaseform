@@ -7,7 +7,7 @@ import { useNavigate } from "react-router-dom";
 import ActionCell from "../../../../components/ActionCell";
 import api, { getErrorMessage } from "../../../../utilities/api";
 import { toast } from "sonner";
-import ConfirmDialog from "../../../../components/modals/confirmdialog";
+import ConfirmDialog from "../../../../components/modals/ConfirmDialog";
 import { FaBars, FaPlus } from "react-icons/fa6";
 import { FaSearch } from "react-icons/fa";
 
