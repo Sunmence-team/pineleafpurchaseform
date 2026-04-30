@@ -21,6 +21,7 @@ const ManageUsers = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
   const [totalItems, setTotalItems] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
 
   const fetchUsers = async () => {
     setIsLoading(true);
@@ -32,12 +33,13 @@ const ManageUsers = () => {
         },
         params: {
           page: currentPage,
-          limit: itemsPerPage,
+          per_page: itemsPerPage,
         },
       });
-      const { data, total } = response.data.data;
+      const { data, total, last_page } = response.data.data;
       setUsers(data);
       setTotalItems(total);
+      setTotalPages(last_page)
     } catch (err) {
       const msg = getErrorMessage(err);
       setError(msg);
@@ -72,6 +74,29 @@ const ManageUsers = () => {
     {
       label: "Country",
       key: "country",
+    },
+    {
+      label: "Interest Status",
+      key: "interest_transactions_count",
+      render: (item) => {
+        const isVerified = item?.is_verified;
+        const isInterested = item?.is_interested;
+        const hasPendingIndication =
+          item?.interest_transactions_count > 0 && !isInterested && !isVerified;
+        const awaitingVerification =
+          item?.interest_transactions_count > 0 && isInterested && !isVerified;
+        return (
+          <p>
+            {hasPendingIndication
+              ? "Has Pending Indication"
+              : awaitingVerification
+                ? "Awaiting Verification" 
+                : isVerified && item?.admin_approved_salary
+                  ? "Verified"
+                  : "No indication"}
+          </p>
+        );
+      },
     },
     {
       label: "Action",
@@ -120,7 +145,7 @@ const ManageUsers = () => {
             isLoading={isLoading}
             error={error}
             currentPage={currentPage}
-            totalPages={Math.ceil(totalItems / itemsPerPage)}
+            totalPages={totalPages}
             totalItems={totalItems}
             itemsPerPage={itemsPerPage}
             setCurrentPage={setCurrentPage}

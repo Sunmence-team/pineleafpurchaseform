@@ -11,6 +11,7 @@ import {
 } from "../../../../../utilities/formatterUtility";
 import { StatusTurnPriorityCard } from "../../../../../components/cards/StatusCard";
 import { FaDownload } from "react-icons/fa6";
+import Modal from "../../../../../components/modals/Modal";
 
 const HM_STORAGE_API_URL = import.meta.env.VITE_HM_STORAGE_BASE_URL;
 
@@ -22,6 +23,7 @@ const ViewApplicant = () => {
   const [application, setApplication] = useState(location.state || null);
   const [isLoading, setIsLoading] = useState(!location.state);
   const [isVerifying, setIsVerifying] = useState(false);
+  const [openPaymentImageModal, setOpenPaymentImageModal] = useState(null);
 
   useEffect(() => {
     if (!application) {
@@ -85,7 +87,7 @@ const ViewApplicant = () => {
     setIsVerifying(true);
     try {
       const response = await api.post(
-        `/api/interest/verify/manual`,
+        `/api/admin/interest/verify/manual`,
         {
           reference: paymentReference,
         },
@@ -95,7 +97,11 @@ const ViewApplicant = () => {
           },
         },
       );
-      setApplication(response.data.data || response.data);
+
+      if (response.status === 200) {
+        setApplication(response.data.data || response.data);
+        toast.success(response.data.message || "Payment verified successfully");
+      }
     } catch (err) {
       const msg = getErrorMessage(err);
       toast.error(msg);
@@ -104,6 +110,8 @@ const ViewApplicant = () => {
       setIsVerifying(false);
     }
   };
+
+  const proofOfPaymentImage = `${HM_STORAGE_API_URL}${application?.proof_of_payment}`;
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col p-4 sm:p-6 md:p-8">
@@ -267,22 +275,28 @@ const ViewApplicant = () => {
                   application?.reference || application?.paystack_reference
                 }
               />
-              <div className="md:col-span-2 lg:col-span-3 gap-4">
-                {application.proof_of_payment && (
+              {application.proof_of_payment && (
+                <div
+                  onClick={() => setOpenPaymentImageModal(proofOfPaymentImage)}
+                  className="group overflow-hidden relative md:col-span-2 rounded-xl border h-48 shadow-sm border-gray-100 lg:col-span-3 gap-4 cursor-pointer"
+                >
                   <img
-                    src={`${HM_STORAGE_API_URL}${application?.proof_of_payment}`}
+                    src={proofOfPaymentImage}
                     alt={`${application.user.firstname}_proof_of_payment`}
-                    className="w-full h-48 object-cover rounded-xl border border-gray-100 shadow-sm"
+                    className="w-full h-48 object-cover"
                   />
-                )}
-              </div>
+                  <div className="absolute inset-0 top-[110%] group-hover:top-0 transition-all bg-black/30 text-white flex items-center justify-center font-medium text-lg">
+                    <h3>View image</h3>
+                  </div>
+                </div>
+              )}
             </div>
           </section>
         </div>
 
         {/* Footer */}
         <div className="border-t border-gray-100 pt-8 mt-10 flex gap-3 justify-end">
-          {application?.payment_method !== "paysatck" && (
+          {application?.payment_method !== "paysatck" && application?.status === "pending" && (
             <button
               onClick={() => handleVerifyManualPayment(application?.reference)}
               disabled={isVerifying}
@@ -299,6 +313,16 @@ const ViewApplicant = () => {
           </button>
         </div>
       </div>
+
+      {openPaymentImageModal && (
+        <Modal onClose={() => setOpenPaymentImageModal(null)}>
+          <img
+            src={proofOfPaymentImage}
+            alt={`${application.user.firstname}_proof_of_payment`}
+            className="w-full object-cover rounded-xl border border-gray-100 shadow-sm"
+          />
+        </Modal>
+      )}
     </div>
   );
 };

@@ -28,7 +28,7 @@ const Modal = ({ children, onClose, showClose=true, customMode=false }) => {
                 <button
                   onClick={onClose}
                   type="button"
-                  className="absolute z-100 md:top-8 md:right-8 top-4 right-4 text-pryClr transition-colors cursor-pointer"
+                  className="absolute z-100 md:top-8 md:right-8 top-4 right-4 text-[#2F5318] transition-colors cursor-pointer"
                 >
                   <svg
                     xmlns="http://www.w3.org/2000/svg"

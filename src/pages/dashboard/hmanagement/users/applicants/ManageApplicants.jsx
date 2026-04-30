@@ -51,7 +51,7 @@ const ManageApplicants = () => {
         },
         params: {
           page: currentPage,
-          limit: itemsPerPage,
+          per_page: itemsPerPage,
           search: debouncedSearchQuery,
         },
       });
@@ -105,7 +105,7 @@ const ManageApplicants = () => {
       render: (item) => formatterUtility(Number(item.amount)),
     },
     {
-      label: "Status",
+      label: "Payment Status",
       key: "status",
       render: (item) => <StatusTurnPriorityCard status={item.status} />,
     },
@@ -117,7 +117,7 @@ const ManageApplicants = () => {
           rowId={item.uuid}
           onView={() =>
             navigate(`/dashboard/manage/applicants/${item.id}/view`, {
-                state: item
+              state: item,
             })
           }
           canView
