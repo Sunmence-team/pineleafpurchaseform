@@ -23,6 +23,10 @@ const SideNav = ({ openMenu, setOpenMenu, branches, isLoading }) => {
       name: "Manage Listings",
       relativeRoute: "manage/listings",
     },
+    {
+      name: "Manage Purchases",
+      relativeRoute: "manage/purchases",
+    },
   ];
 
   return (
@@ -108,6 +112,7 @@ const SideNav = ({ openMenu, setOpenMenu, branches, isLoading }) => {
                 {houseManagementNavigation.map((nav) => (
                   <NavLink
                     to={`/dashboard/${nav.relativeRoute}`}
+                    key={`/dashboard/${nav.relativeRoute}`}
                     className={({ isActive }) =>
                       `h-10 flex items-center px-4 last:border-b-0 border-b border-secClr/30 text-xs ${isActive ? "bg-secClr text-white" : "hover:bg-secClr/30"}`
                     }

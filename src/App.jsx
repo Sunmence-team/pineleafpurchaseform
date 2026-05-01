@@ -16,6 +16,8 @@ import CreateProperties from "./pages/dashboard/hmanagement/houses/CreatePropert
 import ViewProperty from "./pages/dashboard/hmanagement/houses/ViewProperty"
 import ManageApplicants from "./pages/dashboard/hmanagement/users/applicants/ManageApplicants"
 import ViewApplicant from "./pages/dashboard/hmanagement/users/applicants/ViewApplicant"
+import ManagePurchases from "./pages/dashboard/hmanagement/purchases/ManagePurchases"
+import ViewPurchase from "./pages/dashboard/hmanagement/purchases/ViewPurchase"
 
 function App() {
 
@@ -66,6 +68,7 @@ function App() {
             path="/edit-client/:id"
             element={<EditClient />}
           />
+          {/* User Management */}
           <Route
             path="/dashboard/manage/users"
             element={<ManageUsers />}
@@ -75,28 +78,40 @@ function App() {
             element={<ViewUser />}
           />
           <Route
-            path="/dashboard/manage/listings"
-            element={<ManageProperties />}
-          />
-          <Route
-            path="/dashboard/manage/listings/create"
-            element={<CreateProperties />}
-          />
-          <Route
-            path="/dashboard/manage/listings/:id/edit"
-            element={<CreateProperties />}
-          />
-          <Route
-            path="/dashboard/manage/listings/:id/view"
-            element={<ViewProperty />}
-          />
-          <Route
             path="/dashboard/manage/applicants"
             element={<ManageApplicants />}
           />
           <Route
             path="/dashboard/manage/applicants/:id/view"
             element={<ViewApplicant />}
+          />
+          
+          {/* Property Management */}
+          <Route
+            path="/dashboard/manage/properties"
+            element={<ManageProperties />}
+          />
+          <Route
+            path="/dashboard/manage/properties/create"
+            element={<CreateProperties />}
+          />
+          <Route
+            path="/dashboard/manage/properties/:id/edit"
+            element={<CreateProperties />}
+          />
+          <Route
+            path="/dashboard/manage/properties/:id/view"
+            element={<ViewProperty />}
+          />
+
+          {/* Purchase/Application Management */}
+          <Route
+            path="/dashboard/manage/purchases"
+            element={<ManagePurchases />}
+          />
+          <Route
+            path="/dashboard/manage/purchases/:id/view"
+            element={<ViewPurchase />}
           />
         </Routes>
       </ClientsProvider>
