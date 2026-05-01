@@ -111,7 +111,7 @@ const CreateProperties = () => {
       if (isEditMode) {
         // Many APIs require _method="PUT" for FormData with PUT
         formData.append("_method", "PUT");
-        await api.post(`/api/properties/${id}`, formData, {
+        await api.post(`/api/admin/properties/${id}`, formData, {
             headers: { 
                 Authorization: `Bearer ${token}`,
                 "Content-Type": "multipart/form-data" 
@@ -119,7 +119,7 @@ const CreateProperties = () => {
         });
         toast.success("Property updated successfully");
       } else {
-        await api.post("/api/properties", formData, {
+        await api.post("/api/admin/properties", formData, {
             headers: { 
                 Authorization: `Bearer ${token}`,
                 "Content-Type": "multipart/form-data" 
