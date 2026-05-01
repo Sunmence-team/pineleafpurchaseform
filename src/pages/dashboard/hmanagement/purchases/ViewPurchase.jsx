@@ -100,12 +100,9 @@ const ViewPurchase = () => {
               <FaArrowLeft className="text-gray-600" />
             </button>
             <img src={assets.logo} className="w-10 h-10" alt="Logo" />
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900">
-                Purchase Details
-              </h1>
-              <p className="text-sm text-gray-500">Application ID: {id}</p>
-            </div>
+            <h1 className="text-2xl font-bold text-gray-900">
+            Purchase Details
+            </h1>
           </div>
           <div
             className={`px-4 py-2 rounded-full text-xs font-bold uppercase ${
