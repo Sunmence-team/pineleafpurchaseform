@@ -23,7 +23,6 @@ const ViewApplicant = () => {
   const [application, setApplication] = useState(location.state || null);
   const [isLoading, setIsLoading] = useState(!location.state);
   const [isVerifying, setIsVerifying] = useState(false);
-  const [openPaymentImageModal, setOpenPaymentImageModal] = useState(null);
 
   useEffect(() => {
     if (!application) {
@@ -136,6 +135,7 @@ const ViewApplicant = () => {
               <a
                 href={`${HM_STORAGE_API_URL}${application?.user?.statement_of_account}`}
                 target="_blank"
+                download
                 className="flex items-center justify-center px-4 py-2 sm:px-5 sm:py-3 bg-secClr text-white font-semibold rounded-lg hover:bg-secClr transition-colors duration-200 w-full sm:w-auto text-sm"
               >
                 <FaDownload className="mr-2 text-sm" />
@@ -254,7 +254,7 @@ const ViewApplicant = () => {
             <h3 className="text-lg font-bold text-gray-900 border-l-4 border-primary pl-3 mb-6">
               Payment Information
             </h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <DetailItem
                 label="Date Filled"
                 value={formatISODateToCustom(application?.created_at)}
@@ -275,36 +275,35 @@ const ViewApplicant = () => {
                   application?.reference || application?.paystack_reference
                 }
               />
-              {application.proof_of_payment && (
-                <div
-                  onClick={() => setOpenPaymentImageModal(proofOfPaymentImage)}
-                  className="group overflow-hidden relative md:col-span-2 rounded-xl border h-48 shadow-sm border-gray-100 lg:col-span-3 gap-4 cursor-pointer"
-                >
-                  <img
-                    src={proofOfPaymentImage}
-                    alt={`${application.user.firstname}_proof_of_payment`}
-                    className="w-full h-48 object-cover"
-                  />
-                  <div className="absolute inset-0 top-[110%] group-hover:top-0 transition-all bg-black/30 text-white flex items-center justify-center font-medium text-lg">
-                    <h3>View image</h3>
-                  </div>
-                </div>
-              )}
             </div>
           </section>
         </div>
 
         {/* Footer */}
         <div className="border-t border-gray-100 pt-8 mt-10 flex gap-3 justify-end">
-          {application?.payment_method !== "paysatck" && application?.status === "pending" && (
-            <button
-              onClick={() => handleVerifyManualPayment(application?.reference)}
-              disabled={isVerifying}
-              className="px-6 py-2 bg-secClr text-white font-semibold rounded-lg transition-colors disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer"
+          {application.proof_of_payment && (
+            <a
+              href={proofOfPaymentImage}
+              target="_blank"
+              download
+              className="flex items-center justify-center px-4 py-2 sm:px-5 sm:py-3 bg-secClr text-white font-semibold rounded-lg hover:bg-secClr transition-colors duration-200 w-full sm:w-auto text-sm"
             >
-              {isVerifying ? "Verifying..." : "Verify Payment"}
-            </button>
+              <FaDownload className="mr-2 text-sm" />
+              Download proof of payment
+            </a>
           )}
+          {application?.payment_method !== "paysatck" &&
+            application?.status === "pending" && (
+              <button
+                onClick={() =>
+                  handleVerifyManualPayment(application?.reference)
+                }
+                disabled={isVerifying}
+                className="px-6 py-2 bg-secClr text-white font-semibold rounded-lg transition-colors disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer"
+              >
+                {isVerifying ? "Verifying..." : "Verify Payment"}
+              </button>
+            )}
           <button
             onClick={() => navigate("/dashboard/manage/applicants")}
             className="px-6 py-2 bg-gray-100 text-gray-700 font-semibold rounded-lg hover:bg-gray-200 transition-colors"
@@ -313,16 +312,6 @@ const ViewApplicant = () => {
           </button>
         </div>
       </div>
-
-      {openPaymentImageModal && (
-        <Modal onClose={() => setOpenPaymentImageModal(null)}>
-          <img
-            src={proofOfPaymentImage}
-            alt={`${application.user.firstname}_proof_of_payment`}
-            className="w-full object-cover rounded-xl border border-gray-100 shadow-sm"
-          />
-        </Modal>
-      )}
     </div>
   );
 };
