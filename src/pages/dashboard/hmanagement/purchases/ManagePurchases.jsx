@@ -145,7 +145,7 @@ const ManagePurchases = () => {
             isLoading={isLoading}
             error={error}
             currentPage={currentPage}
-            totalPages={Math.ceil(totalItems / itemsPerPage) || 1}
+            totalPages={totalPages}
             totalItems={totalItems}
             itemsPerPage={itemsPerPage}
             setCurrentPage={setCurrentPage}
