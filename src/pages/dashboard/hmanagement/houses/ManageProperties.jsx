@@ -41,7 +41,7 @@ const ManageProperties = () => {
     setIsLoading(true);
     setError(null);
     try {
-      const response = await api.get("/api/properties", {
+      const response = await api.get("/api/admin/properties", {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -75,7 +75,7 @@ const ManageProperties = () => {
     if (!propertyToDelete) return;
     setIsDeleting(true);
     try {
-      await api.delete(`/api/properties/${propertyToDelete}`, {
+      await api.delete(`/api/admin/properties/${propertyToDelete}`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -115,8 +115,8 @@ const ManageProperties = () => {
       render: (item) => (
         <ActionCell
           rowId={item.id}
-          onView={() => navigate(`/dashboard/manage/listings/${item.id}/view`)}
-          onEdit={() => navigate(`/dashboard/manage/listings/${item.id}/edit`)}
+          onView={() => navigate(`/dashboard/manage/properties/${item.id}/view`)}
+          onEdit={() => navigate(`/dashboard/manage/properties/${item.id}/edit`)}
           onDelete={() => setPropertyToDelete(item.id)}
           canView
         />
@@ -143,7 +143,7 @@ const ManageProperties = () => {
           </button>
           <img src={assets.logo} alt="Logo" className="w-10 h-10" />
           <h1 className="text-xl font-bold text-gray-900 ps-6 truncate">
-            Manage Listings
+            Manage properties
           </h1>
         </header>
 
@@ -160,10 +160,10 @@ const ManageProperties = () => {
               <FaSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
             </div>
             <button
-              onClick={() => navigate("/dashboard/manage/listings/create")}
+              onClick={() => navigate("/dashboard/manage/properties/create")}
               className="flex items-center gap-2 bg-secClr text-white px-4 py-2 rounded-lg transition"
             >
-              <FaPlus /> Create New Listing
+              <FaPlus /> Create New property
             </button>
           </div>
 

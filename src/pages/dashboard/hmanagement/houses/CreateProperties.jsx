@@ -33,7 +33,7 @@ const CreateProperties = () => {
     if (isEditMode) {
       const fetchProperty = async () => {
         try {
-          const response = await api.get(`/api/properties/${id}`, {
+          const response = await api.get(`/api/admin/properties/${id}`, {
             headers: {
               Authorization: `Bearer ${token}`,
             },

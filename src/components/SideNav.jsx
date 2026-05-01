@@ -20,8 +20,8 @@ const SideNav = ({ openMenu, setOpenMenu, branches, isLoading }) => {
       relativeRoute: "manage/users",
     },
     {
-      name: "Manage Listings",
-      relativeRoute: "manage/listings",
+      name: "Manage Properties",
+      relativeRoute: "manage/properties",
     },
     {
       name: "Manage Purchases",
