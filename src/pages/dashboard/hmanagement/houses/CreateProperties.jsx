@@ -56,7 +56,7 @@ const CreateProperties = () => {
           }
         } catch (err) {
           toast.error(getErrorMessage(err));
-          navigate("/dashboard/manage/listings");
+          navigate("/dashboard/manage/properties");
         } finally {
           setIsLoading(false);
         }
@@ -127,7 +127,7 @@ const CreateProperties = () => {
         });
         toast.success("Property created successfully");
       }
-      navigate("/dashboard/manage/listings");
+      navigate("/dashboard/manage/properties");
     } catch (err) {
       toast.error(getErrorMessage(err));
     } finally {
@@ -152,7 +152,7 @@ const CreateProperties = () => {
       <div className="max-w-3xl mx-auto bg-white rounded-xl shadow-md overflow-hidden p-6 md:p-8">
         <div className="flex items-center gap-4 mb-8 border-b border-gray-100 pb-4">
           <button
-            onClick={() => navigate("/dashboard/manage/listings")}
+            onClick={() => navigate("/dashboard/manage/properties")}
             className="p-2 rounded-full bg-gray-50 hover:bg-gray-100 transition"
           >
             <FaArrowLeft className="text-gray-600" />
@@ -360,7 +360,7 @@ const CreateProperties = () => {
               <div className="flex justify-end gap-4 pt-4 border-t border-gray-100">
                 <button
                   type="button"
-                  onClick={() => navigate("/dashboard/manage/listings")}
+                  onClick={() => navigate("/dashboard/manage/properties")}
                   className="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition"
                 >
                   Cancel

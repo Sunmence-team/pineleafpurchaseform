@@ -25,7 +25,7 @@ const ViewProperty = () => {
         setProperty(response.data.data || response.data);
       } catch (err) {
         toast.error(getErrorMessage(err));
-        navigate("/dashboard/manage/listings");
+        navigate("/dashboard/manage/properties");
       } finally {
         setIsLoading(false);
       }
@@ -48,7 +48,7 @@ const ViewProperty = () => {
           Property not found
         </p>
         <button
-          onClick={() => navigate("/dashboard/manage/listings")}
+          onClick={() => navigate("/dashboard/manage/properties")}
           className="px-6 py-2 bg-primary text-white rounded-lg hover:bg-pryClr"
         >
           Back to Properties
@@ -74,7 +74,7 @@ const ViewProperty = () => {
         {/* Header */}
         <div className="flex items-center gap-4 border-b border-gray-100 pb-6 mb-8">
           <button
-            onClick={() => navigate("/dashboard/manage/listings")}
+            onClick={() => navigate("/dashboard/manage/properties")}
             className="p-2 rounded-full bg-gray-50 hover:bg-gray-100 transition"
           >
             <FaArrowLeft className="text-gray-600" />
@@ -142,13 +142,13 @@ const ViewProperty = () => {
         {/* Footer */}
         <div className="border-t border-gray-100 pt-8 mt-10 flex justify-end gap-4">
           <button
-            onClick={() => navigate(`/dashboard/manage/listings/${id}/edit`)}
+            onClick={() => navigate(`/dashboard/manage/properties/${id}/edit`)}
             className="px-6 py-2 bg-primary text-white font-semibold rounded-lg hover:bg-pryClr transition"
           >
             Edit Property
           </button>
           <button
-            onClick={() => navigate("/dashboard/manage/listings")}
+            onClick={() => navigate("/dashboard/manage/properties")}
             className="px-6 py-2 bg-gray-100 text-gray-700 font-semibold rounded-lg hover:bg-gray-200 transition"
           >
             Back to List
