@@ -6,6 +6,9 @@ import { FaArrowLeft, FaCloudUploadAlt, FaTimes } from "react-icons/fa";
 import { toast } from "sonner";
 import api, { getErrorMessage } from "../../../../utilities/api";
 import assets from "../../../../assets/assests";
+import FormattedNumberInput from "../../../../components/FormattedNumberInput";
+
+const HM_STORAGE_API_URL = import.meta.env.VITE_HM_STORAGE_BASE_URL;
 
 const CreateProperties = () => {
   const token = localStorage.getItem("token");
@@ -51,8 +54,10 @@ const CreateProperties = () => {
           });
           // If there are existing images, we might want to show them
           if (data.images && Array.isArray(data.images)) {
-            // Assuming data.images contains URLs
-            setImagePreviews(data.images);
+            // Map through the array and prepend the base URL to each item
+            const fullImageUrls = data.images.map(img => `${HM_STORAGE_API_URL}${img}`);
+
+            setImagePreviews(fullImageUrls);
           }
         } catch (err) {
           toast.error(getErrorMessage(err));
@@ -110,20 +115,20 @@ const CreateProperties = () => {
     try {
       if (isEditMode) {
         // Many APIs require _method="PUT" for FormData with PUT
-        formData.append("_method", "PUT");
+        // formData.append("_method", "PUT");
         await api.post(`/api/admin/properties/${id}`, formData, {
-            headers: { 
-                Authorization: `Bearer ${token}`,
-                "Content-Type": "multipart/form-data" 
-            },
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "multipart/form-data",
+          },
         });
         toast.success("Property updated successfully");
       } else {
         await api.post("/api/admin/properties", formData, {
-            headers: { 
-                Authorization: `Bearer ${token}`,
-                "Content-Type": "multipart/form-data" 
-            },
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "multipart/form-data",
+          },
         });
         toast.success("Property created successfully");
       }
@@ -248,9 +253,21 @@ const CreateProperties = () => {
                   <Field
                     name="price"
                     type="number"
-                    className={inputClasses}
+                    // className={inputClasses}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none transition duration-300"
+                    component={FormattedNumberInput}
                     placeholder="0.00"
                   />
+                  {/* <FormattedNumberInput
+                    id="admin_approved_salary"
+                    name="admin_approved_salary"
+                    value={formik.values.admin_approved_salary}
+                    onChange={(value) =>
+                      formik.setFieldValue("admin_approved_salary", value)
+                    }
+                    onBlur={formik.handleBlur}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none transition duration-300"
+                  /> */}
                   <ErrorMessage
                     name="price"
                     component="div"

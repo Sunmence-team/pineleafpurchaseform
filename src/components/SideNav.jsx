@@ -29,7 +29,7 @@ const SideNav = ({ openMenu, setOpenMenu, branches, isLoading }) => {
     },
   ];
 
-  const role = JSON.parse(localStorage.getItem("user"))?.role;
+  const role = localStorage.getItem("role").toLowerCase();
 
   return (
     <div className="fixed top-0 left-0 z-99999 w-full h-full bg-black/50">

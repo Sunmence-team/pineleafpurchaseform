@@ -36,8 +36,9 @@ const Login = () => {
         });
 
         if (response.status === 200) {
-          const { token } = response.data;
+          const { token, role } = response.data;
           localStorage.setItem('token', token);
+          localStorage.setItem('role', role);
 
           toast.success('Login successful');
           setTimeout(() => {

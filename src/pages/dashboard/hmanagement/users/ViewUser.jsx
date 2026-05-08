@@ -12,6 +12,7 @@ import {
   formatISODateToCustom,
   formatterUtility,
 } from "../../../../utilities/formatterUtility";
+import FormattedNumberInput from "../../../../components/FormattedNumberInput";
 
 const HM_STORAGE_API_URL = import.meta.env.VITE_HM_STORAGE_BASE_URL;
 
@@ -305,20 +306,21 @@ const ViewUser = () => {
               <div>
                 <label
                   htmlFor="admin_approved_salary"
-                  className="block text-gray-700 mb-2 font-medium"
+                  className="block text-gray-700 font-medium"
                 >
                   Enter estimated monthly income based on statement review
                 </label>
                 <div className="relative">
-                  <input
+                  <input />
+                  <FormattedNumberInput
                     id="admin_approved_salary"
                     name="admin_approved_salary"
-                    type="text"
                     value={formik.values.admin_approved_salary}
-                    onChange={formik.handleChange}
+                    onChange={(value) =>
+                      formik.setFieldValue("admin_approved_salary", value)
+                    }
                     onBlur={formik.handleBlur}
                     className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none transition duration-300"
-                    required
                   />
                   {formik.touched.admin_approved_salary &&
                   formik.errors.admin_approved_salary ? (
