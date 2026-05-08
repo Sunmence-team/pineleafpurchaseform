@@ -9,7 +9,13 @@ import {
 import { toast } from "sonner";
 import assets from "../../../../assets/assests";
 import api, { getErrorMessage } from "../../../../utilities/api";
-import { formatterUtility } from "../../../../utilities/formatterUtility";
+import {
+  formatISODateToCustom,
+  formatterUtility,
+  formatUnderScores,
+} from "../../../../utilities/formatterUtility";
+import { StatusTurnPriorityCard } from "../../../../components/cards/StatusCard";
+import Modal from "../../../../components/modals/Modal";
 
 const HM_STORAGE_API_URL = import.meta.env.VITE_HM_STORAGE_BASE_URL;
 
@@ -20,6 +26,8 @@ const ViewPurchase = () => {
   const location = useLocation();
   const [purchase, setPurchase] = useState(location.state || null);
   const [isLoading, setIsLoading] = useState(!location.state);
+  const [paymentDetails, setPaymentDetails] = useState(null);
+  const [isVerifying, setIsVerifying] = useState(false);
 
   useEffect(() => {
     const fetchPurchaseDetail = async () => {
@@ -44,6 +52,34 @@ const ViewPurchase = () => {
 
     fetchPurchaseDetail();
   }, [id, navigate]);
+
+  const handleVerifyPayment = async (paymentReference) => {
+    setIsVerifying(true);
+    try {
+      const response = await api.post(
+        `/api/admin/applications/verify/manual`,
+        {
+          reference: paymentReference,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        },
+      );
+
+      if (response.status === 200) {
+        toast.success(response.data.message || "Payment verified successfully");
+      }
+    } catch (err) {
+      const msg = getErrorMessage(err);
+      toast.error(msg);
+      console.error("Error verifying payment:", err);
+    } finally {
+      setIsVerifying(false);
+      setPaymentDetails(null)
+    }
+  };
 
   if (isLoading) {
     return (
@@ -76,12 +112,14 @@ const ViewPurchase = () => {
     </h3>
   );
 
-  const InfoItem = ({ label, value, className = "" }) => (
+  const InfoItem = ({ label, value, className = "", capitalize = false }) => (
     <div className={`flex flex-col space-y-1 ${className}`}>
       <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
         {label}
       </span>
-      <span className="text-sm sm:text-base text-gray-900 font-medium">
+      <span
+        className={`text-sm sm:text-base text-gray-900 font-medium truncate ${capitalize ? "capitalize" : ""}`}
+      >
         {value || "N/A"}
       </span>
     </div>
@@ -101,20 +139,10 @@ const ViewPurchase = () => {
             </button>
             <img src={assets.logo} className="w-10 h-10" alt="Logo" />
             <h1 className="text-2xl font-bold text-gray-900">
-            Purchase Details
+              Purchase Details
             </h1>
           </div>
-          <div
-            className={`px-4 py-2 rounded-full text-xs font-bold uppercase ${
-              purchase.status === "approved"
-                ? "bg-green-100 text-green-700"
-                : purchase.status === "pending"
-                  ? "bg-yellow-100 text-yellow-700"
-                  : "bg-red-100 text-red-700"
-            }`}
-          >
-            {purchase.status}
-          </div>
+          <StatusTurnPriorityCard status={purchase?.status} />
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
@@ -123,22 +151,30 @@ const ViewPurchase = () => {
             {/* Applicant Section */}
             <section>
               <SectionHeader icon={FaUser} title="Applicant Information" />
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 bg-gray-50 p-6 rounded-xl border border-gray-100">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 bg-gray-50 p-6 rounded-xl border border-gray-100">
                 <InfoItem
                   label="Full Name"
                   value={`${purchase.user?.firstname} ${purchase.user?.lastname}`}
                 />
-                <InfoItem label="Email" value={purchase.user?.email} />
                 <InfoItem label="Phone" value={purchase.user?.phone} />
+                <div className="md:col-span-2">
+                  <InfoItem label="Email" value={purchase.user?.email} />
+                </div>
                 <InfoItem
                   label="Occupation"
                   value={purchase.user?.job_description}
                 />
+                <InfoItem label="Country" value={purchase.user?.country} />
                 <InfoItem
-                  label="Monthly Salary"
+                  label="Indicated Monthly Salary"
                   value={formatterUtility(Number(purchase.user?.salary))}
                 />
-                <InfoItem label="Country" value={purchase.user?.country} />
+                <InfoItem
+                  label="Approved Monthly Salary"
+                  value={formatterUtility(
+                    Number(purchase.user?.admin_approved_salary),
+                  )}
+                />
               </div>
             </section>
 
@@ -158,12 +194,12 @@ const ViewPurchase = () => {
                   value={purchase.upfront_paid ? "Yes" : "No"}
                 />
                 <InfoItem
-                  label="Salary Snapshot"
-                  value={formatterUtility(Number(purchase.salary_snapshot))}
-                />
-                <InfoItem
                   label="Submitted On"
                   value={new Date(purchase.created_at).toLocaleDateString()}
+                />
+                <InfoItem
+                  label="Approved Date"
+                  value={formatISODateToCustom(purchase.approved_at)}
                 />
               </div>
             </section>
@@ -220,33 +256,44 @@ const ViewPurchase = () => {
                 purchase.transactions.map((tx) => (
                   <div
                     key={tx.id}
-                    className="flex justify-between items-center p-4 bg-gray-50 rounded-xl border border-gray-100"
+                    className="flex flex-col gap-4 justify-between items-center p-4 bg-gray-50 rounded-xl border border-gray-100"
                   >
-                    <div>
-                      <p className="text-sm font-bold text-gray-900 capitalize">
-                        {tx.type} Payment
-                      </p>
-                      <p className="text-xs text-gray-500">
-                        {new Date(tx.paid_at || tx.created_at).toLocaleString()}
-                      </p>
-                      <p className="text-[10px] text-gray-400 font-mono mt-1">
-                        Ref: {tx.reference}
-                      </p>
+                    <div className="flex w-full justify-between items-center">
+                      <div>
+                        <p className="text-sm font-bold text-gray-900 capitalize">
+                          {tx.type} Payment
+                        </p>
+                        <p className="text-xs text-gray-500">
+                          {new Date(
+                            tx.paid_at || tx.created_at,
+                          ).toLocaleString()}
+                        </p>
+                        <p className="text-[10px] text-gray-400 font-mono mt-1">
+                          Ref: {tx.reference}
+                        </p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-sm font-bold text-primary">
+                          {formatterUtility(Number(tx.amount))}
+                        </p>
+                        <span
+                          className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded ${
+                            tx.status === "success"
+                              ? "bg-green-100 text-green-700"
+                              : "bg-red-100 text-red-700"
+                          }`}
+                        >
+                          {tx.status}
+                        </span>
+                      </div>
                     </div>
-                    <div className="text-right">
-                      <p className="text-sm font-bold text-primary">
-                        {formatterUtility(Number(tx.amount))}
-                      </p>
-                      <span
-                        className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded ${
-                          tx.status === "success"
-                            ? "bg-green-100 text-green-700"
-                            : "bg-red-100 text-red-700"
-                        }`}
-                      >
-                        {tx.status}
-                      </span>
-                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setPaymentDetails(tx)}
+                      className="bg-secClr h-10 rounded-lg text-white w-full cursor-pointer"
+                    >
+                      View Payment
+                    </button>
                   </div>
                 ))
               ) : (
@@ -270,6 +317,70 @@ const ViewPurchase = () => {
           </button>
         </div>
       </div>
+
+      {paymentDetails && (
+        <Modal onClose={() => setPaymentDetails(null)}>
+          <div className="space-y-6">
+            <div className="grid md:grid-cols-2 gap-4">
+              <InfoItem
+                label="Payment Type"
+                value={paymentDetails.type}
+                capitalize={true}
+              />
+              <InfoItem
+                label="Amount"
+                value={formatterUtility(Number(paymentDetails.amount))}
+              />
+              <InfoItem
+                label="status"
+                value={paymentDetails?.status}
+                capitalize={true}
+              />
+              <InfoItem
+                label="Payment Method"
+                value={formatUnderScores(paymentDetails?.payment_method, {
+                  capitalize: true,
+                })}
+              />
+              <InfoItem label="Reference" value={paymentDetails?.reference} />
+              <InfoItem
+                label="Payment Date"
+                value={formatISODateToCustom(paymentDetails.created_at)}
+              />
+              <InfoItem
+                label="Confirmation Date"
+                value={paymentDetails.paid_at}
+              />
+            </div>
+            {
+              // paymentDetails?.payment_gateway_response.verification ===
+              //   "pending_manual" &&
+              paymentDetails?.payment_gateway_response.proof_of_payment && (
+                <div className="space-y-2">
+                  <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                    Payment Proof
+                  </h3>
+                  <img
+                    src={`${HM_STORAGE_API_URL}${paymentDetails?.payment_gateway_response?.proof_of_payment}`}
+                    className="w-auto border border-gray-300"
+                  />
+                </div>
+              )
+            }
+            {paymentDetails.type === "upfront" &&
+              paymentDetails.status === "pending" && (
+                <button
+                  type="button"
+                  disabled={isVerifying}
+                  onClick={() => handleVerifyPayment(paymentDetails.reference)}
+                  className="w-full h-12 bg-[#2F5318] text-white font-medium rounded-lg hover:bg-[#254015] transition duration-300 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isVerifying ? "Verifying..." : "Verify"}
+                </button>
+              )}
+          </div>
+        </Modal>
+      )}
     </div>
   );
 };
