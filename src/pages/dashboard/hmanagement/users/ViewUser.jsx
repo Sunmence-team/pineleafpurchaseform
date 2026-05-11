@@ -132,7 +132,7 @@ const ViewUser = () => {
     user?.interest_transactions_count > 0 && !user?.is_interested;
   const awaitingVerification =
     user?.interest_transactions_count > 0 && user?.is_interested;
-  const isVerified = user?.isVerified;
+  const isVerified = user?.is_verified;
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col p-4 sm:p-6 md:p-8">
@@ -152,10 +152,10 @@ const ViewUser = () => {
           <div className="flex items-center gap-4">
             <p>
               <b>Status: </b>
-              {hasPendingIndication
-                ? "Has Pending Indication"
-                : isVerified
-                  ? "Verified"
+              {isVerified && user?.admin_approved_salary
+                ? "Verified"
+                : hasPendingIndication
+                  ? "Has Pending Indication"
                   : awaitingVerification
                     ? "Awaiting Verification"
                     : "No indication"}
@@ -246,7 +246,7 @@ const ViewUser = () => {
 
         {/* Footer */}
         <div className="border-t border-gray-100 pt-8 mt-10 flex gap-3 justify-end">
-          {awaitingVerification && (
+          {awaitingVerification && !isVerified && (
             <button
               onClick={() => setOpenVerificationModal(true)}
               className="px-6 py-2 bg-secClr text-white font-semibold rounded-lg transition-colors disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer"
@@ -290,7 +290,7 @@ const ViewUser = () => {
                     Pick a status
                   </option>
                   {["verified", "declined"].map((status) => (
-                    <option value={status} className="capitalize">
+                    <option value={status} key={status} className="capitalize">
                       {status}
                     </option>
                   ))}
@@ -311,7 +311,6 @@ const ViewUser = () => {
                   Enter estimated monthly income based on statement review
                 </label>
                 <div className="relative">
-                  <input />
                   <FormattedNumberInput
                     id="admin_approved_salary"
                     name="admin_approved_salary"
