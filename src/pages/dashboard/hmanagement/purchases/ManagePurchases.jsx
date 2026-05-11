@@ -9,6 +9,7 @@ import ActionCell from "../../../../components/ActionCell";
 import api, { getErrorMessage } from "../../../../utilities/api";
 import { toast } from "sonner";
 import { formatterUtility } from "../../../../utilities/formatterUtility";
+import { FaSearch } from "react-icons/fa";
 
 const ManagePurchases = () => {
     const token = localStorage.getItem("token");
@@ -18,11 +19,23 @@ const ManagePurchases = () => {
   const [error, setError] = useState(null);
   const navigate = useNavigate();
 
+  const [searchQuery, setSearchQuery] = useState("");
+  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState("");
+
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
   const [totalItems, setTotalItems] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
+
+  // Debounce search
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedSearchQuery(searchQuery);
+      setCurrentPage(1); // Reset to first page on search
+    }, 500);
+    return () => clearTimeout(handler);
+  }, [searchQuery]);
 
   const fetchPurchases = async () => {
     setIsLoading(true);
@@ -35,6 +48,7 @@ const ManagePurchases = () => {
         params: {
           page: currentPage,
           per_page: itemsPerPage,
+          search: debouncedSearchQuery,
         },
       });
       if (response.status === 200) {
@@ -54,7 +68,7 @@ const ManagePurchases = () => {
 
   useEffect(() => {
     fetchPurchases();
-  }, [currentPage, itemsPerPage]);
+  }, [currentPage, itemsPerPage, debouncedSearchQuery]);
 
   const columns = [
     {
@@ -139,6 +153,16 @@ const ManagePurchases = () => {
         </header>
 
         <main className="flex-1 overflow-y-auto p-4 md:p-8">
+          <div className="relative w-full md:w-102 h-12 mb-8 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary/50 flex gap-2 items-center px-3">
+            <FaSearch className="text-gray-400" />
+            <input
+              type="text"
+              placeholder="Search Purchases..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full h-full focus:outline-none"
+            />
+          </div>
           <ReusableTable
             columns={columns}
             data={purchases}

@@ -150,15 +150,15 @@ const ManageApplicants = () => {
         </header>
 
         <main className="flex-1 overflow-y-auto p-4 md:p-8">
-          <div className="relative w-full md:w-96 mb-8">
+          <div className="relative w-full md:w-102 h-12 mb-8 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary/50 flex gap-2 items-center px-3">
+            <FaSearch className="text-gray-400" />
             <input
               type="text"
               placeholder="Search Applicants..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50"
+              className="w-full h-full focus:outline-none"
             />
-            <FaSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
           </div>
 
           <ReusableTable

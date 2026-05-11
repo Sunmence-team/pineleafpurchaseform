@@ -8,6 +8,7 @@ import { useNavigate } from "react-router-dom";
 import ActionCell from "../../../../components/ActionCell";
 import api, { getErrorMessage } from "../../../../utilities/api";
 import { toast } from "sonner";
+import { FaSearch } from "react-icons/fa";
 
 const ManageUsers = () => {
   const token = localStorage.getItem("token");
@@ -17,11 +18,23 @@ const ManageUsers = () => {
   const [error, setError] = useState(null);
   const navigate = useNavigate();
 
+  const [searchQuery, setSearchQuery] = useState("");
+  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState("");
+
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
   const [totalItems, setTotalItems] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
+
+  // Debounce search
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedSearchQuery(searchQuery);
+      setCurrentPage(1); // Reset to first page on search
+    }, 500);
+    return () => clearTimeout(handler);
+  }, [searchQuery]);
 
   const fetchUsers = async () => {
     setIsLoading(true);
@@ -34,12 +47,13 @@ const ManageUsers = () => {
         params: {
           page: currentPage,
           per_page: itemsPerPage,
+          search: debouncedSearchQuery,
         },
       });
       const { data, total, last_page } = response.data.data;
       setUsers(data);
       setTotalItems(total);
-      setTotalPages(last_page)
+      setTotalPages(last_page);
     } catch (err) {
       const msg = getErrorMessage(err);
       setError(msg);
@@ -51,7 +65,7 @@ const ManageUsers = () => {
 
   useEffect(() => {
     fetchUsers();
-  }, [currentPage, itemsPerPage]);
+  }, [currentPage, itemsPerPage, debouncedSearchQuery]);
 
   const columns = [
     {
@@ -90,7 +104,7 @@ const ManageUsers = () => {
             {hasPendingIndication
               ? "Has Pending Indication"
               : awaitingVerification
-                ? "Awaiting Verification" 
+                ? "Awaiting Verification"
                 : isVerified && item?.admin_approved_salary
                   ? "Verified"
                   : "No indication"}
@@ -139,6 +153,17 @@ const ManageUsers = () => {
         </header>
 
         <main className="flex-1 overflow-y-auto p-4 md:p-8">
+          <div className="relative w-full md:w-102 h-12 mb-8 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary/50 flex gap-2 items-center px-3">
+            <FaSearch className="text-gray-400" />
+            <input
+              type="text"
+              placeholder="Search Users..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full h-full focus:outline-none"
+            />
+          </div>
+
           <ReusableTable
             columns={columns}
             data={users}
