@@ -189,8 +189,8 @@ const ViewApplicant = () => {
               <DetailItem label="State" value={application?.user.state} />
               <DetailItem label="City" value={application?.user.city} />
               <DetailItem
-                label="Postal Code"
-                value={application?.user.postal_code}
+                label="Close Branch"
+                value={application?.user.branch}
               />
             </div>
           </section>

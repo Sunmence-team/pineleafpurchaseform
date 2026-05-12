@@ -205,7 +205,7 @@ const ViewUser = () => {
               <DetailItem label="Country" value={user.country} />
               <DetailItem label="State" value={user.state} />
               <DetailItem label="City" value={user.city} />
-              <DetailItem label="Postal Code" value={user.postal_code} />
+              <DetailItem label="Close Branch" value={user.branch}/>
             </div>
           </section>
 
