@@ -62,7 +62,13 @@ const ViewApplicant = () => {
           Application not found
         </p>
         <button
-          onClick={() => navigate("/dashboard/manage/applicants")}
+          onClick={() =>
+            navigate("/dashboard/manage/applicants", {
+              state: location.state?.listState
+                ? { listState: location.state.listState }
+                : undefined,
+            })
+          }
           className="px-6 py-2 bg-primary text-white rounded-lg hover:bg-primary/90"
         >
           Back to applicants
@@ -119,7 +125,13 @@ const ViewApplicant = () => {
         <div className="flex md:flex-row flex-col items-center justify-between pb-6 mb-8  border-b border-gray-200">
           <div className="flex items-center gap-4">
             <button
-              onClick={() => navigate("/dashboard/manage/applicants")}
+              onClick={() =>
+                navigate("/dashboard/manage/applicants", {
+                  state: location.state?.listState
+                    ? { listState: location.state.listState }
+                    : undefined,
+                })
+              }
               className="p-2 rounded-full bg-gray-50 hover:bg-gray-100 transition-colors"
             >
               <FaArrowLeft className="text-gray-600" />
@@ -305,7 +317,13 @@ const ViewApplicant = () => {
               </button>
             )}
           <button
-            onClick={() => navigate("/dashboard/manage/applicants")}
+            onClick={() =>
+              navigate("/dashboard/manage/applicants", {
+                state: location.state?.listState
+                  ? { listState: location.state.listState }
+                  : undefined,
+              })
+            }
             className="px-6 py-2 bg-gray-100 text-gray-700 font-semibold rounded-lg hover:bg-gray-200 transition-colors"
           >
             Back to List

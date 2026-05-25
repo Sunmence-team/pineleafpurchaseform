@@ -1,10 +1,10 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import SideNav from "../../../../components/SideNav";
 import { branchOptions } from "../../../../lib/branchList";
 import { FaBars } from "react-icons/fa6";
 import assets from "../../../../assets/assests";
 import ReusableTable from "../../../../utilities/ReusableTable";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import ActionCell from "../../../../components/ActionCell";
 import api, { getErrorMessage } from "../../../../utilities/api";
 import { toast } from "sonner";
@@ -17,18 +17,41 @@ const ManageUsers = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
   const navigate = useNavigate();
+  const location = useLocation();
+  const savedListState = location.state?.listState;
+  const skipInitialSearchReset = useRef(!!savedListState);
+  const hasMounted = useRef(false);
 
-  const [searchQuery, setSearchQuery] = useState("");
-  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState("");
+  const [searchQuery, setSearchQuery] = useState(
+    savedListState?.searchQuery || "",
+  );
+  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState(
+    savedListState?.searchQuery || "",
+  );
+  const [interestedFilter, setInterestedFilter] = useState(
+    savedListState?.interestedFilter || "",
+  );
+  const [verifiedFilter, setVerifiedFilter] = useState(
+    savedListState?.verifiedFilter || "",
+  );
 
   // Pagination state
-  const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(10);
+  const [currentPage, setCurrentPage] = useState(
+    savedListState?.currentPage || 1,
+  );
+  const [itemsPerPage, setItemsPerPage] = useState(
+    savedListState?.itemsPerPage || 10,
+  );
   const [totalItems, setTotalItems] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
 
   // Debounce search
   useEffect(() => {
+    if (skipInitialSearchReset.current) {
+      skipInitialSearchReset.current = false;
+      return;
+    }
+
     const handler = setTimeout(() => {
       setDebouncedSearchQuery(searchQuery);
       setCurrentPage(1); // Reset to first page on search
@@ -36,19 +59,33 @@ const ManageUsers = () => {
     return () => clearTimeout(handler);
   }, [searchQuery]);
 
+  useEffect(() => {
+    if (!hasMounted.current) {
+      hasMounted.current = true;
+      return;
+    }
+    setCurrentPage(1);
+  }, [interestedFilter, verifiedFilter]);
+
   const fetchUsers = async () => {
     setIsLoading(true);
     setError(null);
     try {
+      const params = {
+        page: currentPage,
+        per_page: itemsPerPage,
+        search: debouncedSearchQuery,
+      };
+
+      if (interestedFilter !== "")
+        params.is_interested = Number(interestedFilter);
+      if (verifiedFilter !== "") params.is_verified = Number(verifiedFilter);
+
       const response = await api.get("/api/users", {
         headers: {
           Authorization: `Bearer ${token}`,
         },
-        params: {
-          page: currentPage,
-          per_page: itemsPerPage,
-          search: debouncedSearchQuery,
-        },
+        params,
       });
       const { data, total, last_page } = response.data.data;
       setUsers(data);
@@ -65,7 +102,13 @@ const ManageUsers = () => {
 
   useEffect(() => {
     fetchUsers();
-  }, [currentPage, itemsPerPage, debouncedSearchQuery]);
+  }, [
+    currentPage,
+    itemsPerPage,
+    debouncedSearchQuery,
+    interestedFilter,
+    verifiedFilter,
+  ]);
 
   const columns = [
     {
@@ -120,7 +163,16 @@ const ManageUsers = () => {
           rowId={item.id}
           onView={(id) =>
             navigate(`/dashboard/manage/users/${id}/view`, {
-              state: item,
+              state: {
+                ...item,
+                listState: {
+                  searchQuery,
+                  interestedFilter,
+                  verifiedFilter,
+                  currentPage,
+                  itemsPerPage,
+                },
+              },
             })
           }
           canView
@@ -153,7 +205,7 @@ const ManageUsers = () => {
         </header>
 
         <main className="flex-1 overflow-y-auto p-4 md:p-8">
-          <div className="relative w-full md:w-102 h-12 mb-8 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary/50 flex gap-2 items-center px-3">
+          <div className="relative w-full md:w-102 h-12 mb-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary/50 flex gap-2 items-center px-3">
             <FaSearch className="text-gray-400" />
             <input
               type="text"
@@ -162,6 +214,51 @@ const ManageUsers = () => {
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full h-full focus:outline-none"
             />
+          </div>
+
+          <div className="grid gap-4 mb-8 md:grid-cols-3 lg:grid-cols-4">
+            <div className="flex flex-col gap-2">
+              <label className="text-xs font-semibold text-gray-700">
+                Interest Indication
+              </label>
+              <select
+                value={interestedFilter}
+                onChange={(e) => setInterestedFilter(e.target.value)}
+                className="h-12 rounded-lg border border-gray-300 px-3 text-sm"
+              >
+                <option value="">All</option>
+                <option value="1">Has interest indication</option>
+                <option value="0">No interest indication</option>
+              </select>
+            </div>
+
+            <div className="flex flex-col gap-2">
+              <label className="text-xs font-semibold text-gray-700">
+                Verified
+              </label>
+              <select
+                value={verifiedFilter}
+                onChange={(e) => setVerifiedFilter(e.target.value)}
+                className="h-12 rounded-lg border border-gray-300 px-3 text-sm"
+              >
+                <option value="">All</option>
+                <option value="1">Verified</option>
+                <option value="0">Not verified</option>
+              </select>
+            </div>
+
+            <div className="flex items-end">
+              <button
+                type="button"
+                onClick={() => {
+                  setInterestedFilter("");
+                  setVerifiedFilter("");
+                }}
+                className="h-12 w-full rounded-lg bg-gray-100 text-sm font-semibold text-gray-700 hover:bg-gray-200"
+              >
+                Reset filters
+              </button>
+            </div>
           </div>
 
           <ReusableTable
