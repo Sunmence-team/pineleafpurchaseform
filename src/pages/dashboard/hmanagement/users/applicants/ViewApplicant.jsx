@@ -23,6 +23,7 @@ const ViewApplicant = () => {
   const [application, setApplication] = useState(location.state || null);
   const [isLoading, setIsLoading] = useState(!location.state);
   const [isVerifying, setIsVerifying] = useState(false);
+  const [paymentActionNote, setPaymentActionNote] = useState("");
 
   useEffect(() => {
     if (!application) {
@@ -88,14 +89,26 @@ const ViewApplicant = () => {
     </div>
   );
 
-  const handleVerifyManualPayment = async (paymentReference) => {
+  const handlePaymentAction = async (paymentReference, action) => {
+    if (action === "rejected" && !paymentActionNote.trim()) {
+      toast.error("Please provide a rejection note.");
+      return;
+    }
+
     setIsVerifying(true);
     try {
+      const payload = {
+        reference: paymentReference,
+      };
+
+      if (action === "rejected") {
+        payload.status = "rejected";
+        payload.note = paymentActionNote.trim();
+      }
+
       const response = await api.post(
         `/api/admin/interest/verify/manual`,
-        {
-          reference: paymentReference,
-        },
+        payload,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -105,14 +118,20 @@ const ViewApplicant = () => {
 
       if (response.status === 200) {
         setApplication(response.data.data || response.data);
-        toast.success(response.data.message || "Payment verified successfully");
+        toast.success(
+          response.data.message ||
+            (action === "rejected"
+              ? "Payment rejected successfully"
+              : "Payment verified successfully"),
+        );
       }
     } catch (err) {
       const msg = getErrorMessage(err);
       toast.error(msg);
-      console.error("Error verifying payment:", err);
+      console.error("Error processing payment action:", err);
     } finally {
       setIsVerifying(false);
+      setPaymentActionNote("");
     }
   };
 
@@ -292,42 +311,72 @@ const ViewApplicant = () => {
         </div>
 
         {/* Footer */}
-        <div className="border-t border-gray-100 pt-8 mt-10 flex gap-3 justify-end">
-          {application.proof_of_payment && (
-            <a
-              href={proofOfPaymentImage}
-              target="_blank"
-              download
-              className="flex items-center justify-center px-4 py-2 sm:px-5 sm:py-3 bg-secClr text-white font-semibold rounded-lg hover:bg-secClr transition-colors duration-200 w-full sm:w-auto text-sm"
-            >
-              <FaDownload className="mr-2 text-sm" />
-              Download proof of payment
-            </a>
-          )}
+        <div className="border-t border-gray-100 pt-8 mt-10">
           {application?.payment_method !== "paysatck" &&
             application?.status === "pending" && (
-              <button
-                onClick={() =>
-                  handleVerifyManualPayment(application?.reference)
-                }
-                disabled={isVerifying}
-                className="px-6 py-2 bg-secClr text-white font-semibold rounded-lg transition-colors disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer"
-              >
-                {isVerifying ? "Verifying..." : "Verify Payment"}
-              </button>
+              <div className="space-y-4 mb-4">
+                <div className="flex flex-col gap-2">
+                  <label className="text-sm font-semibold text-gray-700">
+                    Rejection Note
+                  </label>
+                  <textarea
+                    rows={4}
+                    value={paymentActionNote}
+                    onChange={(e) => setPaymentActionNote(e.target.value)}
+                    className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none"
+                    placeholder="Add a reason when rejecting this payment"
+                  />
+                </div>
+              </div>
             )}
-          <button
-            onClick={() =>
-              navigate("/dashboard/manage/applicants", {
-                state: location.state?.listState
-                  ? { listState: location.state.listState }
-                  : undefined,
-              })
-            }
-            className="px-6 py-2 bg-gray-100 text-gray-700 font-semibold rounded-lg hover:bg-gray-200 transition-colors"
-          >
-            Back to List
-          </button>
+          <div className="flex gap-3 justify-end">
+            {application.proof_of_payment && (
+              <a
+                href={proofOfPaymentImage}
+                target="_blank"
+                download
+                className="flex items-center justify-center px-4 py-2 sm:px-5 sm:py-3 bg-secClr text-white font-semibold rounded-lg hover:bg-secClr transition-colors duration-200 w-full sm:w-auto text-sm"
+              >
+                <FaDownload className="mr-2 text-sm" />
+                Download proof of payment
+              </a>
+            )}
+            {application?.payment_method !== "paysatck" &&
+              application?.status === "pending" && (
+                <>
+                  <button
+                    onClick={() =>
+                      handlePaymentAction(application?.reference, "success")
+                    }
+                    disabled={isVerifying}
+                    className="px-6 py-2 bg-secClr text-white font-semibold rounded-lg transition-colors disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer"
+                  >
+                    {isVerifying ? "Processing..." : "Verify Payment"}
+                  </button>
+                  <button
+                    onClick={() =>
+                      handlePaymentAction(application?.reference, "rejected")
+                    }
+                    disabled={isVerifying}
+                    className="px-6 py-2 bg-red-600 text-white font-semibold rounded-lg transition-colors disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer"
+                  >
+                    {isVerifying ? "Processing..." : "Reject Payment"}
+                  </button>
+                </>
+              )}
+            <button
+              onClick={() =>
+                navigate("/dashboard/manage/applicants", {
+                  state: location.state?.listState
+                    ? { listState: location.state.listState }
+                    : undefined,
+                })
+              }
+              className="px-6 py-2 bg-gray-100 text-gray-700 font-semibold rounded-lg hover:bg-gray-200 transition-colors"
+            >
+              Back to List
+            </button>
+          </div>
         </div>
       </div>
     </div>
