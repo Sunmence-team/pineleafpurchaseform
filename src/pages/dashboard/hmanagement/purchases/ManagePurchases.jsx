@@ -1,10 +1,10 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import SideNav from "../../../../components/SideNav";
 import { branchOptions } from "../../../../lib/branchList";
 import { FaBars } from "react-icons/fa6";
 import assets from "../../../../assets/assests";
 import ReusableTable from "../../../../utilities/ReusableTable";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import ActionCell from "../../../../components/ActionCell";
 import api, { getErrorMessage } from "../../../../utilities/api";
 import { toast } from "sonner";
@@ -12,30 +12,58 @@ import { formatterUtility } from "../../../../utilities/formatterUtility";
 import { FaSearch } from "react-icons/fa";
 
 const ManagePurchases = () => {
-    const token = localStorage.getItem("token");
+  const token = localStorage.getItem("token");
   const [openMenu, setOpenMenu] = useState(false);
   const [purchases, setPurchases] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
   const navigate = useNavigate();
+  const location = useLocation();
+  const savedListState = location.state?.listState;
+  const skipInitialSearchReset = useRef(!!savedListState);
+  const hasMounted = useRef(false);
 
-  const [searchQuery, setSearchQuery] = useState("");
-  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState("");
+  const [searchQuery, setSearchQuery] = useState(
+    savedListState?.searchQuery || "",
+  );
+  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState(
+    savedListState?.searchQuery || "",
+  );
+  const [statusFilter, setStatusFilter] = useState(
+    savedListState?.statusFilter || "",
+  );
 
   // Pagination state
-  const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(10);
+  const [currentPage, setCurrentPage] = useState(
+    savedListState?.currentPage || 1,
+  );
+  const [itemsPerPage, setItemsPerPage] = useState(
+    savedListState?.itemsPerPage || 10,
+  );
   const [totalItems, setTotalItems] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
 
   // Debounce search
   useEffect(() => {
+    if (skipInitialSearchReset.current) {
+      skipInitialSearchReset.current = false;
+      return;
+    }
+
     const handler = setTimeout(() => {
       setDebouncedSearchQuery(searchQuery);
       setCurrentPage(1); // Reset to first page on search
     }, 500);
     return () => clearTimeout(handler);
   }, [searchQuery]);
+
+  useEffect(() => {
+    if (!hasMounted.current) {
+      hasMounted.current = true;
+      return;
+    }
+    setCurrentPage(1);
+  }, [statusFilter]);
 
   const fetchPurchases = async () => {
     setIsLoading(true);
@@ -49,6 +77,7 @@ const ManagePurchases = () => {
           page: currentPage,
           per_page: itemsPerPage,
           search: debouncedSearchQuery,
+          status: statusFilter,
         },
       });
       if (response.status === 200) {
@@ -68,7 +97,7 @@ const ManagePurchases = () => {
 
   useEffect(() => {
     fetchPurchases();
-  }, [currentPage, itemsPerPage, debouncedSearchQuery]);
+  }, [currentPage, itemsPerPage, debouncedSearchQuery, statusFilter]);
 
   const columns = [
     {
@@ -99,8 +128,8 @@ const ManagePurchases = () => {
             item.status === "approved"
               ? "bg-green-100 text-green-700"
               : item.status === "pending"
-              ? "bg-yellow-100 text-yellow-700"
-              : "bg-red-100 text-red-700"
+                ? "bg-yellow-100 text-yellow-700"
+                : "bg-red-100 text-red-700"
           }`}
         >
           {item.status}
@@ -120,7 +149,15 @@ const ManagePurchases = () => {
           rowId={item.id}
           onView={(id) =>
             navigate(`/dashboard/manage/purchases/${id}/view`, {
-              state: item,
+              state: {
+                ...item,
+                listState: {
+                  searchQuery,
+                  statusFilter,
+                  currentPage,
+                  itemsPerPage,
+                },
+              },
             })
           }
           canView
@@ -153,15 +190,49 @@ const ManagePurchases = () => {
         </header>
 
         <main className="flex-1 overflow-y-auto p-4 md:p-8">
-          <div className="relative w-full md:w-102 h-12 mb-8 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary/50 flex gap-2 items-center px-3">
-            <FaSearch className="text-gray-400" />
-            <input
-              type="text"
-              placeholder="Search Purchases..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full h-full focus:outline-none"
-            />
+          <div className="grid gap-4 mb-8 grid-cols-12 items-end">
+            <div className="relative w-full md:col-span-6 h-12 border border-gray-300 rounded-lg focus-within:ring-2 focus-within:ring-primary/50 flex gap-2 items-center px-3">
+              <FaSearch className="text-gray-400" />
+              <input
+                type="text"
+                placeholder="Search Purchases..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full h-full focus:outline-none"
+              />
+            </div>
+
+            <div className="flex flex-col gap-2 md:col-span-3">
+              <label className="text-xs font-semibold text-gray-700">
+                Status
+              </label>
+              <select
+                value={statusFilter}
+                onChange={(e) => {
+                  setStatusFilter(e.target.value);
+                  setCurrentPage(1);
+                }}
+                className="h-12 rounded-lg outline-0 border border-gray-300 px-3 text-sm"
+              >
+                <option value="">All</option>
+                <option value="pending">Pending</option>
+                <option value="approved">Approved</option>
+                <option value="rejected">Rejected</option>
+              </select>
+            </div>
+
+            <div className="flex items-end md:col-span-3">
+              <button
+                type="button"
+                onClick={() => {
+                  setSearchQuery("");
+                  setStatusFilter("");
+                }}
+                className="h-12 w-full rounded-lg bg-gray-200 text-sm font-semibold text-gray-700 hover:bg-gray-300"
+              >
+                Reset filters
+              </button>
+            </div>
           </div>
           <ReusableTable
             columns={columns}

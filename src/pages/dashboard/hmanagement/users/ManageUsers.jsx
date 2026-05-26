@@ -205,26 +205,25 @@ const ManageUsers = () => {
         </header>
 
         <main className="flex-1 overflow-y-auto p-4 md:p-8">
-          <div className="relative w-full md:w-102 h-12 mb-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary/50 flex gap-2 items-center px-3">
-            <FaSearch className="text-gray-400" />
-            <input
-              type="text"
-              placeholder="Search Users..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full h-full focus:outline-none"
-            />
-          </div>
-
-          <div className="grid gap-4 mb-8 md:grid-cols-3 lg:grid-cols-4">
-            <div className="flex flex-col gap-2">
+          <div className="grid gap-4 mb-8 grid-cols-12 items-end">
+            <div className="relative w-full md:col-span-5 h-12 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary/50 flex gap-2 items-center px-3">
+              <FaSearch className="text-gray-400" />
+              <input
+                type="text"
+                placeholder="Search Users..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full h-full focus:outline-none"
+              />
+            </div>
+            <div className="flex flex-col gap-2 md:col-span-3">
               <label className="text-xs font-semibold text-gray-700">
                 Interest Indication
               </label>
               <select
                 value={interestedFilter}
                 onChange={(e) => setInterestedFilter(e.target.value)}
-                className="h-12 rounded-lg border border-gray-300 px-3 text-sm"
+                className="h-12 rounded-lg border border-gray-300 outline-0 px-3 text-sm"
               >
                 <option value="">All</option>
                 <option value="1">Has interest indication</option>
@@ -232,14 +231,14 @@ const ManageUsers = () => {
               </select>
             </div>
 
-            <div className="flex flex-col gap-2">
+            <div className="flex flex-col gap-2 md:col-span-3">
               <label className="text-xs font-semibold text-gray-700">
                 Verified
               </label>
               <select
                 value={verifiedFilter}
                 onChange={(e) => setVerifiedFilter(e.target.value)}
-                className="h-12 rounded-lg border border-gray-300 px-3 text-sm"
+                className="h-12 rounded-lg border border-gray-300 outline-0 px-3 text-sm"
               >
                 <option value="">All</option>
                 <option value="1">Verified</option>
@@ -247,14 +246,14 @@ const ManageUsers = () => {
               </select>
             </div>
 
-            <div className="flex items-end">
+            <div className="flex items-end md:col-span-1">
               <button
                 type="button"
                 onClick={() => {
                   setInterestedFilter("");
                   setVerifiedFilter("");
                 }}
-                className="h-12 w-full rounded-lg bg-gray-100 text-sm font-semibold text-gray-700 hover:bg-gray-200"
+                className="h-12 w-full rounded-lg bg-gray-300 text-sm font-semibold text-gray-700"
               >
                 Reset filters
               </button>

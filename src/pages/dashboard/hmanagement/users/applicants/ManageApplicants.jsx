@@ -10,6 +10,7 @@ import { toast } from "sonner";
 import { FaBars, FaPlus } from "react-icons/fa6";
 import { FaSearch } from "react-icons/fa";
 import {
+  formatISODateToCustom,
   formatterUtility,
   formatUnderScores,
 } from "../../../../../utilities/formatterUtility";
@@ -156,6 +157,13 @@ const ManageApplicants = () => {
       render: (item) => <StatusTurnPriorityCard status={item.status} />,
     },
     {
+      label: "Date Created",
+      key: "created_at",
+      render: (item) => (
+        formatISODateToCustom(item.created_at)
+      ),
+    },
+    {
       label: "Action",
       key: "action",
       render: (item) => (
@@ -206,26 +214,25 @@ const ManageApplicants = () => {
         </header>
 
         <main className="flex-1 overflow-y-auto p-4 md:p-8">
-          <div className="relative w-full md:w-102 h-12 mb-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary/50 flex gap-2 items-center px-3">
-            <FaSearch className="text-gray-400" />
-            <input
-              type="text"
-              placeholder="Search Applicants..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full h-full focus:outline-none"
-            />
-          </div>
-
-          <div className="grid gap-4 mb-8 md:grid-cols-3 lg:grid-cols-4">
-            <div className="flex flex-col gap-2">
+          <div className="grid gap-4 mb-8 items-end grid-cols-12">
+            <div className="relative w-full col-span-12 md:col-span-6 lg:col-span-4 h-12 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary/50 flex gap-2 items-center px-3">
+              <FaSearch className="text-gray-400" />
+              <input
+                type="text"
+                placeholder="Search Applicants..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full h-full focus:outline-none"
+              />
+            </div>
+            <div className="flex flex-col gap-2 col-span-12 md:col-span-6 lg:col-span-3">
               <label className="text-xs font-semibold text-gray-700">
                 Status
               </label>
               <select
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value)}
-                className="h-12 rounded-lg border border-gray-300 px-3 text-sm"
+                className="h-12 rounded-lg border border-gray-300 outline-0 px-3 text-sm"
               >
                 <option value="">All</option>
                 <option value="pending">Pending</option>
@@ -233,8 +240,7 @@ const ManageApplicants = () => {
                 <option value="rejected">Rejected</option>
               </select>
             </div>
-
-            <div className="flex flex-col gap-2">
+            <div className="flex flex-col gap-2 col-span-12 md:col-span-4 lg:col-span-2">
               <label className="text-xs font-semibold text-gray-700">
                 Applied from
               </label>
@@ -242,11 +248,10 @@ const ManageApplicants = () => {
                 type="date"
                 value={appliedFrom}
                 onChange={(e) => setAppliedFrom(e.target.value)}
-                className="h-12 rounded-lg border border-gray-300 px-3 text-sm"
+                className="h-12 rounded-lg border border-gray-300 outline-0 px-3 text-sm"
               />
             </div>
-
-            <div className="flex flex-col gap-2">
+            <div className="flex flex-col gap-2 col-span-12 md:col-span-4 lg:col-span-2">
               <label className="text-xs font-semibold text-gray-700">
                 Applied to
               </label>
@@ -254,11 +259,10 @@ const ManageApplicants = () => {
                 type="date"
                 value={appliedTo}
                 onChange={(e) => setAppliedTo(e.target.value)}
-                className="h-12 rounded-lg border border-gray-300 px-3 text-sm"
+                className="h-12 rounded-lg border border-gray-300 outline-0 px-3 text-sm"
               />
             </div>
-
-            <div className="flex items-end">
+            <div className="flex items-end col-span-12 md:col-span-4 lg:col-span-1">
               <button
                 type="button"
                 onClick={() => {
@@ -266,7 +270,7 @@ const ManageApplicants = () => {
                   setAppliedFrom("");
                   setAppliedTo("");
                 }}
-                className="h-12 w-full rounded-lg bg-gray-100 text-sm font-semibold text-gray-700 hover:bg-gray-200"
+                className="h-12 w-full rounded-lg bg-gray-300 text-sm font-semibold text-gray-700 hover:bg-gray-200"
               >
                 Reset filters
               </button>

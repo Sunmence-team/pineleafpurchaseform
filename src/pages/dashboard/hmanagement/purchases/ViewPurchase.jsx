@@ -27,7 +27,9 @@ const ViewPurchase = () => {
   const [purchase, setPurchase] = useState(location.state || null);
   const [isLoading, setIsLoading] = useState(!location.state);
   const [paymentDetails, setPaymentDetails] = useState(null);
-  const [isVerifying, setIsVerifying] = useState(false);
+  const [paymentActionNote, setPaymentActionNote] = useState("");
+  const [isProcessingPaymentAction, setIsProcessingPaymentAction] =
+    useState(false);
 
   useEffect(() => {
     const fetchPurchaseDetail = async () => {
@@ -53,14 +55,41 @@ const ViewPurchase = () => {
     fetchPurchaseDetail();
   }, [id, navigate]);
 
-  const handleVerifyPayment = async (paymentReference) => {
-    setIsVerifying(true);
+  const resolveProofUrl = (proofValue) => {
+    if (!proofValue) return "";
+    const raw =
+      typeof proofValue === "string"
+        ? proofValue
+        : proofValue?.url || proofValue?.path || "";
+    if (!raw) return "";
+    return raw.startsWith("http://") || raw.startsWith("https://")
+      ? raw
+      : `${HM_STORAGE_API_URL}${raw}`;
+  };
+
+  const handlePaymentAction = async (paymentReference, action) => {
+    if (action === "rejected" && !paymentActionNote.trim()) {
+      toast.error("Please provide a rejection note.");
+      return;
+    }
+
+    setIsProcessingPaymentAction(true);
+
     try {
+      const payload = {
+        reference: paymentReference,
+      };
+
+      if (action === "rejected") {
+        payload.status = "rejected";
+        payload.note = paymentActionNote.trim();
+      } else {
+        payload.status = "success";
+      }
+
       const response = await api.post(
         `/api/admin/applications/verify/manual`,
-        {
-          reference: paymentReference,
-        },
+        payload,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -69,17 +98,29 @@ const ViewPurchase = () => {
       );
 
       if (response.status === 200) {
-        toast.success(response.data.message || "Payment verified successfully");
+        toast.success(
+          response.data.message ||
+            (action === "rejected"
+              ? "Payment rejected successfully."
+              : "Payment verified successfully."),
+        );
+        setPurchase(response.data?.data);
       }
     } catch (err) {
       const msg = getErrorMessage(err);
       toast.error(msg);
-      console.error("Error verifying payment:", err);
+      console.error("Error processing payment action:", err);
     } finally {
-      setIsVerifying(false);
-      setPaymentDetails(null)
+      setIsProcessingPaymentAction(false);
+      setPaymentDetails(null);
+      setPaymentActionNote("");
     }
   };
+
+  const paymentProofUrl = resolveProofUrl(
+    paymentDetails?.payment_gateway_response?.proof_of_payment,
+  );
+  const isPaymentProofPdf = paymentProofUrl.toLowerCase().endsWith(".pdf");
 
   if (isLoading) {
     return (
@@ -310,7 +351,11 @@ const ViewPurchase = () => {
         {/* Footer Actions */}
         <div className="border-t border-gray-100 pt-8 mt-10 flex justify-end gap-4">
           <button
-            onClick={() => navigate("/dashboard/manage/purchases")}
+            onClick={() =>
+              navigate("/dashboard/manage/purchases", {
+                state: location.state?.listState,
+              })
+            }
             className="px-6 py-2 bg-gray-100 text-gray-700 font-semibold rounded-lg hover:bg-gray-200 transition"
           >
             Back to List
@@ -352,31 +397,91 @@ const ViewPurchase = () => {
                 value={paymentDetails.paid_at}
               />
             </div>
-            {
-              // paymentDetails?.payment_gateway_response.verification ===
-              //   "pending_manual" &&
-              paymentDetails?.payment_gateway_response.proof_of_payment && (
-                <div className="space-y-2">
+            {paymentDetails?.payment_gateway_response?.proof_of_payment && (
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
                   <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
                     Payment Proof
                   </h3>
-                  <img
-                    src={`${HM_STORAGE_API_URL}${paymentDetails?.payment_gateway_response?.proof_of_payment}`}
-                    className="w-auto border border-gray-300"
-                  />
+                  <a
+                    href={paymentProofUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-block text-sm font-semibold text-primary underline"
+                  >
+                    {isPaymentProofPdf
+                      ? "Open / Download PDF"
+                      : "Open / Download Proof"}
+                  </a>
                 </div>
-              )
-            }
+                {isPaymentProofPdf ? (
+                  <div className="space-y-2">
+                    <div className="border border-gray-300 rounded-lg overflow-hidden">
+                      <object
+                        data={paymentProofUrl}
+                        type="application/pdf"
+                        width="100%"
+                        height="500"
+                      >
+                        <p className="p-4 text-sm text-gray-500">
+                          PDF preview is not available. You can open or download
+                          it below.
+                        </p>
+                      </object>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    <img
+                      src={paymentProofUrl}
+                      alt="Payment proof"
+                      className="w-full max-h-[500px] object-contain border border-gray-300 rounded-lg"
+                    />
+                  </div>
+                )}
+              </div>
+            )}
             {paymentDetails.type === "upfront" &&
               paymentDetails.status === "pending" && (
-                <button
-                  type="button"
-                  disabled={isVerifying}
-                  onClick={() => handleVerifyPayment(paymentDetails.reference)}
-                  className="w-full h-12 bg-[#2F5318] text-white font-medium rounded-lg hover:bg-[#254015] transition duration-300 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {isVerifying ? "Verifying..." : "Verify"}
-                </button>
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <label className="text-sm font-semibold text-gray-700">
+                      Rejection Note
+                    </label>
+                    <textarea
+                      rows={4}
+                      value={paymentActionNote}
+                      onChange={(e) => setPaymentActionNote(e.target.value)}
+                      className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none"
+                      placeholder="Enter a note when rejecting this payment"
+                    />
+                  </div>
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <button
+                      type="button"
+                      disabled={isProcessingPaymentAction}
+                      onClick={() =>
+                        handlePaymentAction(paymentDetails.reference, "success")
+                      }
+                      className="h-12 rounded-lg bg-[#2F5318] text-white font-medium hover:bg-[#254015] transition duration-300 disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
+                    >
+                      {isProcessingPaymentAction ? "Processing..." : "Verify"}
+                    </button>
+                    <button
+                      type="button"
+                      disabled={isProcessingPaymentAction}
+                      onClick={() =>
+                        handlePaymentAction(
+                          paymentDetails.reference,
+                          "rejected",
+                        )
+                      }
+                      className="h-12 rounded-lg bg-red-600 text-white font-medium hover:bg-red-700 transition duration-300 disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
+                    >
+                      {isProcessingPaymentAction ? "Processing..." : "Reject"}
+                    </button>
+                  </div>
+                </div>
               )}
           </div>
         </Modal>

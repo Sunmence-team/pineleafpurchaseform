@@ -27,6 +27,14 @@ const SideNav = ({ openMenu, setOpenMenu, branches, isLoading }) => {
       name: "Manage Purchases",
       relativeRoute: "manage/purchases",
     },
+    {
+      name: "Manage Subscriptions",
+      relativeRoute: "manage/subscriptions",
+    },
+    {
+      name: "Flagged Accounts",
+      relativeRoute: "manage/flagged-accounts",
+    },
   ];
 
   const role = localStorage.getItem("role").toLowerCase();
