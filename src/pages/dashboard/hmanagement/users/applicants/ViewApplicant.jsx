@@ -346,7 +346,7 @@ const ViewApplicant = () => {
                 <>
                   <button
                     onClick={() =>
-                      handlePaymentAction(application?.reference, "approved")
+                      handlePaymentAction(application?.reference, "success")
                     }
                     disabled={isVerifying}
                     className="px-6 py-2 bg-secClr text-white font-semibold rounded-lg transition-colors disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer"
