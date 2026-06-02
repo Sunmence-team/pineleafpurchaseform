@@ -461,7 +461,7 @@ const ViewPurchase = () => {
                       type="button"
                       disabled={isProcessingPaymentAction}
                       onClick={() =>
-                        handlePaymentAction(paymentDetails.reference, "success")
+                        handlePaymentAction(paymentDetails.reference, "approved")
                       }
                       className="h-12 rounded-lg bg-[#2F5318] text-white font-medium hover:bg-[#254015] transition duration-300 disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
                     >
