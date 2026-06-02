@@ -84,7 +84,7 @@ const ViewPurchase = () => {
         payload.status = "rejected";
         payload.note = paymentActionNote.trim();
       } else {
-        payload.status = "success";
+        payload.status = "approved";
       }
 
       const response = await api.post(
