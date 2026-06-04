@@ -347,7 +347,7 @@ const Section3 = ({ formData, setFormData, prevSection, nextSection }) => {
               htmlFor="branches"
               className="block text-sm sm:text-base font-medium text-gray-700 mb-1 sm:mb-2"
             >
-              Branch
+              Branch (Please select the branch closest to you)
             </label>
             <div className={parentClass}>
               <BiMap className="text-secClr" />
