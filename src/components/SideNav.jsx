@@ -32,6 +32,10 @@ const SideNav = ({ openMenu, setOpenMenu, branches, isLoading }) => {
       relativeRoute: "manage/subscriptions",
     },
     {
+      name: "Manage Refunds",
+      relativeRoute: "manage/refunds",
+    },
+    {
       name: "Flagged Accounts",
       relativeRoute: "manage/flagged-accounts",
     },

@@ -20,6 +20,8 @@ import ManagePurchases from "./pages/dashboard/hmanagement/purchases/ManagePurch
 import ViewPurchase from "./pages/dashboard/hmanagement/purchases/ViewPurchase";
 import ManageSubscriptions from "./pages/dashboard/hmanagement/subscriptions/ManageSubscriptions";
 import ManageFlaggedAccounts from "./pages/dashboard/hmanagement/flaggedAccounts/ManageFlaggedAccounts";
+import ManageRefunds from "./pages/dashboard/hmanagement/refunds/ManageRefunds";
+import ViewRefund from "./pages/dashboard/hmanagement/refunds/ViewRefund";
 
 function App() {
   useEffect(() => {
@@ -99,6 +101,14 @@ function App() {
           <Route
             path="/dashboard/manage/flagged-accounts"
             element={<ManageFlaggedAccounts />}
+          />
+          <Route
+            path="/dashboard/manage/refunds"
+            element={<ManageRefunds />}
+          />
+          <Route
+            path="/dashboard/manage/refunds/:id/view"
+            element={<ViewRefund />}
           />
         </Routes>
       </ClientsProvider>

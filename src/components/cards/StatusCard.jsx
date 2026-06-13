@@ -39,7 +39,7 @@ export const StatusTurnPriorityCard = ({ status }) => {
   return (
     <span
       className={`px-3 py-1 border rounded-full text-[10px] whitespace-nowrap font-semibold uppercase ${
-        status === "approved"
+        status === "approved" || status === "settled"
           ? "bg-green-100 text-green-700"
           : status === "rejected"
             ? "bg-red-100 text-red-700"
