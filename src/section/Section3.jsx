@@ -1,44 +1,72 @@
-import React, { useRef, useState, useEffect } from 'react';
-import { Formik, Form, Field, ErrorMessage } from 'formik';
-import * as Yup from 'yup';
-import DatePicker from 'react-datepicker';
-import 'react-datepicker/dist/react-datepicker.css';
-import { BiMoney, BiMap } from 'react-icons/bi';
-import { FaUser, FaCalendarAlt } from 'react-icons/fa';
-import { MdOutlineSignLanguage } from 'react-icons/md';
-import { formatNumberWithCommas, unformatNumber } from '../utilities/formatterUtility';
-import axios from 'axios';
+import React, { useRef, useState, useEffect } from "react";
+import { Formik, Form, Field, ErrorMessage } from "formik";
+import * as Yup from "yup";
+import DatePicker from "react-datepicker";
+import "react-datepicker/dist/react-datepicker.css";
+import { BiMoney, BiMap } from "react-icons/bi";
+import { FaUser, FaCalendarAlt } from "react-icons/fa";
+import { MdOutlineSignLanguage } from "react-icons/md";
+import {
+  formatNumberWithCommas,
+  unformatNumber,
+} from "../utilities/formatterUtility";
+import axios from "axios";
 
 const PROPERTY_URL = import.meta.env.VITE_PROPERTY_BASE_URL;
 
 const Section3 = ({ formData, setFormData, prevSection, nextSection }) => {
+  console.log("formData", formData);
   const canvasRef = useRef(null);
   const dropdownRef = useRef(null);
   const isDrawing = useRef(false);
   const lastTouch = useRef({ x: 0, y: 0 });
   const [siteLocations, setSiteLocations] = useState([]);
-  const [searchTerm, setSearchTerm] = useState(formData.clientDeclarationSiteLocation || '');
+  const [searchTerm, setSearchTerm] = useState(
+    formData.clientDeclarationSiteLocation || "",
+  );
   const [showDropdown, setShowDropdown] = useState(false);
-  const [isValidSelection, setIsValidSelection] = useState(!!formData.clientDeclarationSiteLocation);
+  const [isValidSelection, setIsValidSelection] = useState(
+    !!formData.clientDeclarationSiteLocation,
+  );
+
+  const fullName =
+    `${formData.title ? formData.title + " " : ""}${formData.firstName || ""} ${formData.middleName || ""} ${formData.lastName || ""}`.trim();
+  const spouseName = formData.shouldSpouseNameShow
+    ? ` and ${formData.spouseTitle} ${formData.spouseFirstName || ""} ${formData.spouseMiddleName || ""} ${formData.spouseLastName || ""}`.trim()
+    : "";
+
+  const isIndividual = formData.purchase_type === "individual";
+  const repName = formData.nextOfKinFullName || "Representative Name";
+  const clubName = formData.clubName || "Club Name";
+
+  const initialClientName = isIndividual
+    ? `${fullName} ${spouseName?.trim() ? spouseName : ""}`.trim()
+    : clubName;
 
   useEffect(() => {
     const delayDebounceFn = setTimeout(() => {
       if (searchTerm.trim() !== "") {
         const fetchSiteLocations = async () => {
           try {
-            const response = await axios.get(`${PROPERTY_URL}/api/properties/search?name=${searchTerm}`);
-            
-            if (response.data && response.data.data && Array.isArray(response.data.data.data)) {
+            const response = await axios.get(
+              `${PROPERTY_URL}/api/properties/search?name=${searchTerm}`,
+            );
+
+            if (
+              response.data &&
+              response.data.data &&
+              Array.isArray(response.data.data.data)
+            ) {
               setSiteLocations(response.data.data.data);
             }
           } catch (error) {
-            console.error('Error fetching site locations:', error);
+            console.error("Error fetching site locations:", error);
           }
         };
-    
+
         fetchSiteLocations();
       }
-    }, 300)
+    }, 300);
 
     return () => clearTimeout(delayDebounceFn);
   }, [searchTerm]);
@@ -50,80 +78,83 @@ const Section3 = ({ formData, setFormData, prevSection, nextSection }) => {
       }
     };
 
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  const parentClass = "mt-1 block w-full rounded-md border border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 h-[50px] px-2 flex items-center bg-white";
+  const parentClass =
+    "mt-1 block w-full rounded-md border border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 h-[50px] px-2 flex items-center bg-white";
   const inputClass = "w-full focus:outline-0 text-sm h-full indent-2";
 
   // Standardized branch options
   const branchOptions = [
-    'HQ - Onitsha',
-    'Mgbuka',
-    'Awka',
-    'Asaba',
-    'Owerri',
-    'Port Harcourt',
-    'Lagos Ajah',
-    'Lagos Apapa',
-    'Enugwu-Ukwu',
-    'Abuja',
-    'Abia',
-    'Nnewi',
-    'Enugu',
-    'Amuwo odofin Lagos',
-    'Ebonyi',
-    'Nkpor',
+    "HQ - Onitsha",
+    "Mgbuka",
+    "Awka",
+    "Asaba",
+    "Owerri",
+    "Port Harcourt",
+    "Lagos Ajah",
+    "Lagos Apapa",
+    "Enugwu-Ukwu",
+    "Abuja",
+    "Abia",
+    "Nnewi",
+    "Enugu",
+    "Amuwo odofin Lagos",
+    "Ebonyi",
+    "Nkpor",
   ];
 
   const validationSchema = Yup.object({
     clientDeclarationLandPrice: Yup.string()
-      .required('Land price is required')
+      .required("Land price is required")
       .transform((value) => unformatNumber(value))
-      .test('is-numeric', 'Land price must be a valid number', (value) => {
+      .test("is-numeric", "Land price must be a valid number", (value) => {
         return !isNaN(Number(value)) && Number(value) >= 0;
       })
-      .typeError('Land price must be a number'),
+      .typeError("Land price must be a number"),
     clientDeclarationNumberOfPlots: Yup.number()
-      .required('Number of plots is required')
-      .min(1, 'Number of plots must be at least 1'),
+      .required("Number of plots is required")
+      .min(1, "Number of plots must be at least 1"),
     clientDeclarationSiteLocation: Yup.string()
-      .required('Site location is required')
-      .test('is-valid-location', 'Please select a valid property from the list', function(value) {
-      // This ensures the value in Formik's state is actually one of the fetched properties
-      return siteLocations.some(loc => loc.name === value);
-    }),
+      .required("Site location is required")
+      .test(
+        "is-valid-location",
+        "Please select a valid property from the list",
+        function (value) {
+          // This ensures the value in Formik's state is actually one of the fetched properties
+          return siteLocations.some((loc) => loc.name === value);
+        },
+      ),
     clientDeclarationPlotNumber: Yup.string()
       .trim()
-      .required('Plot number is required')
+      .required("Plot number is required")
       .matches(
         /^[a-zA-Z0-9, ]*$/,
-        'Plot number can only contain letters, numbers, and commas.'
+        "Plot number can only contain letters, numbers, and commas.",
       ),
-    branches: Yup.string().required('Branch is required'),
+    branches: Yup.string().required("Branch is required"),
     clientDeclarationSignature: Yup.string()
-      .required('Signature is required')
-      .test('is-not-empty', 'Signature is required', (value) => {
+      .required("Signature is required")
+      .test("is-not-empty", "Signature is required", (value) => {
         return (
           value &&
           value !==
-            'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAjAAAAJYCAYAAACado6zAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAADPSURBVHhe7dAxAQAwDMCw/f8vfwBkyS8O...'
+            "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAjAAAAJYCAYAAACado6zAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAADPSURBVHhe7dAxAQAwDMCw/f8vfwBkyS8O..."
         );
       }),
     clientDeclarationDate: Yup.date()
-      .required('Date is required')
+      .required("Date is required")
       .nullable()
-      .typeError('Invalid date format, use DD-MM-YYYY'),
+      .typeError("Invalid date format, use DD-MM-YYYY"),
   });
-
-  const fullName = `${formData.title ? formData.title + ' ' : ''}${formData.firstName || ''} ${formData.middleName || ''} ${formData.lastName || ''}`.trim();
 
   const clearSignature = (setFieldValue) => {
     const canvas = canvasRef.current;
-    const ctx = canvas.getContext('2d');
+    const ctx = canvas.getContext("2d");
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-    setFieldValue('clientDeclarationSignature', '');
+    setFieldValue("clientDeclarationSignature", "");
   };
 
   const getCanvasCoordinates = (event, canvas) => {
@@ -132,7 +163,7 @@ const Section3 = ({ formData, setFormData, prevSection, nextSection }) => {
     const scaleY = canvas.height / rect.height;
     let x, y;
 
-    if (event.type.startsWith('touch')) {
+    if (event.type.startsWith("touch")) {
       const touch = event.touches[0] || event.changedTouches[0];
       x = (touch.clientX - rect.left) * scaleX;
       y = (touch.clientY - rect.top) * scaleY;
@@ -147,19 +178,30 @@ const Section3 = ({ formData, setFormData, prevSection, nextSection }) => {
   return (
     <Formik
       initialValues={{
-        clientDeclarationLandPrice: formData.clientDeclarationLandPrice ? formatNumberWithCommas(formData.clientDeclarationLandPrice) : '',
-        clientDeclarationNumberOfPlots: formData.clientDeclarationNumberOfPlots || '',
-        clientDeclarationSiteLocation: formData.clientDeclarationSiteLocation || '',
-        clientDeclarationPlotNumber: formData.clientDeclarationPlotNumber || '',
-        branches: formData.branches || '',
-        clientDeclarationSignature: formData.clientDeclarationSignature || '',
+        clientDeclarationLandPrice: formData.clientDeclarationLandPrice
+          ? formatNumberWithCommas(formData.clientDeclarationLandPrice)
+          : "",
+        clientDeclarationNumberOfPlots:
+          formData.clientDeclarationNumberOfPlots || "",
+        clientDeclarationSiteLocation:
+          formData.clientDeclarationSiteLocation || "",
+        clientDeclarationPlotNumber: formData.clientDeclarationPlotNumber || "",
+        branches: formData.branches || "",
+        clientDeclarationSignature: formData.clientDeclarationSignature || "",
         clientDeclarationDate: formData.clientDeclarationDate || null,
-        clientDeclarationClientName: formData.clientDeclarationClientName || fullName,
+        clientDeclarationClientName:
+          formData.clientDeclarationClientName || initialClientName,
       }}
       validationSchema={validationSchema}
       onSubmit={(values) => {
-        const unformattedLandPrice = unformatNumber(values.clientDeclarationLandPrice);
-        setFormData({ ...formData, ...values, clientDeclarationLandPrice: unformattedLandPrice });
+        const unformattedLandPrice = unformatNumber(
+          values.clientDeclarationLandPrice,
+        );
+        setFormData({
+          ...formData,
+          ...values,
+          clientDeclarationLandPrice: unformattedLandPrice,
+        });
         nextSection();
       }}
     >
@@ -170,11 +212,33 @@ const Section3 = ({ formData, setFormData, prevSection, nextSection }) => {
           </p>
 
           <div className="w-full">
-            <p className="text-sm sm:text-base text-center text-gray-700">
-              I <span className="font-semibold">{fullName || 'Your Name'}</span> hereby
-              affirm that all information provided as requirement for LAND PURCHASE are
-              correct, PINELEAF ESTATE shall not be held responsible for any inaccurate
-              information provided by the client.
+            <p className="text-sm sm:text-base text-center text-gray-700 leading-relaxed">
+              {isIndividual ? (
+                <>
+                  I{" "}
+                  <span className="font-semibold text-secClr">
+                    {fullName || "Your Name"}
+                  </span>{" "}
+                  {spouseName && (
+                    <span className="font-semibold text-secClr">
+                      {spouseName}
+                    </span>
+                  )}{" "}
+                </>
+              ) : (
+                <>
+                  We,{" "}
+                  <span className="font-semibold text-secClr">{clubName}</span>{" "}
+                  (represented by Representative{" "}
+                  <span className="font-semibold text-secClr">{repName}</span>
+                  ){" "}
+                </>
+              )}
+              hereby affirm that all information provided as requirement for
+              LAND PURCHASE are correct,{" "}
+              <span className="font-semibold">PINELEAF ESTATE</span> shall not
+              be held responsible for any inaccurate information provided by the
+              client.
             </p>
           </div>
 
@@ -192,13 +256,13 @@ const Section3 = ({ formData, setFormData, prevSection, nextSection }) => {
                 name="clientDeclarationClientName"
                 id="clientDeclarationClientName"
                 className={`${inputClass} bg-gray-100 cursor-not-allowed`}
-                value={fullName || ''}
+                value={initialClientName}
                 readOnly
               />
             </div>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
             <div className="relative">
               <label
                 htmlFor="clientDeclarationLandPrice"
@@ -217,7 +281,10 @@ const Section3 = ({ formData, setFormData, prevSection, nextSection }) => {
                   onChange={(e) => {
                     const { value } = e.target;
                     const unformattedValue = unformatNumber(value);
-                    setFieldValue('clientDeclarationLandPrice', formatNumberWithCommas(unformattedValue));
+                    setFieldValue(
+                      "clientDeclarationLandPrice",
+                      formatNumberWithCommas(unformattedValue),
+                    );
                   }}
                 />
               </div>
@@ -249,10 +316,10 @@ const Section3 = ({ formData, setFormData, prevSection, nextSection }) => {
                 className="text-xs sm:text-sm text-red-500 mt-1"
               />
             </div>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
-            <div className="relative" ref={dropdownRef}>
+            <div
+              className="relative lg:col-span-1 md:col-span-2"
+              ref={dropdownRef}
+            >
               <label
                 htmlFor="clientDeclarationSiteLocation"
                 className="block text-sm sm:text-base font-medium text-gray-700 mb-1 sm:mb-2"
@@ -270,18 +337,18 @@ const Section3 = ({ formData, setFormData, prevSection, nextSection }) => {
                   onChange={(e) => {
                     const value = e.target.value;
                     setSearchTerm(value);
-                    // Important: Mark as invalid because they are currently typing, 
+                    // Important: Mark as invalid because they are currently typing,
                     // and haven't clicked a suggestion yet.
-                    setIsValidSelection(false); 
-                    setFieldValue('clientDeclarationSiteLocation', ''); 
+                    setIsValidSelection(false);
+                    setFieldValue("clientDeclarationSiteLocation", "");
                     setShowDropdown(true);
                   }}
                   onBlur={() => {
                     // Optional: Clear search term if they click away without selecting
                     setTimeout(() => {
                       if (!isValidSelection) {
-                        setSearchTerm('');
-                        setFieldValue('clientDeclarationSiteLocation', '');
+                        setSearchTerm("");
+                        setFieldValue("clientDeclarationSiteLocation", "");
                       }
                     }, 200);
                   }}
@@ -298,7 +365,10 @@ const Section3 = ({ formData, setFormData, prevSection, nextSection }) => {
                         className="px-4 py-2 hover:bg-secClr hover:text-white cursor-pointer transition-colors duration-200 text-sm"
                         onMouseDown={(e) => {
                           e.preventDefault();
-                          setFieldValue('clientDeclarationSiteLocation', location.name);
+                          setFieldValue(
+                            "clientDeclarationSiteLocation",
+                            location.name,
+                          );
                           setSearchTerm(location.name);
                           setIsValidSelection(true);
                           setShowDropdown(false);
@@ -308,7 +378,9 @@ const Section3 = ({ formData, setFormData, prevSection, nextSection }) => {
                       </div>
                     ))
                   ) : (
-                    <div className="px-4 py-2 text-gray-500 text-sm">No results found</div>
+                    <div className="px-4 py-2 text-gray-500 text-sm">
+                      No results found
+                    </div>
                   )}
                 </div>
               )}
@@ -318,20 +390,50 @@ const Section3 = ({ formData, setFormData, prevSection, nextSection }) => {
                 className="text-xs sm:text-sm text-red-500 mt-1"
               />
             </div>
-            <div className="relative">
+            <div className="relative w-full lg:col-span-1 md:col-span-2">
               <label
-                htmlFor="clientDeclarationPlotNumber"
+                htmlFor="branches"
                 className="block text-sm sm:text-base font-medium text-gray-700 mb-1 sm:mb-2"
               >
-                Plot Number
+                Branch (Please select the branch closest to you)
               </label>
               <div className={parentClass}>
                 <BiMap className="text-secClr" />
                 <Field
-                  type="text"
+                  as="select"
+                  name="branches"
+                  id="branches"
+                  className={inputClass}
+                >
+                  <option value="">Select Branch</option>
+                  {branchOptions.map((branch) => (
+                    <option key={branch} value={branch}>
+                      {branch}
+                    </option>
+                  ))}
+                </Field>
+              </div>
+              <ErrorMessage
+                name="branches"
+                component="div"
+                className="text-xs sm:text-sm text-red-500 mt-1"
+              />
+            </div>
+            <div className="relative md:col-span-2">
+              <label
+                htmlFor="clientDeclarationPlotNumber"
+                className="block text-sm sm:text-base font-medium text-gray-700 mb-1 sm:mb-2"
+              >
+                Please list out your plot numbers
+              </label>
+              <div className={parentClass + " h-[100px]! py-2 items-start"}>
+                <BiMap className="text-secClr" />
+                <Field
+                  as="textarea"
+                  rows={4}
                   name="clientDeclarationPlotNumber"
                   id="clientDeclarationPlotNumber"
-                  className={inputClass}
+                  className={inputClass + " resize-none"}
                 />
               </div>
               <ErrorMessage
@@ -340,36 +442,6 @@ const Section3 = ({ formData, setFormData, prevSection, nextSection }) => {
                 className="text-xs sm:text-sm text-red-500 mt-1"
               />
             </div>
-          </div>
-
-          <div className="relative w-full">
-            <label
-              htmlFor="branches"
-              className="block text-sm sm:text-base font-medium text-gray-700 mb-1 sm:mb-2"
-            >
-              Branch (Please select the branch closest to you)
-            </label>
-            <div className={parentClass}>
-              <BiMap className="text-secClr" />
-              <Field
-                as="select"
-                name="branches"
-                id="branches"
-                className={inputClass}
-              >
-                <option value="">Select Branch</option>
-                {branchOptions.map((branch) => (
-                  <option key={branch} value={branch}>
-                    {branch}
-                  </option>
-                ))}
-              </Field>
-            </div>
-            <ErrorMessage
-              name="branches"
-              component="div"
-              className="text-xs sm:text-sm text-red-500 mt-1"
-            />
           </div>
 
           <div className="relative w-full">
@@ -391,10 +463,10 @@ const Section3 = ({ formData, setFormData, prevSection, nextSection }) => {
                   e.preventDefault();
                   isDrawing.current = true;
                   const canvas = canvasRef.current;
-                  const ctx = canvas.getContext('2d');
+                  const ctx = canvas.getContext("2d");
                   ctx.lineWidth = 2;
-                  ctx.lineCap = 'round';
-                  ctx.strokeStyle = '#000000';
+                  ctx.lineCap = "round";
+                  ctx.strokeStyle = "#000000";
                   const { x, y } = getCanvasCoordinates(e, canvas);
                   ctx.beginPath();
                   ctx.moveTo(x, y);
@@ -404,7 +476,7 @@ const Section3 = ({ formData, setFormData, prevSection, nextSection }) => {
                   if (!isDrawing.current) return;
                   e.preventDefault();
                   const canvas = canvasRef.current;
-                  const ctx = canvas.getContext('2d');
+                  const ctx = canvas.getContext("2d");
                   const { x, y } = getCanvasCoordinates(e, canvas);
                   ctx.lineTo(x, y);
                   ctx.stroke();
@@ -413,26 +485,32 @@ const Section3 = ({ formData, setFormData, prevSection, nextSection }) => {
                 onMouseUp={() => {
                   isDrawing.current = false;
                   const canvas = canvasRef.current;
-                  const ctx = canvas.getContext('2d');
+                  const ctx = canvas.getContext("2d");
                   ctx.closePath();
-                  setFieldValue('clientDeclarationSignature', canvas.toDataURL());
+                  setFieldValue(
+                    "clientDeclarationSignature",
+                    canvas.toDataURL(),
+                  );
                 }}
                 onMouseOut={() => {
                   isDrawing.current = false;
                   const canvas = canvasRef.current;
-                  const ctx = canvas.getContext('2d');
+                  const ctx = canvas.getContext("2d");
                   ctx.closePath();
-                  setFieldValue('clientDeclarationSignature', canvas.toDataURL());
+                  setFieldValue(
+                    "clientDeclarationSignature",
+                    canvas.toDataURL(),
+                  );
                 }}
                 onTouchStart={(e) => {
                   e.preventDefault();
                   e.stopPropagation();
                   isDrawing.current = true;
                   const canvas = canvasRef.current;
-                  const ctx = canvas.getContext('2d');
+                  const ctx = canvas.getContext("2d");
                   ctx.lineWidth = 2;
-                  ctx.lineCap = 'round';
-                  ctx.strokeStyle = '#000000';
+                  ctx.lineCap = "round";
+                  ctx.strokeStyle = "#000000";
                   const { x, y } = getCanvasCoordinates(e, canvas);
                   ctx.beginPath();
                   ctx.moveTo(x, y);
@@ -443,7 +521,7 @@ const Section3 = ({ formData, setFormData, prevSection, nextSection }) => {
                   e.stopPropagation();
                   if (!isDrawing.current) return;
                   const canvas = canvasRef.current;
-                  const ctx = canvas.getContext('2d');
+                  const ctx = canvas.getContext("2d");
                   const { x, y } = getCanvasCoordinates(e, canvas);
                   ctx.lineTo(x, y);
                   ctx.stroke();
@@ -454,20 +532,26 @@ const Section3 = ({ formData, setFormData, prevSection, nextSection }) => {
                   e.stopPropagation();
                   isDrawing.current = false;
                   const canvas = canvasRef.current;
-                  const ctx = canvas.getContext('2d');
+                  const ctx = canvas.getContext("2d");
                   ctx.closePath();
-                  setFieldValue('clientDeclarationSignature', canvas.toDataURL());
+                  setFieldValue(
+                    "clientDeclarationSignature",
+                    canvas.toDataURL(),
+                  );
                 }}
                 onTouchCancel={(e) => {
                   e.preventDefault();
                   e.stopPropagation();
                   isDrawing.current = false;
                   const canvas = canvasRef.current;
-                  const ctx = canvas.getContext('2d');
+                  const ctx = canvas.getContext("2d");
                   ctx.closePath();
-                  setFieldValue('clientDeclarationSignature', canvas.toDataURL());
+                  setFieldValue(
+                    "clientDeclarationSignature",
+                    canvas.toDataURL(),
+                  );
                 }}
-                style={{ touchAction: 'none' }}
+                style={{ touchAction: "none" }}
               ></canvas>
               <div className="mt-2">
                 <button
@@ -497,7 +581,9 @@ const Section3 = ({ formData, setFormData, prevSection, nextSection }) => {
               <FaCalendarAlt className="text-secClr z-10" />
               <DatePicker
                 selected={values.clientDeclarationDate}
-                onChange={(date) => setFieldValue('clientDeclarationDate', date)}
+                onChange={(date) =>
+                  setFieldValue("clientDeclarationDate", date)
+                }
                 dateFormat="dd-MM-YYYY"
                 placeholderText="DD-MM-YYYY"
                 className={`${inputClass} w-full`}

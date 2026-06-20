@@ -44,6 +44,10 @@ const ViewClient = () => {
 
         const clientData = {
           id: application.id,
+          purchase_type: application.purchase_type || 'individual',
+          club_name: application.club_name || '',
+          club_contact: application.club_contact || '',
+          club_members: application.club_members || [],
           personal_picture: application.personal_picture
             ? `${STORAGE_URL}/${application.personal_picture.replace(/^public\//, "")}`
             : "https://via.placeholder.com/150",
@@ -52,8 +56,6 @@ const ViewClient = () => {
           middle_name: application.middle_name || "",
           last_name: application.last_name || "",
           address: application.address || "",
-          dob: application.dob ? new Date(application.dob) : null,
-          nationality: application.nationality || "",
           marital_status: application.marital_status || "",
           gender: application.gender || "",
           first_name_of_spouse: application.first_name_of_spouse || "",
@@ -61,14 +63,11 @@ const ViewClient = () => {
           last_name_of_spouse: application.last_name_of_spouse || "",
           state_of_origin: application.state_of_origin || "",
           lga: application.lga || "",
-          occupation: application.occupation || "",
           country: application.country || "",
-          language: application.language || "",
           email: application.email || "",
           mobile_number: application.mobile_number || "",
-          telephone_number: application.telephone_number || "",
           next_of_kin_full_name: application.next_of_kin_full_name || "",
-          next_of_kin_address: application.next_of_kin_address || "",
+          next_of_kin_relationship: application.next_of_kin_relationship || "",
           next_of_kin_mobile_number: application.next_of_kin_mobile_number || "",
           next_of_kin_email: application.next_of_kin_email || "",
           land_price: application.land_price || "",
@@ -85,10 +84,6 @@ const ViewClient = () => {
           declaration_name: application.declaration_name || "",
           referral_name: application.referral_name || "",
           referral_number: application.referral_number || "",
-          referral_date: application.referral_date
-            ? new Date(application.referral_date)
-            : null,
-          referral_email: application.referral_email || "",
         };
 
         // console.log("Raw personal_picture:", application.personal_picture);
@@ -186,76 +181,157 @@ const ViewClient = () => {
         <div ref={componentRef} className="space-y-6 sm:space-y-10 print-section">
           {/* Profile */}
           <div className="flex flex-col sm:flex-row gap-4 sm:gap-8 items-start sm:items-center border-b border-gray-200 pb-4 sm:pb-6">
-            <img
-              src={client.personal_picture}
-              alt="Client"
-              className="w-24 h-24 sm:w-32 sm:h-32 rounded-xl object-cover border-2 border-gray-100 shadow-sm"
-            />
-            <div className="space-y-2">
-              <h2 className="text-xl sm:text-2xl font-bold text-gray-900">{client.client_name}</h2>
-              <p className="text-sm sm:text-base text-gray-600">Email: {client.email}</p>
-              <p className="text-sm sm:text-base text-gray-600">Phone: {client.mobile_number}</p>
-              <p className="text-sm sm:text-base text-gray-600">Nationality: {client.nationality}</p>
-            </div>
+            {client.purchase_type === "individual" ? (
+              <>
+                <img
+                  src={client.personal_picture}
+                  alt="Client"
+                  className="w-24 h-24 sm:w-32 sm:h-32 rounded-xl object-cover border-2 border-gray-100 shadow-sm"
+                />
+                <div className="space-y-2">
+                  <h2 className="text-xl sm:text-2xl font-bold text-gray-900">{client.client_name}</h2>
+                  <p className="text-sm sm:text-base text-gray-600">Email: {client.email}</p>
+                  <p className="text-sm sm:text-base text-gray-600">Phone: {client.mobile_number}</p>
+                </div>
+              </>
+            ) : (
+              <div className="space-y-2 w-full">
+                <div className="inline-block px-3 py-1 bg-secClr/10 text-secClr text-xs font-semibold rounded-full uppercase tracking-wider">
+                  {client.purchase_type}
+                </div>
+                <h2 className="text-2xl sm:text-3xl font-bold text-gray-900">{client.client_name}</h2>
+                <p className="text-sm sm:text-base text-gray-600">Official Contact: {client.club_contact}</p>
+              </div>
+            )}
           </div>
 
-          {/* Personal Info */}
-          <div>
-            <h3 className="text-lg md:text-2xl font-semibold text-scClr border-b border-gray-200 py-3 mb-6">
-              Personal Information
-            </h3>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
-              <p className="text-sm sm:text-base text-gray-700"><span className="font-medium">First Name:</span> {client.first_name}</p>
-              <p className="text-sm sm:text-base text-gray-700"><span className="font-medium">Middle Name:</span> {client.middle_name}</p>
-              <p className="text-sm sm:text-base text-gray-700"><span className="font-medium">Last Name:</span> {client.last_name}</p>
-              <p className="text-sm sm:text-base text-gray-700"><span className="font-medium">Gender:</span> {client.gender}</p>
-              <p className="text-sm sm:text-base text-gray-700">
-                <span className="font-medium">Date of Birth:</span>{" "}
-                {client.dob ? format(client.dob, "dd/MM/yyyy") : "N/A"}
-              </p>
-              <p className="text-sm sm:text-base text-gray-700"><span className="font-medium">Marital Status:</span> {client.marital_status}</p>
-              <p className="text-sm sm:text-base text-gray-700"><span className="font-medium">State of Origin:</span> {client.state_of_origin}</p>
-              <p className="text-sm sm:text-base text-gray-700"><span className="font-medium">LGA:</span> {client.lga}</p>
-              <p className="text-sm sm:text-base text-gray-700"><span className="font-medium">Occupation:</span> {client.occupation}</p>
-              <p className="text-sm sm:text-base text-gray-700"><span className="font-medium">Language:</span> {client.language}</p>
-              <p className="text-sm sm:text-base text-gray-700 sm:col-span-2"><span className="font-medium">Address:</span> {client.address}</p>
+          {/* Personal Information / Club Details dynamic block */}
+          {client.purchase_type === "individual" ? (
+            <div>
+              <h3 className="text-lg md:text-2xl font-semibold text-secClr border-b border-gray-200 py-3 mb-6">
+                Personal Information
+              </h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+                <p className="text-sm sm:text-base text-gray-700"><span className="font-medium">First Name:</span> {client.first_name}</p>
+                <p className="text-sm sm:text-base text-gray-700"><span className="font-medium">Middle Name:</span> {client.middle_name}</p>
+                <p className="text-sm sm:text-base text-gray-700"><span className="font-medium">Last Name:</span> {client.last_name}</p>
+                <p className="text-sm sm:text-base text-gray-700"><span className="font-medium">Gender:</span> {client.gender}</p>
+                <p className="text-sm sm:text-base text-gray-700"><span className="font-medium">Marital Status:</span> {client.marital_status}</p>
+                <p className="text-sm sm:text-base text-gray-700"><span className="font-medium">State of Origin:</span> {client.state_of_origin}</p>
+                <p className="text-sm sm:text-base text-gray-700"><span className="font-medium">LGA:</span> {client.lga}</p>
+                <p className="text-sm sm:text-base text-gray-700"><span className="font-medium">Country of Residence:</span> {client.country}</p>
+                <p className="text-sm sm:text-base text-gray-700 sm:col-span-2"><span className="font-medium">Address:</span> {client.address}</p>
+              </div>
             </div>
-          </div>
+          ) : (
+            <div className="space-y-6">
+              <div>
+                <h3 className="text-lg md:text-2xl font-semibold text-secClr border-b border-gray-200 py-3 mb-6">
+                  {client.purchase_type === 'club' ? 'Club Details' : 'Association Details'}
+                </h3>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+                  <p className="text-sm sm:text-base text-gray-700"><span className="font-medium">Name:</span> {client.client_name}</p>
+                  <p className="text-sm sm:text-base text-gray-700"><span className="font-medium">Official Contact:</span> {client.club_contact}</p>
+                  <p className="text-sm sm:text-base text-gray-700"><span className="font-medium">State of Origin:</span> {client.state_of_origin}</p>
+                  <p className="text-sm sm:text-base text-gray-700"><span className="font-medium">LGA:</span> {client.lga}</p>
+                  <p className="text-sm sm:text-base text-gray-700"><span className="font-medium">Country:</span> {client.country}</p>
+                  <p className="text-sm sm:text-base text-gray-700 sm:col-span-2"><span className="font-medium">Address:</span> {client.address}</p>
+                </div>
+              </div>
+
+              <div>
+                <h3 className="text-lg md:text-2xl font-semibold text-secClr border-b border-gray-200 py-3 mb-4">
+                  Registered Members
+                </h3>
+                {client.club_members && client.club_members.length > 0 ? (
+                  <div className="overflow-x-auto rounded-xl border border-gray-200 shadow-sm">
+                    <table className="w-full text-left text-sm text-gray-700">
+                      <thead className="bg-gray-50 text-gray-700 uppercase text-xs tracking-wider">
+                        <tr>
+                          <th className="py-3 px-4 font-bold">#</th>
+                          <th className="py-3 px-4 font-bold">Title</th>
+                          <th className="py-3 px-4 font-bold">Full Name</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-gray-100 bg-white">
+                        {client.club_members.map((member, index) => (
+                          <tr key={index} className="hover:bg-gray-50/50">
+                            <td className="py-3 px-4 text-gray-500 font-medium">{index + 1}</td>
+                            <td className="py-3 px-4 font-semibold text-secClr">{member.title || member.Title || ''}</td>
+                            <td className="py-3 px-4">
+                              {(member.first_name || member.firstName || '')}{' '}
+                              {(member.middle_name || member.middleName) ? (member.middle_name || member.middleName) + ' ' : ''}
+                              {(member.last_name || member.lastName || '')}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                ) : (
+                  <p className="text-sm text-red-500 font-medium">No members registered under this club.</p>
+                )}
+              </div>
+            </div>
+          )}
 
           {/* Spouse Info */}
-          <div>
-            <h3 className="text-lg md:text-2xl font-semibold text-secClr border-b border-gray-200 py-3 mb-6">
-              Spouse Information
-            </h3>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6">
-              <p className="text-sm sm:text-base text-gray-700"><span className="font-medium">First Name:</span> {client.first_name_of_spouse}</p>
-              <p className="text-sm sm:text-base text-gray-700"><span className="font-medium">Middle Name:</span> {client.middle_name_of_spouse}</p>
-              <p className="text-sm sm:text-base text-gray-700"><span className="font-medium">Last Name:</span> {client.last_name_of_spouse}</p>
+          {client.purchase_type === "individual" && (client.first_name_of_spouse || client.last_name_of_spouse) && (
+            <div>
+              <h3 className="text-lg md:text-2xl font-semibold text-secClr border-b border-gray-200 py-3 mb-6">
+                Spouse Information
+              </h3>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6">
+                <p className="text-sm sm:text-base text-gray-700"><span className="font-medium">First Name:</span> {client.first_name_of_spouse}</p>
+                <p className="text-sm sm:text-base text-gray-700"><span className="font-medium">Middle Name:</span> {client.middle_name_of_spouse}</p>
+                <p className="text-sm sm:text-base text-gray-700"><span className="font-medium">Last Name:</span> {client.last_name_of_spouse}</p>
+              </div>
             </div>
-          </div>
+          )}
 
           {/* Contact Info */}
-          <div>
-            <h3 className="text-lg md:text-2xl font-semibold text-secClr border-b border-gray-200 py-3 mb-6">
-              Contact Information
-            </h3>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
-              <p className="text-sm sm:text-base text-gray-700"><span className="font-medium">Email:</span> {client.email}</p>
-              <p className="text-sm sm:text-base text-gray-700"><span className="font-medium">Mobile Number:</span> {client.mobile_number}</p>
-              <p className="text-sm sm:text-base text-gray-700"><span className="font-medium">Telephone Number:</span> {client.telephone_number}</p>
+          {client.purchase_type === "individual" && (
+            <div>
+              <h3 className="text-lg md:text-2xl font-semibold text-secClr border-b border-gray-200 py-3 mb-6">
+                Contact Information
+              </h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+                <p className="text-sm sm:text-base text-gray-700"><span className="font-medium">Email:</span> {client.email}</p>
+                <p className="text-sm sm:text-base text-gray-700"><span className="font-medium">Mobile Number:</span> {client.mobile_number}</p>
+              </div>
             </div>
-          </div>
+          )}
 
-          {/* Next of Kin */}
+          {/* Next of Kin / Representative Details */}
           <div>
             <h3 className="text-lg md:text-2xl font-semibold text-secClr border-b border-gray-200 py-3 mb-6">
-              Next of Kin
+              {client.purchase_type === "individual" ? "Next of Kin" : "Representative / Trustee Details"}
             </h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
-              <p className="text-sm sm:text-base text-gray-700"><span className="font-medium">Full Name:</span> {client.next_of_kin_full_name}</p>
-              <p className="text-sm sm:text-base text-gray-700"><span className="font-medium">Address:</span> {client.next_of_kin_address}</p>
-              <p className="text-sm sm:text-base text-gray-700"><span className="font-medium">Phone:</span> {client.next_of_kin_mobile_number}</p>
-              <p className="text-sm sm:text-base text-gray-700"><span className="font-medium">Email:</span> {client.next_of_kin_email}</p>
+              <p className="text-sm sm:text-base text-gray-700">
+                <span className="font-medium">
+                  {client.purchase_type === "individual" ? "Full Name:" : "Representative / Trustee Full Name:"}
+                </span>{" "}
+                {client.next_of_kin_full_name}
+              </p>
+              <p className="text-sm sm:text-base text-gray-700">
+                <span className="font-medium">
+                  {client.purchase_type === "individual" ? "Relationship:" : "Role / Designation:"}
+                </span>{" "}
+                {client.next_of_kin_relationship}
+              </p>
+              <p className="text-sm sm:text-base text-gray-700">
+                <span className="font-medium">
+                  {client.purchase_type === "individual" ? "Phone:" : "Representative Contact Mobile:"}
+                </span>{" "}
+                {client.next_of_kin_mobile_number}
+              </p>
+              <p className="text-sm sm:text-base text-gray-700">
+                <span className="font-medium">
+                  {client.purchase_type === "individual" ? "Email:" : "Representative Contact Email:"}
+                </span>{" "}
+                {client.next_of_kin_email}
+              </p>
             </div>
           </div>
 
@@ -300,22 +376,17 @@ const ViewClient = () => {
           </div>
 
           {/* Referral */}
-          <div>
-            <h3 className="text-lg md:text-2xl font-semibold text-secClr border-b border-gray-200 py-3 mb-6">
-              Referral
-            </h3>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
-              <p className="text-sm sm:text-base text-gray-700"><span className="font-medium">Name:</span> {client.referral_name}</p>
-              <p className="text-sm sm:text-base text-gray-700"><span className="font-medium">Phone:</span> {client.referral_number}</p>
-              <p className="text-sm sm:text-base text-gray-700"><span className="font-medium">Email:</span> {client.referral_email}</p>
-              <p className="text-sm sm:text-base text-gray-700">
-                <span className="font-medium">Date:</span>{" "}
-                {client.referral_date
-                  ? format(client.referral_date, "dd/MM/yyyy")
-                  : "N/A"}
-              </p>
+          {client.referral_name && (
+            <div>
+              <h3 className="text-lg md:text-2xl font-semibold text-secClr border-b border-gray-200 py-3 mb-6">
+                Referral
+              </h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+                <p className="text-sm sm:text-base text-gray-700"><span className="font-medium">Name:</span> {client.referral_name}</p>
+                <p className="text-sm sm:text-base text-gray-700"><span className="font-medium">Phone:</span> {client.referral_number}</p>
+              </div>
             </div>
-          </div>
+          )}
         </div>
 
         {/* Footer */}

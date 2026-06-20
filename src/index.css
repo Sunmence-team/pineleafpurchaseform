@@ -26,3 +26,8 @@
 .styled-scrollbar::-webkit-scrollbar-thumb {
   @apply bg-secClr/20 rounded-full;
 }
+
+.form-checkbox,
+.form-radio {
+  @apply accent-secClr;
+}
