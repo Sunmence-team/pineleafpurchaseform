@@ -12,6 +12,8 @@ import logo from "../../assets/logo.png";
 import SideNav from "../../components/SideNav";
 import ApplicationsList from "../../components/ApplicationsList";
 import PaginationControls from "../../components/PaginationControls";
+import DownloadAllModal from "../../components/modals/DownloadAllModal";
+import BranchDownloadModal from "../../components/modals/BranchDownloadModal";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import { useClients } from "../../context/ClientsContext";
@@ -48,6 +50,13 @@ const BranchBreakDown = () => {
   // For first-time download
   const [startDate, setStartDate] = useState(null);
   const [startTime, setStartTime] = useState("");
+
+  // Download options & Site exclusion states
+  const [downloadAllModalOpen, setDownloadAllModalOpen] = useState(false);
+  const [branchDownloadModalOpen, setBranchDownloadModalOpen] = useState(false);
+  const [excludedSites, setExcludedSites] = useState("");
+  const [initialDownloadData, setInitialDownloadData] = useState([]);
+  const [filteredDownloadData, setFilteredDownloadData] = useState([]);
 
   const fetchLastDownloadTime = useCallback(async () => {
     if (!branchKey) return;
@@ -119,6 +128,73 @@ const BranchBreakDown = () => {
     );
     setPaginatedData(paginated);
   }, [fullFilteredData, currentPage, recordsPerPage]);
+
+  useEffect(() => {
+    if (branchDownloadModalOpen) {
+      let filterFrom;
+
+      if (branchLastDownload) {
+        filterFrom = new Date(branchLastDownload);
+      } else {
+        if (!startDate || !startTime) {
+          setInitialDownloadData([]);
+          setFilteredDownloadData([]);
+          return;
+        }
+        filterFrom = new Date(startDate);
+        const [fromHours, fromMinutes] = startTime.split(":").map(Number);
+        filterFrom.setHours(fromHours, fromMinutes, 0, 0);
+      }
+
+      const data = allClients.filter((item) => {
+        if (item.branches !== branchTitle) return false;
+        const createdDate = item.created_at
+          ? new Date(parseISO(item.created_at))
+          : null;
+        if (!createdDate) return false;
+        return createdDate >= filterFrom;
+      });
+      setInitialDownloadData(data);
+      setFilteredDownloadData(data);
+    }
+  }, [
+    branchDownloadModalOpen,
+    allClients,
+    branchTitle,
+    branchLastDownload,
+    startDate,
+    startTime,
+  ]);
+
+  useEffect(() => {
+    const sitesToExclude = excludedSites
+      .split(",")
+      .map((site) => site.trim().toLowerCase())
+      .filter(Boolean);
+
+    const filtered = initialDownloadData.filter((item) => {
+      const siteLocationLower = item.site_location?.toLowerCase() || "";
+      const siteMatch =
+        sitesToExclude.length > 0 &&
+        sitesToExclude.some((excludedSite) =>
+          siteLocationLower.includes(excludedSite)
+        );
+      return !siteMatch;
+    });
+
+    setFilteredDownloadData(filtered);
+  }, [excludedSites, initialDownloadData]);
+
+  useEffect(() => {
+    if (downloadAllModalOpen || branchDownloadModalOpen) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "auto";
+    }
+    return () => {
+      document.body.style.overflow = "auto";
+    };
+  }, [downloadAllModalOpen, branchDownloadModalOpen]);
 
   const updateDownloadTime = async (downloadTime) => {
     const token = localStorage.getItem("token");
@@ -229,51 +305,88 @@ const BranchBreakDown = () => {
     pdf.save(filename);
   };
 
-  const handleDownloadAll = (type) => {
-    const data = fullFilteredData;
-    if (data.length === 0) return toast.error("No records to download");
-
-    const filename = `all_records_${branchKey}_${format(new Date(), "yyyyMMdd_HHmm")}`;
-    if (type === "csv") generateCSV(data, `${filename}.csv`);
-    else generatePDF(data, `${filename}.pdf`, `All Records - ${branchTitle}`);
-
-    setShowDownloadOptions(false);
-    toast.success("Download started");
+  const onModalCloseCleanup = () => {
+    setBranchDownloadModalOpen(false);
+    setStartDate(null);
+    setStartTime("");
+    setExcludedSites("");
+    setInitialDownloadData([]);
+    setFilteredDownloadData([]);
   };
 
-  const handleDownloadNew = (type) => {
-    const downloadStartTime = new Date();
-    let filterFrom;
+  const handleDownloadAllCSV = () => {
+    const data = [...fullFilteredData].sort((a, b) => {
+      const dateA = a.created_at ? new Date(parseISO(a.created_at)) : new Date(0);
+      const dateB = b.created_at ? new Date(parseISO(b.created_at)) : new Date(0);
+      return dateB - dateA;
+    });
 
+    if (data.length === 0) return toast.error("No records to download");
+
+    const filename = `all_records_${branchKey}_${format(new Date(), "yyyyMMdd_HHmm")}.csv`;
+    generateCSV(data, filename);
+    setDownloadAllModalOpen(false);
+    toast.success("CSV downloaded successfully!");
+  };
+
+  const handleDownloadAllPDF = () => {
+    const data = [...fullFilteredData].sort((a, b) => {
+      const dateA = a.created_at ? new Date(parseISO(a.created_at)) : new Date(0);
+      const dateB = b.created_at ? new Date(parseISO(b.created_at)) : new Date(0);
+      return dateB - dateA;
+    });
+
+    if (data.length === 0) return toast.error("No records to download");
+
+    const filename = `all_records_${branchKey}_${format(new Date(), "yyyyMMdd_HHmm")}.pdf`;
+    generatePDF(data, filename, `All Records - ${branchTitle}`);
+    setDownloadAllModalOpen(false);
+    toast.success("PDF downloaded successfully!");
+  };
+
+  const handleDownloadNewCSV = () => {
+    const downloadStartTime = new Date();
+    const data = [...filteredDownloadData].sort((a, b) => {
+      const dateA = a.created_at ? new Date(parseISO(a.created_at)) : new Date(0);
+      const dateB = b.created_at ? new Date(parseISO(b.created_at)) : new Date(0);
+      return dateB - dateA;
+    });
+
+    if (data.length === 0) return toast.error("No new records to download");
+
+    const filename = `new_records_${branchKey}_${format(new Date(), "yyyyMMdd_HHmm")}.csv`;
+    generateCSV(data, filename);
+    updateDownloadTime(downloadStartTime);
+    onModalCloseCleanup();
+    toast.success("CSV downloaded successfully!");
+  };
+
+  const handleDownloadNewPDF = () => {
+    const downloadStartTime = new Date();
+    const data = [...filteredDownloadData].sort((a, b) => {
+      const dateA = a.created_at ? new Date(parseISO(a.created_at)) : new Date(0);
+      const dateB = b.created_at ? new Date(parseISO(b.created_at)) : new Date(0);
+      return dateB - dateA;
+    });
+
+    if (data.length === 0) return toast.error("No new records to download");
+
+    let filterFrom;
     if (branchLastDownload) {
       filterFrom = new Date(branchLastDownload);
     } else {
-      if (!startDate || !startTime) {
-        toast.error(
-          "Please select a start date and time for first-time download.",
-        );
-        return;
+      if (startDate && startTime) {
+        filterFrom = new Date(startDate);
+        const [hours, minutes] = startTime.split(":").map(Number);
+        filterFrom.setHours(hours, minutes, 0, 0);
       }
-      filterFrom = new Date(startDate);
-      const [hours, minutes] = startTime.split(":").map(Number);
-      filterFrom.setHours(hours, minutes, 0, 0);
     }
 
-    const data = fullFilteredData.filter((item) => {
-      const createdDate = item.created_at ? parseISO(item.created_at) : null;
-      return createdDate && createdDate >= filterFrom;
-    });
-
-    if (data.length === 0)
-      return toast.error("No new records found since last download.");
-
-    const filename = `new_records_${branchKey}_${format(new Date(), "yyyyMMdd_HHmm")}`;
-    if (type === "csv") generateCSV(data, `${filename}.csv`);
-    else generatePDF(data, `${filename}.pdf`, `New Records - ${branchTitle}`, filterFrom, downloadStartTime);
-
+    const filename = `new_records_${branchKey}_${format(new Date(), "yyyyMMdd_HHmm")}.pdf`;
+    generatePDF(data, filename, `New Records - ${branchTitle}`, filterFrom, downloadStartTime);
     updateDownloadTime(downloadStartTime);
-    setShowDownloadOptions(false);
-    toast.success("Download started");
+    onModalCloseCleanup();
+    toast.success("PDF downloaded successfully!");
   };
 
   const handleDelete = async (id) => {
@@ -385,69 +498,27 @@ const BranchBreakDown = () => {
                         </button>
 
                         {showDownloadOptions && (
-                          <div className="absolute right-0 mt-2 w-64 bg-white border border-gray-200 rounded-lg shadow-xl z-20">
-                            <div className="p-3 border-b border-gray-100 bg-gray-50">
-                              <p className="text-xs font-bold text-gray-500 uppercase">
-                                Download All
-                              </p>
-                              <div className="flex gap-2 mt-2">
-                                <button
-                                  onClick={() => handleDownloadAll("csv")}
-                                  className="flex-1 py-1.5 text-xs bg-white border border-gray-300 rounded hover:bg-gray-100"
-                                >
-                                  CSV
-                                </button>
-                                <button
-                                  onClick={() => handleDownloadAll("pdf")}
-                                  className="flex-1 py-1.5 text-xs bg-white border border-gray-300 rounded hover:bg-gray-100"
-                                >
-                                  PDF
-                                </button>
-                              </div>
-                            </div>
-                            <div className="p-3">
-                              <p className="text-xs font-bold text-gray-500 uppercase">
-                                Download New
-                              </p>
-                              {branchLastDownload ? (
-                                <p className="text-[10px] text-secClr mt-1">
-                                  Last:{" "}
-                                  {format(
-                                    parseISO(branchLastDownload),
-                                    "dd/MM HH:mm",
-                                  )}
-                                </p>
-                              ) : (
-                                <div className="mt-2 space-y-2">
-                                  <DatePicker
-                                    selected={startDate}
-                                    onChange={setStartDate}
-                                    placeholderText="Start Date"
-                                    className="w-full text-xs p-1.5 border border-gray-300 rounded"
-                                  />
-                                  <input
-                                    type="time"
-                                    value={startTime}
-                                    onChange={(e) => setStartTime(e.target.value)}
-                                    className="w-full text-xs p-1.5 border border-gray-300 rounded"
-                                  />
-                                </div>
-                              )}
-                              <div className="flex gap-2 mt-2">
-                                <button
-                                  onClick={() => handleDownloadNew("csv")}
-                                  className="flex-1 py-1.5 text-xs bg-secClr text-white rounded hover:bg-secClr/90"
-                                >
-                                  CSV
-                                </button>
-                                <button
-                                  onClick={() => handleDownloadNew("pdf")}
-                                  className="flex-1 py-1.5 text-xs bg-secClr text-white rounded hover:bg-secClr/90"
-                                >
-                                  PDF
-                                </button>
-                              </div>
-                            </div>
+                          <div className="absolute right-0 mt-2 min-w-[200px] bg-white border border-gray-200 rounded-lg shadow-xl z-50 text-sm font-semibold overflow-hidden">
+                            <button
+                              onClick={() => {
+                                if (!allClientsFetched) fetchAllClients();
+                                setShowDownloadOptions(false);
+                                setBranchDownloadModalOpen(true);
+                              }}
+                              className="w-full text-left p-3 border-b border-gray-100 hover:bg-gray-50 transition"
+                            >
+                              Download new records
+                            </button>
+                            <button
+                              onClick={() => {
+                                if (!allClientsFetched) fetchAllClients();
+                                setShowDownloadOptions(false);
+                                setDownloadAllModalOpen(true);
+                              }}
+                              className="w-full text-left p-3 hover:bg-gray-50 transition"
+                            >
+                              Download all records
+                            </button>
                           </div>
                         )}
                       </div>
@@ -518,6 +589,32 @@ const BranchBreakDown = () => {
           </div>
         </main>
       </div>
+
+      <DownloadAllModal
+        isLoadingAllclients={loadingAllClients}
+        isOpen={downloadAllModalOpen}
+        onClose={() => setDownloadAllModalOpen(false)}
+        onDownloadCSV={handleDownloadAllCSV}
+        onDownloadPDF={handleDownloadAllPDF}
+      />
+
+      <BranchDownloadModal
+        isOpen={branchDownloadModalOpen}
+        onClose={onModalCloseCleanup}
+        lastDownloadTime={branchLastDownload}
+        startDate={startDate}
+        setStartDate={setStartDate}
+        startTime={startTime}
+        setStartTime={setStartTime}
+        excludedSites={excludedSites}
+        onExcludeChange={setExcludedSites}
+        initialCount={initialDownloadData.length}
+        excludedCount={initialDownloadData.length - filteredDownloadData.length}
+        remainingCount={filteredDownloadData.length}
+        onDownloadCSV={handleDownloadNewCSV}
+        onDownloadPDF={handleDownloadNewPDF}
+        branchTitle={branchTitle}
+      />
     </div>
   );
 };
