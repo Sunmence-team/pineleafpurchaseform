@@ -31,7 +31,9 @@ const EditClient = () => {
   const [newMiddleName, setNewMiddleName] = useState("");
   const [newLastName, setNewLastName] = useState("");
 
-  const inputClass = "mt-1 block w-full rounded-md border border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm py-3 px-4 pl-10 bg-white";
+  const parentClass =
+    "mt-1 block w-full rounded-md border border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 h-[50px] px-2 flex items-center bg-white";
+  const inputClass = "w-full focus:outline-0 text-sm h-full indent-2";
 
   // Fetch countries and ISO codes on component mount
   useEffect(() => {
@@ -126,7 +128,7 @@ const EditClient = () => {
 
         const isIndividual = (application.purchase_type || 'individual') === 'individual';
         const standardRelationships = isIndividual
-            ? ['brother', 'sister', 'father', 'mother', 'husband', 'hussband', 'wife', 'son', 'daughter']
+            ? ['brother', 'sister', 'father', 'mother', 'husband', 'husband', 'wife', 'son', 'daughter']
             : ['board member / trustee', 'board member', 'trustee', 'president / chairman', 'president', 'chairman', 'general secretary', 'representative'];
         const isStandard = application.next_of_kin_relationship ? standardRelationships.includes(application.next_of_kin_relationship.toLowerCase()) : true;
 
@@ -517,8 +519,8 @@ const EditClient = () => {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
                     <div className="relative">
                       <label className="block text-base font-medium text-gray-700">First Name</label>
-                      <div className="relative">
-                        <FaUser className="absolute top-1/2 transform -translate-y-1/2 left-3 text-secClr" />
+                      <div className={parentClass}>
+                        <FaUser className="text-secClr" />
                         <Field
                           type="text"
                           name="firstName"
@@ -529,8 +531,8 @@ const EditClient = () => {
                     </div>
                     <div className="relative">
                       <label className="block text-base font-medium text-gray-700">Middle Name</label>
-                      <div className="relative">
-                        <FaUser className="absolute top-1/2 transform -translate-y-1/2 left-3 text-secClr" />
+                      <div className={parentClass}>
+                        <FaUser className="text-secClr" />
                         <Field
                           type="text"
                           name="middleName"
@@ -541,8 +543,8 @@ const EditClient = () => {
                     </div>
                     <div className="relative">
                       <label className="block text-base font-medium text-gray-700">Last Name</label>
-                      <div className="relative">
-                        <FaUser className="absolute top-1/2 transform -translate-y-1/2 left-3 text-secClr" />
+                      <div className={parentClass}>
+                        <FaUser className="text-secClr" />
                         <Field
                           type="text"
                           name="lastName"
@@ -553,8 +555,8 @@ const EditClient = () => {
                     </div>
                     <div className="relative">
                       <label className="block text-base font-medium text-gray-700">Gender</label>
-                      <div className="relative">
-                        <FaVenusMars className="absolute top-1/2 transform -translate-y-1/2 left-3 text-secClr" />
+                      <div className={parentClass}>
+                        <FaVenusMars className="text-secClr" />
                         <Field
                           as="select"
                           name="gender"
@@ -576,8 +578,8 @@ const EditClient = () => {
                     </div>
                     <div className="relative">
                       <label className="block text-base font-medium text-gray-700">Marital Status</label>
-                      <div className="relative">
-                        <FaVenusMars className="absolute top-1/2 transform -translate-y-1/2 left-3 text-secClr" />
+                      <div className={parentClass}>
+                        <FaVenusMars className="text-secClr" />
                         <Field
                           as="select"
                           name="maritalStatus"
@@ -607,11 +609,11 @@ const EditClient = () => {
                   </h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
                     <div className="relative">
-                      <label className="block text-base font-medium text-gray-700 font-semibold">
+                      <label className="block text-base font-medium text-gray-700">
                         {values.purchase_type === 'club' ? 'Club Name' : 'Association Name'}
                       </label>
-                      <div className="relative">
-                        <BiBriefcase className="absolute top-1/2 transform -translate-y-1/2 left-3 text-secClr text-lg" />
+                      <div className={parentClass}>
+                        <BiBriefcase className="text-secClr" />
                         <Field
                           type="text"
                           name="clubName"
@@ -623,9 +625,9 @@ const EditClient = () => {
                     </div>
 
                     <div className="relative">
-                      <label className="block text-base font-medium text-gray-700 font-semibold">Official Contact Number</label>
-                      <div className="relative">
-                        <FaPhoneAlt className="absolute top-1/2 transform -translate-y-1/2 left-3 text-secClr" />
+                      <label className="block text-base font-medium text-gray-700">Official Contact Number</label>
+                      <div className={parentClass}>
+                        <FaPhoneAlt classNaame="text-secClr" />
                         <Field
                           type="text"
                           name="clubContact"
@@ -638,54 +640,23 @@ const EditClient = () => {
                   </div>
 
                   {/* Members Manager */}
-                  <div className="bg-gray-50 border border-secClr/20 p-4 sm:p-6 rounded-2xl space-y-4">
-                    <h4 className="font-bold text-secClr text-lg">Registered Members</h4>
-                    <p className="text-xs text-gray-500">
-                      Please add all individual members belonging to this {values.purchase_type}. (At least 1 is required)
-                    </p>
+                  <div className="space-y-4">
+                    <div className="">
+                      <h4 className="font-bold text-secClr text-lg">Registered Members</h4>
+                      <p className="text-xs text-gray-500">
+                        Please add all individual members belonging to this {values.purchase_type}. (At least 1 is required)
+                      </p>
+                    </div>
 
                     <FieldArray name="clubMembers">
                       {({ push, remove }) => (
                         <div className="space-y-4">
                           {/* Add Member form */}
-                          <div className="bg-white p-4 rounded-xl border border-gray-150 shadow-sm space-y-3">
-                            <p className="text-xs font-bold text-gray-700 uppercase tracking-wide">
-                              Add New Member
-                            </p>
-                            <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
-                              <select
-                                value={newTitle}
-                                onChange={(e) => setNewTitle(e.target.value)}
-                                className="w-full text-sm border border-gray-300 rounded-md py-2 px-3 focus:outline-none focus:ring-1 focus:ring-secClr"
-                              >
-                                <option value="">Title</option>
-                                {["Mr", "Mrs", "Miss", "Dr", "Prof", "Chief", "Hon"].map((t) => (
-                                  <option key={t} value={t}>{t}</option>
-                                ))}
-                              </select>
-                              <input
-                                type="text"
-                                placeholder="First Name *"
-                                value={newFirstName}
-                                onChange={(e) => setNewFirstName(e.target.value)}
-                                className="w-full text-sm border border-gray-300 rounded-md py-2 px-3 focus:outline-none focus:ring-1 focus:ring-secClr"
-                              />
-                              <input
-                                type="text"
-                                placeholder="Middle Name (Opt)"
-                                value={newMiddleName}
-                                onChange={(e) => setNewMiddleName(e.target.value)}
-                                className="w-full text-sm border border-gray-300 rounded-md py-2 px-3 focus:outline-none focus:ring-1 focus:ring-secClr"
-                              />
-                              <input
-                                type="text"
-                                placeholder="Last Name *"
-                                value={newLastName}
-                                onChange={(e) => setNewLastName(e.target.value)}
-                                className="w-full text-sm border border-gray-300 rounded-md py-2 px-3 focus:outline-none focus:ring-1 focus:ring-secClr"
-                              />
-                            </div>
-                            <div className="flex justify-end">
+                          <div className="bg-white p-4 rounded-xl border border-secClr/10 space-y-3">
+                            <div className="flex justify-between md:items-center gap-5">
+                              <p className="text-sm font-bold text-gray-700 uppercase tracking-wide">
+                                Add New Member
+                              </p>
                               <button
                                 type="button"
                                 onClick={() => {
@@ -705,16 +676,49 @@ const EditClient = () => {
                                   setNewLastName("");
                                   toast.success("Member added!");
                                 }}
-                                className="inline-flex items-center gap-2 px-4 py-2 bg-secClr text-white text-xs font-bold rounded-lg hover:bg-secClr/95 shadow"
+                                className="inline-flex justify-center items-center gap-2 px-4 h-10 bg-secClr text-white text-xs font-bold rounded-lg hover:bg-secClr/95 shadow"
                               >
-                                <FaPlus /> Add Member
+                                <FaPlus /> <span>Add Member</span>
                               </button>
+                            </div>
+                            <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
+                              <select
+                                value={newTitle}
+                                onChange={(e) => setNewTitle(e.target.value)}
+                                className="w-full text-sm border border-gray-300 rounded-md h-10 indent-3 focus:outline-none"
+                              >
+                                <option value="">Title</option>
+                                {["Mr", "Mrs", "Miss"].map((t) => (
+                                  <option key={t} value={t}>{t}</option>
+                                ))}
+                              </select>
+                              <input
+                                type="text"
+                                placeholder="First Name *"
+                                value={newFirstName}
+                                onChange={(e) => setNewFirstName(e.target.value)}
+                                className="w-full text-sm border border-gray-300 rounded-md h-10 indent-3 focus:outline-none"
+                              />
+                              <input
+                                type="text"
+                                placeholder="Middle Name (Opt)"
+                                value={newMiddleName}
+                                onChange={(e) => setNewMiddleName(e.target.value)}
+                                className="w-full text-sm border border-gray-300 rounded-md h-10 indent-3 focus:outline-none"
+                              />
+                              <input
+                                type="text"
+                                placeholder="Last Name *"
+                                value={newLastName}
+                                onChange={(e) => setNewLastName(e.target.value)}
+                                className="w-full text-sm border border-gray-300 rounded-md h-10 indent-3 focus:outline-none"
+                              />
                             </div>
                           </div>
 
                           {/* Members table */}
                           {values.clubMembers && values.clubMembers.length > 0 ? (
-                            <div className="overflow-x-auto bg-white rounded-xl border border-gray-150 shadow-sm">
+                            <div className="overflow-x-auto bg-white rounded-xl border border-secClr/10">
                               <table className="w-full text-left text-sm">
                                 <thead className="bg-gray-50 text-gray-700">
                                   <tr>
@@ -770,8 +774,8 @@ const EditClient = () => {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
                   <div className="relative">
                     <label className="block text-base font-medium text-gray-700">Country of Residence</label>
-                    <div className="relative">
-                      <FaMap className="absolute top-1/2 transform -translate-y-1/2 left-3 text-secClr" />
+                    <div className={parentClass}>
+                      <FaMap className="text-secClr" />
                       <Field
                         as="select"
                         name="countryOfResidence"
@@ -808,8 +812,8 @@ const EditClient = () => {
                   </div>
                   <div className="relative">
                     <label className="block text-base font-medium text-gray-700">State of Origin</label>
-                    <div className="relative">
-                      <FaMapMarkerAlt className="absolute top-1/2 transform -translate-y-1/2 left-3 text-secClr" />
+                    <div className={parentClass}>
+                      <FaMapMarkerAlt claame="-3 text-secClr" />
                       <Field
                         as="select"
                         name="stateOfOrigin"
@@ -848,10 +852,10 @@ const EditClient = () => {
                       <ErrorMessage name="stateOfOrigin" component="div" className="text-xs text-red-500 mt-1" />
                     </div>
                   </div>
-                  <div className="relative">
+                  <div className="md:col-span-2 relative">
                     <label className="block text-base font-medium text-gray-700">Local Government (LGA)</label>
-                    <div className="relative">
-                      <FaMapMarkerAlt className="absolute top-1/2 transform -translate-y-1/2 left-3 text-secClr" />
+                    <div className={parentClass}>
+                      <FaMapMarkerAlt claame="-3 text-secClr" />
                       <Field
                         type="text"
                         name="lga"
@@ -863,13 +867,12 @@ const EditClient = () => {
 
                   <div className="md:col-span-2 relative">
                     <label className="block text-base font-medium text-gray-700">Address</label>
-                    <div className="relative">
-                      <FaAddressCard className="absolute top-1/2 transform -translate-y-1/2 left-3 text-secClr" />
+                    <div className={parentClass + " items-start! h-48! p-2!"}>
+                      <FaAddressCard clasame="text-secClr" />
                       <Field
                         as="textarea"
                         name="address"
-                        className={`${inputClass} ${errors.address && touched.address ? 'border-red-500' : ''}`}
-                        rows="3"
+                        className={`${inputClass + " resize-none"} ${errors.address && touched.address ? 'border-red-500' : ''}`}
                         placeholder={
                           values.purchase_type === "individual"
                             ? "Enter your residential address"
@@ -916,8 +919,8 @@ const EditClient = () => {
                       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 md:gap-6">
                         <div className="relative">
                           <label className="block text-base font-medium text-gray-700">Title</label>
-                          <div className="relative">
-                            <FaUser className="absolute top-1/2 transform -translate-y-1/2 left-3 text-secClr" />
+                          <div className={parentClass}>
+                            <FaUser className="text-secClr" />
                             <Field
                               as="select"
                               name="spouseTitle"
@@ -939,8 +942,8 @@ const EditClient = () => {
                         </div>
                         <div className="relative">
                           <label className="block text-base font-medium text-gray-700">First Name</label>
-                          <div className="relative">
-                            <FaUser className="absolute top-1/2 transform -translate-y-1/2 left-3 text-secClr" />
+                          <div className={parentClass}>
+                            <FaUser className="text-secClr" />
                             <Field
                               type="text"
                               name="spouseFirstName"
@@ -951,8 +954,8 @@ const EditClient = () => {
                         </div>
                         <div className="relative">
                           <label className="block text-base font-medium text-gray-700">Middle Name</label>
-                          <div className="relative">
-                            <FaUser className="absolute top-1/2 transform -translate-y-1/2 left-3 text-secClr" />
+                          <div className={parentClass}>
+                            <FaUser className="text-secClr" />
                             <Field
                               type="text"
                               name="spouseMiddleName"
@@ -963,8 +966,8 @@ const EditClient = () => {
                         </div>
                         <div className="relative">
                           <label className="block text-base font-medium text-gray-700">Last Name</label>
-                          <div className="relative">
-                            <FaUser className="absolute top-1/2 transform -translate-y-1/2 left-3 text-secClr" />
+                          <div className={parentClass}>
+                            <FaUser className="text-secClr" />
                             <Field
                               type="text"
                               name="spouseLastName"
@@ -986,8 +989,8 @@ const EditClient = () => {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
                     <div className="relative">
                       <label className="block text-base font-medium text-gray-700">Email</label>
-                      <div className="relative">
-                        <FaEnvelope className="absolute top-1/2 transform -translate-y-1/2 left-3 text-secClr" />
+                      <div className={parentClass}>
+                        <FaEnvelope classNaame="ext-secClr" />
                         <Field
                           type="email"
                           name="email"
@@ -998,8 +1001,8 @@ const EditClient = () => {
                     </div>
                     <div className="relative">
                       <label className="block text-base font-medium text-gray-700">Mobile Number</label>
-                      <div className="relative">
-                        <FaPhoneAlt className="absolute top-1/2 transform -translate-y-1/2 left-3 text-secClr" />
+                      <div className={parentClass}>
+                        <FaPhoneAlt classNaame="ext-secClr" />
                         <Field
                           type="tel"
                           name="mobileNumber"
@@ -1023,8 +1026,8 @@ const EditClient = () => {
                     <label className="block text-base font-medium text-gray-700">
                       {values.purchase_type === 'individual' ? 'Full Name' : 'Representative / Trustee Full Name'}
                     </label>
-                    <div className="relative">
-                      <FaUser className="absolute top-1/2 transform -translate-y-1/2 left-3 text-secClr" />
+                    <div className={parentClass}>
+                      <FaUser className="text-secClr" />
                       <Field
                         type="text"
                         name="nextOfKinFullName"
@@ -1039,8 +1042,8 @@ const EditClient = () => {
                     <label className="block text-base font-medium text-gray-700">
                       {values.purchase_type === 'individual' ? 'Relationship' : 'Role / Designation'}
                     </label>
-                    <div className="relative">
-                      <FaUser className="absolute top-1/2 transform -translate-y-1/2 left-3 text-secClr" />
+                    <div className={parentClass}>
+                      <FaUser className="text-secClr" />
                       <Field
                         as="select"
                         name="nextOfKinRelationship"
@@ -1079,8 +1082,8 @@ const EditClient = () => {
                       <label className="block text-base font-medium text-gray-700">
                         {values.purchase_type === 'individual' ? 'Specify Relationship' : 'Specify Role / Designation'}
                       </label>
-                      <div className="relative">
-                        <FaUser className="absolute top-1/2 transform -translate-y-1/2 left-3 text-secClr" />
+                      <div className={parentClass}>
+                        <FaUser className="text-secClr" />
                         <Field
                           type="text"
                           name="nextOfKinRelationshipOther"
@@ -1098,8 +1101,8 @@ const EditClient = () => {
                     <label className="block text-base font-medium text-gray-700">
                       {values.purchase_type === 'individual' ? 'Phone' : 'Representative Contact Mobile'}
                     </label>
-                    <div className="relative">
-                      <FaPhoneAlt className="absolute top-1/2 transform -translate-y-1/2 left-3 text-secClr" />
+                    <div className={parentClass}>
+                      <FaPhoneAlt classNaame="ext-secClr" />
                       <Field
                         type="tel"
                         name="nextOfKinMobileNumber"
@@ -1113,8 +1116,8 @@ const EditClient = () => {
                     <label className="block text-base font-medium text-gray-700">
                       {values.purchase_type === 'individual' ? 'Email' : 'Representative Contact Email'}
                     </label>
-                    <div className="relative">
-                      <FaEnvelope className="absolute top-1/2 transform -translate-y-1/2 left-3 text-secClr" />
+                    <div className={parentClass}>
+                      <FaEnvelope classNaame="ext-secClr" />
                       <Field
                         type="email"
                         name="nextOfKinEmail"
@@ -1133,8 +1136,8 @@ const EditClient = () => {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
                   <div className="relative">
                     <label className="block text-base font-medium text-gray-700">Land Price</label>
-                    <div className="relative">
-                      <FaUser className="absolute top-1/2 transform -translate-y-1/2 left-3 text-secClr" />
+                    <div className={parentClass}>
+                      <FaUser className="text-secClr" />
                       <Field
                         type="text"
                         name="clientDeclarationLandPrice"
@@ -1145,8 +1148,8 @@ const EditClient = () => {
                   </div>
                   <div className="relative">
                     <label className="block text-base font-medium text-gray-700">Number of Plots</label>
-                    <div className="relative">
-                      <FaUser className="absolute top-1/2 transform -translate-y-1/2 left-3 text-secClr" />
+                    <div className={parentClass}>
+                      <FaUser className="text-secClr" />
                       <Field
                         type="text"
                         name="clientDeclarationNumberOfPlots"
@@ -1157,8 +1160,8 @@ const EditClient = () => {
                   </div>
                   <div className="relative">
                     <label className="block text-base font-medium text-gray-700">Site Location</label>
-                    <div className="relative">
-                      <FaMapMarkerAlt className="absolute top-1/2 transform -translate-y-1/2 left-3 text-secClr" />
+                    <div className={parentClass}>
+                      <FaMapMarkerAlt claame="-3 text-secClr" />
                       <Field
                         type="text"
                         name="clientDeclarationSiteLocation"
@@ -1169,8 +1172,8 @@ const EditClient = () => {
                   </div>
                   <div className="relative">
                     <label className="block text-base font-medium text-gray-700">Plot Number</label>
-                    <div className="relative">
-                      <FaMapMarkerAlt className="absolute top-1/2 transform -translate-y-1/2 left-3 text-secClr" />
+                    <div className={parentClass}>
+                      <FaMapMarkerAlt claame="-3 text-secClr" />
                       <Field
                         type="text"
                         name="clientDeclarationPlotNumber"
@@ -1181,8 +1184,8 @@ const EditClient = () => {
                   </div>
                   <div className="relative">
                     <label className="block text-base font-medium text-gray-700">Branch</label>
-                    <div className="relative">
-                      <FaMapMarkerAlt className="absolute top-1/2 transform -translate-y-1/2 left-3 text-secClr" />
+                    <div className={parentClass}>
+                      <FaMapMarkerAlt claame="-3 text-secClr" />
                       <Field
                         type="text"
                         name="branches"
@@ -1193,8 +1196,8 @@ const EditClient = () => {
                   </div>
                   <div className="relative">
                     <label className="block text-base font-medium text-gray-700">Declaration Date</label>
-                    <div className="relative">
-                      <FaCalendarAlt className="absolute top-1/2 transform -translate-y-1/2 left-3 text-secClr z-10" />
+                    <div className={parentClass}>
+                      <FaCalendarAlt clasame="3 text-secClr z-10" />
                       <DatePicker
                         selected={values.clientDeclarationDate}
                         onChange={(date) => setFieldValue('clientDeclarationDate', date)}
@@ -1217,8 +1220,8 @@ const EditClient = () => {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
                   <div className="relative">
                     <label className="block text-base font-medium text-gray-700">Full Name</label>
-                    <div className="relative">
-                      <FaUser className="absolute top-1/2 transform -translate-y-1/2 left-3 text-secClr" />
+                    <div className={parentClass}>
+                      <FaUser className="text-secClr" />
                       <Field
                         type="text"
                         name="referralFullName"
@@ -1229,8 +1232,8 @@ const EditClient = () => {
                   </div>
                   <div className="relative">
                     <label className="block text-base font-medium text-gray-700">Phone</label>
-                    <div className="relative">
-                      <FaPhoneAlt className="absolute top-1/2 transform -translate-y-1/2 left-3 text-secClr" />
+                    <div className={parentClass}>
+                      <FaPhoneAlt classNaame="ext-secClr" />
                       <Field
                         type="tel"
                         name="referralMobileNumber"

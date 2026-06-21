@@ -10,7 +10,7 @@ export const ClientsProvider = ({ children }) => {
   const [allClients, setAllClients] = useState([]);
   const [loadingAllClients, setLoadingAllClients] = useState(false);
   const [allClientsFetched, setAllClientsFetched] = useState(false);
-  
+
   // For paginated/search results
   const [applications, setApplications] = useState([]);
   const [loadingApplications, setLoadingApplications] = useState(false);
@@ -35,103 +35,108 @@ export const ClientsProvider = ({ children }) => {
     } else {
       console.error("Unexpected response structure:", response.data);
       throw new Error(
-        "Response data is not an array or does not contain an array of clients"
+        "Response data is not an array or does not contain an array of clients",
       );
     }
 
     const mappedApplications = applications.map((item) => ({
-      id: item.id || "",
-      client_name: item.client_name || "",
-      email: item.email || "",
-      mobile_number: item.mobile_number || "",
-      branches: item.branches || "",
-      created_at: item.created_at || "",
-      address: item.address || "",
-      country: item.country || "",
-      declaration_date: item.declaration_date || "",
-      declaration_name: item.declaration_name || "",
-      dob: item.dob || "",
-      first_name: item.first_name || "",
-      first_name_of_spouse: item.first_name_of_spouse || "",
-      gender: item.gender || "",
-      land_price: item.land_price || "",
-      language: item.language || "",
-      last_name: item.last_name || "",
-      last_name_of_spouse: item.last_name_of_spouse || "",
-      lga: item.lga || "",
-      marital_status: item.marital_status || "",
-      middle_name: item.middle_name || "",
-      middle_name_of_spouse: item.middle_name_of_spouse || "",
-      nationality: item.nationality || "",
-      next_of_kin_address: item.next_of_kin_address || "",
-      next_of_kin_email: item.next_of_kin_email || "",
-      next_of_kin_full_name: item.next_of_kin_full_name || "",
-      next_of_kin_mobile_number: item.next_of_kin_mobile_number || "",
-      number_of_plot: item.number_of_plot || "",
-      occupation: item.occupation || "",
-      personal_picture: item.personal_picture || "",
-      plot_number: item.plot_number || "",
-      referral_date: item.referral_date || "",
-      referral_email: item.referral_email || "",
-      referral_name: item.referral_name || "",
-      referral_number: item.referral_number || "",
-      signature: item.signature || "",
-      site_location: item.site_location || "",
-      state_of_origin: item.state_of_origin || "",
-      telephone_number: item.telephone_number || "",
-      title: item.title || "",
-      title_of_spouse: item.title_of_spouse || "",
-      updated_at: item.updated_at || "",
+      id: item.id || "N/A",
+      client_name: item.client_name || item.club_name || "N/A",
+      email: item.email || "N/A",
+      mobile_number: item.mobile_number || item.club_contact || "N/A",
+      branches: item.branches || "N/A",
+      created_at: item.created_at || "N/A",
+      address: item.address || "N/A",
+      country: item.country || "N/A",
+      declaration_date: item.declaration_date || "N/A",
+      declaration_name: item.declaration_name || "N/A",
+      dob: item.dob || "N/A",
+      first_name: item.first_name || "N/A",
+      first_name_of_spouse: item.first_name_of_spouse || "N/A",
+      gender: item.gender || "N/A",
+      land_price: item.land_price || "N/A",
+      language: item.language || "N/A",
+      last_name: item.last_name || "N/A",
+      last_name_of_spouse: item.last_name_of_spouse || "N/A",
+      lga: item.lga || "N/A",
+      marital_status: item.marital_status || "N/A",
+      middle_name: item.middle_name || "N/A",
+      middle_name_of_spouse: item.middle_name_of_spouse || "N/A",
+      nationality: item.nationality || "N/A",
+      next_of_kin_address: item.next_of_kin_address || "N/A",
+      next_of_kin_email: item.next_of_kin_email || "N/A",
+      next_of_kin_full_name: item.next_of_kin_full_name || "N/A",
+      next_of_kin_mobile_number: item.next_of_kin_mobile_number || "N/A",
+      number_of_plot: item.number_of_plot || "N/A",
+      occupation: item.occupation || "N/A",
+      personal_picture: item.personal_picture || "N/A",
+      plot_number: item.plot_number || "N/A",
+      referral_date: item.referral_date || "N/A",
+      referral_email: item.referral_email || "N/A",
+      referral_name: item.referral_name || "N/A",
+      referral_number: item.referral_number || "N/A",
+      signature: item.signature || "N/A",
+      site_location: item.site_location || "N/A",
+      state_of_origin: item.state_of_origin || "N/A",
+      telephone_number: item.telephone_number || "N/A",
+      title: item.title || "N/A",
+      title_of_spouse: item.title_of_spouse || "N/A",
+      updated_at: item.updated_at || "N/A",
     }));
 
     return { applications: mappedApplications, meta };
   };
 
-  const fetchAllClients = useCallback(async (force = false) => {
-    if ((allClientsFetched && !force) || loadingAllClients) return;
+  const fetchAllClients = useCallback(
+    async (force = false) => {
+      if ((allClientsFetched && !force) || loadingAllClients) return;
 
-    const token = localStorage.getItem("token");
-    if (!token) return;
+      const token = localStorage.getItem("token");
+      if (!token) return;
 
-    setLoadingAllClients(true);
+      setLoadingAllClients(true);
 
-    try {
-      let allData = [];
-      let page = 1;
-      let lastPage = 1;
+      try {
+        let allData = [];
+        let page = 1;
+        let lastPage = 1;
 
-      do {
-        const payload = { page, per_page: 200 };
-        const response = await axios.post(
-          `${API_URL}/api/all_clients`,
-          payload,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-              "Content-Type": "application/json",
+        do {
+          const payload = { page, per_page: 200 };
+          const response = await axios.post(
+            `${API_URL}/api/all_clients`,
+            payload,
+            {
+              headers: {
+                Authorization: `Bearer ${token}`,
+                "Content-Type": "application/json",
+              },
             },
-          }
-        );
+          );
 
-        const { applications, meta } = parseApplicationsResponse(response);
-        allData.push(...applications);
+          const { applications, meta } = parseApplicationsResponse(response);
+          allData.push(...applications);
 
-        lastPage = meta.last_page || 1;
-        page += 1;
+          lastPage = meta.last_page || 1;
+          page += 1;
 
-        console.log(`Loaded ${allData.length} clients (page ${page - 1}/${lastPage})`);
-      } while (page <= lastPage);
+          console.log(
+            `Loaded ${allData.length} clients (page ${page - 1}/${lastPage})`,
+          );
+        } while (page <= lastPage);
 
-      setAllClients(allData);
-      setAllClientsFetched(true);
-      toast.success("Client data synchronized");
-    } catch (error) {
-      console.error("Error fetching all clients:", error);
-      toast.error("Failed to load all clients");
-    } finally {
-      setLoadingAllClients(false);
-    }
-  }, [allClientsFetched, loadingAllClients]);
+        setAllClients(allData);
+        setAllClientsFetched(true);
+        toast.success("Client data synchronized");
+      } catch (error) {
+        console.error("Error fetching all clients:", error);
+        toast.error("Failed to load all clients");
+      } finally {
+        setLoadingAllClients(false);
+      }
+    },
+    [allClientsFetched, loadingAllClients],
+  );
 
   const fetchApplications = useCallback(async (page, perPage, query = "") => {
     const token = localStorage.getItem("token");
@@ -146,16 +151,20 @@ export const ClientsProvider = ({ children }) => {
           {
             headers: { Authorization: `Bearer ${token}` },
             params: { page, per_page: perPage },
-          }
+          },
         );
       } else {
         const payload = { page, per_page: perPage };
         response = await axios.post(`${API_URL}/api/all_clients`, payload, {
-          headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
         });
       }
 
-      const { applications: mappedApps, meta } = parseApplicationsResponse(response);
+      const { applications: mappedApps, meta } =
+        parseApplicationsResponse(response);
       setApplications(mappedApps);
       setTotalPages(meta.last_page || 1);
       setTotalRecords(meta.total || mappedApps.length);

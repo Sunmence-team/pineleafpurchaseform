@@ -27,10 +27,10 @@ const ApplicationsList = ({
               <div className="flex justify-between gap-2 items-center">
                 <div className="min-w-0 flex-1">
                   <p className="text-sm font-semibold text-gray-900 break-words line-clamp-2">
-                    {(currentPage - 1) * recordsPerPage + index + 1}. {item.client_name}
+                    {(currentPage - 1) * recordsPerPage + index + 1}. {item.client_name ?? item.club_name}
                   </p>
-                  <p className="text-xs text-gray-600 break-words">{item.email}</p>
-                  <p className="text-xs text-gray-600 break-words">{item.mobile_number}</p>
+                  <p className="text-xs text-gray-600 break-words">{item.email ?? "-"}</p>
+                  <p className="text-xs text-gray-600 break-words">{item.mobile_number ?? item.club_contact}</p>
                 </div>
                 <div className="flex flex-col gap-2 flex-shrink-0">
                   <div className="flex gap-2 flex-shrink-0">
@@ -94,10 +94,10 @@ const ApplicationsList = ({
                     {(currentPage - 1) * recordsPerPage + index + 1}
                   </td>
                   <td className="p-2 md:p-5 text-sm md:text-base font-medium text-gray-900 max-w-[400px] min-w-[300px]">
-                    <p className="lg:line-clamp-0 line-clamp-2">{item.client_name}</p>
+                    <p className="lg:line-clamp-0 line-clamp-2">{item.client_name ?? item.club_name}</p>
                   </td>
-                  <td className="p-2 md:p-5 whitespace-nowrap text-sm md:text-base text-gray-700">{item.email}</td>
-                  <td className="p-2 md:p-5 whitespace-nowrap text-sm md:text-base text-gray-700">{item.mobile_number}</td>
+                  <td className="p-2 md:p-5 whitespace-nowrap text-sm md:text-base text-gray-700">{item.email ?? "-"}</td>
+                  <td className="p-2 md:p-5 whitespace-nowrap text-sm md:text-base text-gray-700">{item.mobile_number ?? item.club_contact}</td>
                   <td className="p-2 md:p-5 whitespace-nowrap text-sm md:text-base text-gray-700">{item.branches}</td>
                   <td className="p-2 md:p-5 text-sm md:text-base text-gray-700 max-w-[300px] min-w-[300px]">
                     <p className="lg:line-clamp-0 line-clamp-2">{item.site_location}</p>
