@@ -372,9 +372,9 @@ const CreateProperties = () => {
                 </label>
 
                 {imagePreviews.length > 0 && (
-                  <div className="mt-4 grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-4">
+                  <div className="mt-4 grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-4 border-2">
                     {imagePreviews.map((preview, index) => (
-                      <div key={index} className="relative group">
+                      <div key={index} className="relative group border-2">
                         <img
                           src={preview}
                           alt={`Preview ${index}`}
