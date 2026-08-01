@@ -331,7 +331,7 @@ const CreateProperties = () => {
                   name="description"
                   as="textarea"
                   rows="4"
-                  className="mt-1 block w-full rounded-md border border-gray-300 shadow-sm focus:border-primary focus:ring-primary p-3 text-sm outline-none"
+                  className="mt-1 block w-full rounded-md border border-gray-300 focus:border-primary focus:ring-primary p-3 text-sm outline-none"
                   placeholder="Describe the property details..."
                 />
                 <ErrorMessage
@@ -372,13 +372,13 @@ const CreateProperties = () => {
                 </label>
 
                 {imagePreviews.length > 0 && (
-                  <div className="mt-4 grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-4 border-2">
+                  <div className="mt-4 flex flex-wrap gap-4">
                     {imagePreviews.map((preview, index) => (
-                      <div key={index} className="relative group border-2">
+                      <div key={index} className="relative group">
                         <img
                           src={preview}
                           alt={`Preview ${index}`}
-                          className="h-20 w-20 object-cover rounded-lg border border-gray-200"
+                          className="h-24 w-24 object-cover rounded-lg border border-gray-200"
                         />
                         <button
                           type="button"
