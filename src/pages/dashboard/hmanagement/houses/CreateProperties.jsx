@@ -329,12 +329,12 @@ const CreateProperties = () => {
               </div>
 
               <div>
-                <label className={labelClasses}>Property Images</label>
-                <div className="mt-2 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-md hover:border-primary transition cursor-pointer relative">
+                <span className={labelClasses}>Property Images</span>
+                <label htmlFor="propertyImages" className="mt-2 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-md hover:border-primary transition cursor-pointer relative">
                   <div className="space-y-1 text-center">
                     <FaCloudUploadAlt className="mx-auto h-12 w-12 text-gray-400" />
                     <div className="flex text-sm text-gray-600">
-                      <label className="relative cursor-pointer bg-white rounded-md font-medium text-primary hover:text-secClr">
+                      <p className="relative cursor-pointer bg-white rounded-md font-medium text-primary hover:text-secClr">
                         <span>Upload files</span>
                         <input
                           type="file"
@@ -342,15 +342,16 @@ const CreateProperties = () => {
                           onChange={handleImageChange}
                           className="sr-only"
                           accept="image/*"
+                          id="propertyImages"
                         />
-                      </label>
+                      </p>
                       <p className="pl-1">or drag and drop</p>
                     </div>
                     <p className="text-xs text-gray-500">
                       PNG, JPG, GIF up to 10MB
                     </p>
                   </div>
-                </div>
+                </label>
 
                 {imagePreviews.length > 0 && (
                   <div className="mt-4 grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-4">
