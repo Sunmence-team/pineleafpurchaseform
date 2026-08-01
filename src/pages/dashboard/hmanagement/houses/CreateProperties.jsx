@@ -91,12 +91,25 @@ const CreateProperties = () => {
 
   const handleImageChange = (e) => {
     const files = Array.from(e.target.files);
-    setImages((prev) => [...prev, ...files]);
+    updateImages(files);
+  };
 
+  const handleDrop = (e) => {
+    e.preventDefault();
+    const files = Array.from(e.dataTransfer.files);
+    updateImages(files);
+  };
+  
+  const updateImages = (files) => {
+    setImages((prev) => [...prev, ...files]);
     const newPreviews = files.map((file) => URL.createObjectURL(file));
     setImagePreviews((prev) => [...prev, ...newPreviews]);
   };
-
+  
+  const handleDragOver = (e) => {
+    e.preventDefault();
+  };
+  
   const removeImage = (index) => {
     setImages((prev) => prev.filter((_, i) => i !== index));
     setImagePreviews((prev) => prev.filter((_, i) => i !== index));
@@ -330,7 +343,12 @@ const CreateProperties = () => {
 
               <div>
                 <span className={labelClasses}>Property Images</span>
-                <label htmlFor="propertyImages" className="mt-2 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-md hover:border-primary transition cursor-pointer relative">
+                <label 
+                  htmlFor="propertyImages" 
+                  onDragOver={handleDragOver}
+                  onDrop={handleDrop}
+                  className="mt-2 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-md hover:border-primary transition cursor-pointer relative"
+                >
                   <div className="space-y-1 text-center">
                     <FaCloudUploadAlt className="mx-auto h-12 w-12 text-gray-400" />
                     <div className="flex text-sm text-gray-600">
