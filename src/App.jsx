@@ -22,6 +22,7 @@ import ManageSubscriptions from "./pages/dashboard/hmanagement/subscriptions/Man
 import ManageFlaggedAccounts from "./pages/dashboard/hmanagement/flaggedAccounts/ManageFlaggedAccounts";
 import ManageRefunds from "./pages/dashboard/hmanagement/refunds/ManageRefunds";
 import ViewRefund from "./pages/dashboard/hmanagement/refunds/ViewRefund";
+import ChangePassword from "./pages/ChangePassword";
 
 function App() {
   useEffect(() => {
@@ -45,6 +46,7 @@ function App() {
           <Route index path="/" element={<Form />} />
           <Route path="/login" element={<Login />} />
           <Route path="/success" element={<Success />} />
+          <Route path="/change-password" element={<ChangePassword />} />
           <Route path="/dashboard" element={<Dashboard />} />
           <Route
             path="/dashboard/branch/:branch"
