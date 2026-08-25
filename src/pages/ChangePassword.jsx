@@ -111,7 +111,7 @@ const ChangePassword = () => {
         </header>
 
         <main className="flex-1 overflow-y-auto p-4 md:p-8">
-          <div className="mx-auto bg-white rounded-2xl shadow-xl p-4 md:p-8 w-full max-w-lg">
+          <div className="mx-auto bg-white rounded-2xl shadow-xl p-4 md:p-8 w-full">
             <form onSubmit={formik.handleSubmit} className="space-y-6">
               <div className="relative">
                 <label

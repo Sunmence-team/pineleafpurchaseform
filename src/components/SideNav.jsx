@@ -1,13 +1,15 @@
 import React, { useState } from "react";
 import assets from "../assets/assests";
-import { NavLink } from "react-router-dom";
+import { NavLink, useNavigate } from "react-router-dom";
 import { FaX } from "react-icons/fa6";
 import { IoChevronDown } from "react-icons/io5";
-import { FaLock } from "react-icons/fa";
+import { FaRightFromBracket } from "react-icons/fa6";
+import { toast } from "sonner";
 
 const SideNav = ({ openMenu, setOpenMenu, branches, isLoading }) => {
   if (!openMenu) return null;
 
+  const navigate = useNavigate();
   const [openDropMenu, setOpenDropMenu] = useState(false);
   const [openDropHMMenu, setOpenDropHMMenu] = useState(false);
 
@@ -44,6 +46,14 @@ const SideNav = ({ openMenu, setOpenMenu, branches, isLoading }) => {
 
   const role = localStorage.getItem("role").toLowerCase();
 
+  const handleLogout = () => {
+    localStorage.removeItem("token");
+    localStorage.removeItem("role");
+    toast.success("Logged out successfully");
+    navigate("/login");
+    setOpenMenu(false);
+  };
+
   return (
     <div className="fixed top-0 left-0 z-99999 w-full h-full bg-black/50">
       <div className="bg-white lg:w-1/5 md:1/2 w-full h-full flex flex-col md:px-6 py-2 px-4">
@@ -61,7 +71,8 @@ const SideNav = ({ openMenu, setOpenMenu, branches, isLoading }) => {
             <FaX />
           </button>
         </div>
-        <ul className="flex flex-col pe-1 gap-4 h-[88%] overflow-y-scroll styled-scrollbar">
+
+        <ul className="flex flex-col pe-1 gap-4 flex-1 overflow-y-scroll styled-scrollbar">
           {role === "admin" ? (
             <>
               <NavLink
@@ -72,22 +83,13 @@ const SideNav = ({ openMenu, setOpenMenu, branches, isLoading }) => {
                 }
                 onClick={() => setOpenMenu(false)}
               >
-            Dashboard
-          </NavLink>
-          <NavLink
-            to="/change-password"
-            className={({ isActive }) =>
-              `py-3 text-sm flex items-center gap-2 px-4 rounded-md font-medium ${isActive ? "bg-secClr text-white" : ""}`
-            }
-            onClick={() => setOpenMenu(false)}
-          >
-             Change Password
-          </NavLink>
-          <div className="space-y-2">
-            <div
-              className={`flex items-center gap-3 w-full text-black px-4 py-3 cursor-pointer text-sm rounded-md ${openDropMenu ? "bg-secClr text-white" : ""}`}
-              title={"branches"}
-              onClick={() => setOpenDropMenu(!openDropMenu)}
+                Dashboard
+              </NavLink>
+              <div className="space-y-2">
+                <div
+                  className={`flex items-center gap-3 w-full text-black px-4 py-3 cursor-pointer text-sm rounded-md ${openDropMenu ? "bg-secClr text-white" : ""}`}
+                  title={"branches"}
+                  onClick={() => setOpenDropMenu(!openDropMenu)}
                 >
                   <div className={`flex items-center w-full h-full gap-2`}>
                     <span>Branches</span>
@@ -161,22 +163,13 @@ const SideNav = ({ openMenu, setOpenMenu, branches, isLoading }) => {
                 }
                 onClick={() => setOpenMenu(false)}
               >
-            Dashboard
-          </NavLink>
-          <NavLink
-            to="/change-password"
-            className={({ isActive }) =>
-              `py-3 text-sm flex items-center gap-2 px-4 rounded-md font-medium ${isActive ? "bg-secClr text-white" : ""}`
-            }
-            onClick={() => setOpenMenu(false)}
-          >
-            <FaLock className="text-xs" /> Change Password
-          </NavLink>
-          <div className="space-y-2">
-            <div
-              className={`flex items-center gap-3 w-full text-black px-4 py-3 cursor-pointer text-sm rounded-md ${openDropMenu ? "bg-secClr text-white" : ""}`}
-              title={"branches"}
-              onClick={() => setOpenDropMenu(!openDropMenu)}
+                Dashboard
+              </NavLink>
+              <div className="space-y-2">
+                <div
+                  className={`flex items-center gap-3 w-full text-black px-4 py-3 cursor-pointer text-sm rounded-md ${openDropMenu ? "bg-secClr text-white" : ""}`}
+                  title={"branches"}
+                  onClick={() => setOpenDropMenu(!openDropMenu)}
                 >
                   <div className={`flex items-center w-full h-full gap-2`}>
                     <span>Branches</span>
@@ -208,6 +201,26 @@ const SideNav = ({ openMenu, setOpenMenu, branches, isLoading }) => {
             </>
           )}
         </ul>
+
+        <div className="border-t border-gray-200 pt-3 pb-2 mt-2 flex flex-col gap-2">
+          <NavLink
+            to="/change-password"
+            className={({ isActive }) =>
+              `py-3 text-sm flex items-center px-4 rounded-md font-medium ${isActive ? "bg-secClr text-white" : ""}`
+            }
+            onClick={() => setOpenMenu(false)}
+          >
+            Change Password
+          </NavLink>
+          <button
+            type="button"
+            onClick={handleLogout}
+            className="py-3 text-sm flex items-center gap-2 px-4 rounded-md font-medium text-red-600 hover:bg-red-50 cursor-pointer w-full text-left"
+          >
+            <FaRightFromBracket className="text-xs" />
+            Logout
+          </button>
+        </div>
       </div>
     </div>
   );
