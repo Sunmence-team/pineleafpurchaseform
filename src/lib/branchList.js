@@ -15,4 +15,6 @@ export const branchOptions = [
   { keyWord: "AMUWOODOFLAG", title: "Amuwo odofin Lagos" },
   { keyWord: "EBONYI", title: "Ebonyi" },
   { keyWord: "NKPOR", title: "Nkpor" },
+  { keyWord: "AKURE", title: "Akure" },
+  { keyWord: "SOUTH_AFRICA", title: "South Africa" },
 ];

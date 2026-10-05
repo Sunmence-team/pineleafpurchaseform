@@ -11,11 +11,11 @@ import {
   unformatNumber,
 } from "../utilities/formatterUtility";
 import axios from "axios";
+import { branchOptions } from "../lib/branchList";
 
 const PROPERTY_URL = import.meta.env.VITE_PROPERTY_BASE_URL;
 
 const Section3 = ({ formData, setFormData, prevSection, nextSection }) => {
-  console.log("formData", formData);
   const canvasRef = useRef(null);
   const dropdownRef = useRef(null);
   const isDrawing = useRef(false);
@@ -85,26 +85,6 @@ const Section3 = ({ formData, setFormData, prevSection, nextSection }) => {
   const parentClass =
     "mt-1 block w-full rounded-md border border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 h-[50px] px-2 flex items-center bg-white";
   const inputClass = "w-full focus:outline-0 text-sm h-full indent-2";
-
-  // Standardized branch options
-  const branchOptions = [
-    "HQ - Onitsha",
-    "Mgbuka",
-    "Awka",
-    "Asaba",
-    "Owerri",
-    "Port Harcourt",
-    "Lagos Ajah",
-    "Lagos Apapa",
-    "Enugwu-Ukwu",
-    "Abuja",
-    "Abia",
-    "Nnewi",
-    "Enugu",
-    "Amuwo odofin Lagos",
-    "Ebonyi",
-    "Nkpor",
-  ];
 
   const validationSchema = Yup.object({
     clientDeclarationLandPrice: Yup.string()
@@ -407,8 +387,8 @@ const Section3 = ({ formData, setFormData, prevSection, nextSection }) => {
                 >
                   <option value="">Select Branch</option>
                   {branchOptions.map((branch) => (
-                    <option key={branch} value={branch}>
-                      {branch}
+                    <option key={branch.keyWord} value={branch.keyWord}>
+                      {branch.title}
                     </option>
                   ))}
                 </Field>
