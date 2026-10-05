@@ -172,7 +172,7 @@ const Section2 = ({ formData, setFormData, prevSection, nextSection }) => {
                       <option value="sister">Sister</option>
                       <option value="father">Father</option>
                       <option value="mother">Mother</option>
-                      <option value="hussband">Husband</option>
+                      <option value="husband">Husband</option>
                       <option value="wife">Wife</option>
                       <option value="son">Son</option>
                       <option value="daughter">Daughter</option>

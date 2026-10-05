@@ -91,12 +91,25 @@ const CreateProperties = () => {
 
   const handleImageChange = (e) => {
     const files = Array.from(e.target.files);
-    setImages((prev) => [...prev, ...files]);
+    updateImages(files);
+  };
 
+  const handleDrop = (e) => {
+    e.preventDefault();
+    const files = Array.from(e.dataTransfer.files);
+    updateImages(files);
+  };
+  
+  const updateImages = (files) => {
+    setImages((prev) => [...prev, ...files]);
     const newPreviews = files.map((file) => URL.createObjectURL(file));
     setImagePreviews((prev) => [...prev, ...newPreviews]);
   };
-
+  
+  const handleDragOver = (e) => {
+    e.preventDefault();
+  };
+  
   const removeImage = (index) => {
     setImages((prev) => prev.filter((_, i) => i !== index));
     setImagePreviews((prev) => prev.filter((_, i) => i !== index));
@@ -318,7 +331,7 @@ const CreateProperties = () => {
                   name="description"
                   as="textarea"
                   rows="4"
-                  className="mt-1 block w-full rounded-md border border-gray-300 shadow-sm focus:border-primary focus:ring-primary p-3 text-sm outline-none"
+                  className="mt-1 block w-full rounded-md border border-gray-300 focus:border-primary focus:ring-primary p-3 text-sm outline-none"
                   placeholder="Describe the property details..."
                 />
                 <ErrorMessage
@@ -329,12 +342,17 @@ const CreateProperties = () => {
               </div>
 
               <div>
-                <label className={labelClasses}>Property Images</label>
-                <div className="mt-2 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-md hover:border-primary transition cursor-pointer relative">
+                <span className={labelClasses}>Property Images</span>
+                <label 
+                  htmlFor="propertyImages" 
+                  onDragOver={handleDragOver}
+                  onDrop={handleDrop}
+                  className="mt-2 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-md hover:border-primary transition cursor-pointer relative"
+                >
                   <div className="space-y-1 text-center">
                     <FaCloudUploadAlt className="mx-auto h-12 w-12 text-gray-400" />
                     <div className="flex text-sm text-gray-600">
-                      <label className="relative cursor-pointer bg-white rounded-md font-medium text-primary hover:text-secClr">
+                      <p className="relative cursor-pointer bg-white rounded-md font-medium text-primary hover:text-secClr">
                         <span>Upload files</span>
                         <input
                           type="file"
@@ -342,24 +360,25 @@ const CreateProperties = () => {
                           onChange={handleImageChange}
                           className="sr-only"
                           accept="image/*"
+                          id="propertyImages"
                         />
-                      </label>
+                      </p>
                       <p className="pl-1">or drag and drop</p>
                     </div>
                     <p className="text-xs text-gray-500">
                       PNG, JPG, GIF up to 10MB
                     </p>
                   </div>
-                </div>
+                </label>
 
                 {imagePreviews.length > 0 && (
-                  <div className="mt-4 grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-4">
+                  <div className="mt-4 flex flex-wrap gap-4">
                     {imagePreviews.map((preview, index) => (
                       <div key={index} className="relative group">
                         <img
                           src={preview}
                           alt={`Preview ${index}`}
-                          className="h-20 w-20 object-cover rounded-lg border border-gray-200"
+                          className="h-24 w-24 object-cover rounded-lg border border-gray-200"
                         />
                         <button
                           type="button"

@@ -99,6 +99,7 @@ const ViewApplicant = () => {
     try {
       const payload = {
         reference: paymentReference,
+        status: "approved",
       };
 
       if (action === "rejected") {
