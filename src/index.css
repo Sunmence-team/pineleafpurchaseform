@@ -31,3 +31,7 @@
 .form-radio {
   @apply accent-secClr;
 }
+
+button:disabled {
+  @apply opacity-50 cursor-not-allowed
+}

@@ -14,10 +14,10 @@ import ApplicationsList from "../../components/ApplicationsList";
 import PaginationControls from "../../components/PaginationControls";
 import DownloadAllModal from "../../components/modals/DownloadAllModal";
 import BranchDownloadModal from "../../components/modals/BranchDownloadModal";
-import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import { useClients } from "../../context/ClientsContext";
 import { branchOptions } from "../../lib/branchList";
+import { parseSafeDate } from "../../utilities/formatterUtility";
 
 const API_URL = import.meta.env.VITE_API_BASE_URL;
 
@@ -103,8 +103,15 @@ const BranchBreakDown = () => {
     return () => clearTimeout(handler);
   }, [searchQuery]);
 
+  const isBranchMatch = (b1, b2) => {
+    if (!b1 || !b2) return false;
+    return String(b1).trim().toLowerCase() === String(b2).trim().toLowerCase();
+  };
+
   useEffect(() => {
-    let data = allClients.filter((item) => item.branches === branchTitle);
+    let data = allClients.filter((item) =>
+      isBranchMatch(item.branches, branchTitle),
+    );
 
     if (debouncedSearchQuery) {
       const query = debouncedSearchQuery.toLowerCase();
@@ -124,7 +131,7 @@ const BranchBreakDown = () => {
     const startIndex = (currentPage - 1) * recordsPerPage;
     const paginated = fullFilteredData.slice(
       startIndex,
-      startIndex + recordsPerPage
+      startIndex + recordsPerPage,
     );
     setPaginatedData(paginated);
   }, [fullFilteredData, currentPage, recordsPerPage]);
@@ -134,24 +141,24 @@ const BranchBreakDown = () => {
       let filterFrom;
 
       if (branchLastDownload) {
-        filterFrom = new Date(branchLastDownload);
+        filterFrom = parseSafeDate(branchLastDownload);
       } else {
         if (!startDate || !startTime) {
           setInitialDownloadData([]);
           setFilteredDownloadData([]);
           return;
         }
-        filterFrom = new Date(startDate);
-        const [fromHours, fromMinutes] = startTime.split(":").map(Number);
-        filterFrom.setHours(fromHours, fromMinutes, 0, 0);
+        filterFrom = parseSafeDate(startDate);
+        if (filterFrom) {
+          const [fromHours, fromMinutes] = startTime.split(":").map(Number);
+          filterFrom.setHours(fromHours, fromMinutes, 0, 0);
+        }
       }
 
       const data = allClients.filter((item) => {
-        if (item.branches !== branchTitle) return false;
-        const createdDate = item.created_at
-          ? new Date(parseISO(item.created_at))
-          : null;
-        if (!createdDate) return false;
+        if (!isBranchMatch(item.branches, branchTitle)) return false;
+        const createdDate = parseSafeDate(item.created_at);
+        if (!createdDate || !filterFrom) return false;
         return createdDate >= filterFrom;
       });
       setInitialDownloadData(data);
@@ -177,7 +184,7 @@ const BranchBreakDown = () => {
       const siteMatch =
         sitesToExclude.length > 0 &&
         sitesToExclude.some((excludedSite) =>
-          siteLocationLower.includes(excludedSite)
+          siteLocationLower.includes(excludedSite),
         );
       return !siteMatch;
     });
@@ -212,8 +219,14 @@ const BranchBreakDown = () => {
 
   const generateCSV = (data, filename) => {
     const headers = [
-      "Client Name", "State of Origin", "LGA", "Property Name",
-      "Number of Plot(s)", "Plot No(s)", "Land Price", "Branch",
+      "Client Name",
+      "State of Origin",
+      "LGA",
+      "Property Name",
+      "Number of Plot(s)",
+      "Plot No(s)",
+      "Land Price",
+      "Branch",
     ];
 
     const rows = data.map((item) =>
@@ -242,7 +255,13 @@ const BranchBreakDown = () => {
     document.body.removeChild(link);
   };
 
-  const generatePDF = (data, filename, title, filterFrom = null, downloadStartTime = null) => {
+  const generatePDF = (
+    data,
+    filename,
+    title,
+    filterFrom = null,
+    downloadStartTime = null,
+  ) => {
     const pdf = new jsPDF({
       orientation: "portrait",
       unit: "mm",
@@ -261,12 +280,27 @@ const BranchBreakDown = () => {
 
     if (filterFrom && downloadStartTime) {
       pdf.setFontSize(12);
-      pdf.text(`(${format(filterFrom, "dd/MM/yyyy HH:mm")} - ${format(downloadStartTime, "dd/MM/yyyy HH:mm")})`, pageWidth / 2, yPosition, { align: "center" });
+      pdf.text(
+        `(${format(filterFrom, "dd/MM/yyyy HH:mm")} - ${format(downloadStartTime, "dd/MM/yyyy HH:mm")})`,
+        pageWidth / 2,
+        yPosition,
+        { align: "center" },
+      );
       yPosition += 15;
     }
 
     const tableHead = [
-      ["S/N", "Client Name", "State of Origin", "LGA", "Property Name", "No. of Plot(s)", "Plot No(s)", "Land Price", "Branch"]
+      [
+        "S/N",
+        "Client Name",
+        "State of Origin",
+        "LGA",
+        "Property Name",
+        "No. of Plot(s)",
+        "Plot No(s)",
+        "Land Price",
+        "Branch",
+      ],
     ];
     const tableBody = data.map((item, index) => [
       index + 1,
@@ -285,18 +319,27 @@ const BranchBreakDown = () => {
       head: tableHead,
       body: tableBody,
       theme: "grid",
-      styles: { fontSize: 7, cellPadding: 2, halign: "center", valign: "middle" },
-      headStyles: { fillColor: [47, 83, 24], textColor: [255, 255, 255], fontStyle: "bold" },
-      columnStyles: { 
-        0: { cellWidth: 8 }, 
-        1: { cellWidth: 30 }, 
-        2: { cellWidth: 20 }, 
-        3: { cellWidth: 20 }, 
-        4: { cellWidth: 30 }, 
-        5: { cellWidth: 12 }, 
-        6: { cellWidth: 15 }, 
-        7: { cellWidth: 20 }, 
-        8: { cellWidth: 25 } 
+      styles: {
+        fontSize: 7,
+        cellPadding: 2,
+        halign: "center",
+        valign: "middle",
+      },
+      headStyles: {
+        fillColor: [47, 83, 24],
+        textColor: [255, 255, 255],
+        fontStyle: "bold",
+      },
+      columnStyles: {
+        0: { cellWidth: 8 },
+        1: { cellWidth: 30 },
+        2: { cellWidth: 20 },
+        3: { cellWidth: 20 },
+        4: { cellWidth: 30 },
+        5: { cellWidth: 12 },
+        6: { cellWidth: 15 },
+        7: { cellWidth: 20 },
+        8: { cellWidth: 25 },
       },
       alternateRowStyles: { fillColor: [245, 245, 245] },
       margin: { left: margin, right: margin },
@@ -316,8 +359,8 @@ const BranchBreakDown = () => {
 
   const handleDownloadAllCSV = () => {
     const data = [...fullFilteredData].sort((a, b) => {
-      const dateA = a.created_at ? new Date(parseISO(a.created_at)) : new Date(0);
-      const dateB = b.created_at ? new Date(parseISO(b.created_at)) : new Date(0);
+      const dateA = parseSafeDate(a.created_at) || new Date(0);
+      const dateB = parseSafeDate(b.created_at) || new Date(0);
       return dateB - dateA;
     });
 
@@ -331,8 +374,8 @@ const BranchBreakDown = () => {
 
   const handleDownloadAllPDF = () => {
     const data = [...fullFilteredData].sort((a, b) => {
-      const dateA = a.created_at ? new Date(parseISO(a.created_at)) : new Date(0);
-      const dateB = b.created_at ? new Date(parseISO(b.created_at)) : new Date(0);
+      const dateA = parseSafeDate(a.created_at) || new Date(0);
+      const dateB = parseSafeDate(b.created_at) || new Date(0);
       return dateB - dateA;
     });
 
@@ -347,8 +390,8 @@ const BranchBreakDown = () => {
   const handleDownloadNewCSV = () => {
     const downloadStartTime = new Date();
     const data = [...filteredDownloadData].sort((a, b) => {
-      const dateA = a.created_at ? new Date(parseISO(a.created_at)) : new Date(0);
-      const dateB = b.created_at ? new Date(parseISO(b.created_at)) : new Date(0);
+      const dateA = parseSafeDate(a.created_at) || new Date(0);
+      const dateB = parseSafeDate(b.created_at) || new Date(0);
       return dateB - dateA;
     });
 
@@ -364,8 +407,8 @@ const BranchBreakDown = () => {
   const handleDownloadNewPDF = () => {
     const downloadStartTime = new Date();
     const data = [...filteredDownloadData].sort((a, b) => {
-      const dateA = a.created_at ? new Date(parseISO(a.created_at)) : new Date(0);
-      const dateB = b.created_at ? new Date(parseISO(b.created_at)) : new Date(0);
+      const dateA = parseSafeDate(a.created_at) || new Date(0);
+      const dateB = parseSafeDate(b.created_at) || new Date(0);
       return dateB - dateA;
     });
 
@@ -373,17 +416,25 @@ const BranchBreakDown = () => {
 
     let filterFrom;
     if (branchLastDownload) {
-      filterFrom = new Date(branchLastDownload);
+      filterFrom = parseSafeDate(branchLastDownload);
     } else {
       if (startDate && startTime) {
-        filterFrom = new Date(startDate);
-        const [hours, minutes] = startTime.split(":").map(Number);
-        filterFrom.setHours(hours, minutes, 0, 0);
+        filterFrom = parseSafeDate(startDate);
+        if (filterFrom) {
+          const [hours, minutes] = startTime.split(":").map(Number);
+          filterFrom.setHours(hours, minutes, 0, 0);
+        }
       }
     }
 
     const filename = `new_records_${branchKey}_${format(new Date(), "yyyyMMdd_HHmm")}.pdf`;
-    generatePDF(data, filename, `New Records - ${branchTitle}`, filterFrom, downloadStartTime);
+    generatePDF(
+      data,
+      filename,
+      `New Records - ${branchTitle}`,
+      filterFrom,
+      downloadStartTime,
+    );
     updateDownloadTime(downloadStartTime);
     onModalCloseCleanup();
     toast.success("PDF downloaded successfully!");
@@ -391,38 +442,49 @@ const BranchBreakDown = () => {
 
   const handleDelete = async (id) => {
     if (!id) return;
-    const toastId = toast.loading("Deleting entry...");
-    setIsDeleting(true);
-    try {
-      const token = localStorage.getItem("token");
-      if (!token) {
-        toast.error("Please log in to perform this action.", { id: toastId });
-        setIsDeleting(false);
-        return;
-      }
-
-      const response = await axios.delete(`${API_URL}/api/applications/${id}`, {
-        headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
-      });
-
-      if (response.status === 200 || response.status === 204) {
-        toast.success("Client entry deleted successfully!", { id: toastId });
-        removeClient(id);
-        if (paginatedData.length === 1 && currentPage > 1) {
-          setCurrentPage(currentPage - 1);
+    if (confirm("Are you sure to delete this entry?. This action is irreversible.")) {
+      const toastId = toast.loading("Deleting entry...");
+      setIsDeleting(true);
+      try {
+        const token = localStorage.getItem("token");
+        if (!token) {
+          toast.error("Please log in to perform this action.", { id: toastId });
+          setIsDeleting(false);
+          return;
         }
-      } else {
-        toast.error(`Failed to delete client. Status: ${response.status}`, { id: toastId });
+  
+        const response = await axios.delete(`${API_URL}/api/applications/${id}`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        });
+  
+        if (response.status === 200 || response.status === 204) {
+          toast.success("Client entry deleted successfully!", { id: toastId });
+          removeClient(id);
+          if (paginatedData.length === 1 && currentPage > 1) {
+            setCurrentPage(currentPage - 1);
+          }
+        } else {
+          toast.error(`Failed to delete client. Status: ${response.status}`, {
+            id: toastId,
+          });
+        }
+      } catch (error) {
+        console.error("Error deleting client:", error);
+        toast.error(
+          "Failed to delete client: " +
+            (error.response?.data?.message || error.message || "Unknown error"),
+          { id: toastId },
+        );
+        if (axios.isAxiosError(error) && error.response?.status === 401) {
+          toast.info("Session expired!. Logging out...");
+          setTimeout(() => localStorage.removeItem("token"), 500);
+        }
+      } finally {
+        setIsDeleting(false);
       }
-    } catch (error) {
-      console.error("Error deleting client:", error);
-      toast.error("Failed to delete client: " + (error.response?.data?.message || error.message || "Unknown error"), { id: toastId });
-      if (axios.isAxiosError(error) && error.response?.status === 401) {
-        toast.info("Session expired!. Logging out...");
-        setTimeout(() => localStorage.removeItem("token"), 500);
-      }
-    } finally {
-      setIsDeleting(false);
     }
   };
 
@@ -453,13 +515,12 @@ const BranchBreakDown = () => {
 
         <main className="flex-1 overflow-y-auto p-4 md:p-8">
           <div className="w-full space-y-6">
-            {(loadingAllClients ||
-             loadingApplications) && (
+            {(loadingAllClients || loadingApplications) && (
               <div className="flex justify-center items-center min-h-[200px]">
                 <div className="animate-spin rounded-full h-12 w-12 border-4 border-secClr border-t-transparent"></div>
               </div>
             )}
-            
+
             {!(loadingAllClients || loadingApplications) && (
               <>
                 {/* Action Bar */}
@@ -501,7 +562,7 @@ const BranchBreakDown = () => {
                           <div className="absolute right-0 mt-2 min-w-[200px] bg-white border border-gray-200 rounded-lg shadow-xl z-50 text-sm font-semibold overflow-hidden">
                             <button
                               onClick={() => {
-                                if (!allClientsFetched) fetchAllClients();
+                                fetchAllClients(true);
                                 setShowDownloadOptions(false);
                                 setBranchDownloadModalOpen(true);
                               }}
@@ -511,7 +572,7 @@ const BranchBreakDown = () => {
                             </button>
                             <button
                               onClick={() => {
-                                if (!allClientsFetched) fetchAllClients();
+                                fetchAllClients(true);
                                 setShowDownloadOptions(false);
                                 setDownloadAllModalOpen(true);
                               }}
@@ -532,16 +593,23 @@ const BranchBreakDown = () => {
                     <p className="text-sm text-gray-500 font-medium">
                       Total Entries
                     </p>
-                    <h3 className="text-2xl font-bold">{fullFilteredData.length}</h3>
+                    <h3 className="text-2xl font-bold">
+                      {fullFilteredData.length}
+                    </h3>
                   </div>
                   <div className="bg-white p-6 rounded-xl shadow-sm border border-secClr/20">
                     <p className="text-sm text-gray-500 font-medium">
                       Last Download
                     </p>
                     <h3 className="text-lg font-bold">
-                      {branchLastDownload
-                        ? format(parseISO(branchLastDownload), "dd MMM yyyy, HH:mm")
-                        : "Never"}
+                      {loadingDownloadTime
+                        ? "Loading..."
+                        : branchLastDownload
+                          ? format(
+                              parseISO(branchLastDownload),
+                              "dd MMM yyyy, HH:mm",
+                            )
+                          : "Never"}
                     </h3>
                   </div>
                   <div className="bg-white p-6 rounded-xl shadow-sm border border-secClr/20">
@@ -591,7 +659,7 @@ const BranchBreakDown = () => {
       </div>
 
       <DownloadAllModal
-        isLoadingAllclients={loadingAllClients}
+        isLoadingAllclients={loadingAllClients || loadingApplications}
         isOpen={downloadAllModalOpen}
         onClose={() => setDownloadAllModalOpen(false)}
         onDownloadCSV={handleDownloadAllCSV}
@@ -601,6 +669,7 @@ const BranchBreakDown = () => {
       <BranchDownloadModal
         isOpen={branchDownloadModalOpen}
         onClose={onModalCloseCleanup}
+        loading={loadingAllClients || loadingApplications}
         lastDownloadTime={branchLastDownload}
         startDate={startDate}
         setStartDate={setStartDate}

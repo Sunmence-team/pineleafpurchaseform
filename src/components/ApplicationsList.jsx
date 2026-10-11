@@ -26,14 +26,14 @@ const ApplicationsList = ({
             >
               <div className="flex justify-between gap-2 items-center">
                 <div className="min-w-0 flex-1">
-                  <p className="text-sm font-semibold text-gray-900 break-words line-clamp-2">
+                  <p className="text-sm font-semibold text-gray-900 wrap-break-word line-clamp-2">
                     {(currentPage - 1) * recordsPerPage + index + 1}. {item.client_name ?? item.club_name}
                   </p>
-                  <p className="text-xs text-gray-600 break-words">{item.email ?? "-"}</p>
-                  <p className="text-xs text-gray-600 break-words">{item.mobile_number ?? item.club_contact}</p>
+                  <p className="text-xs text-gray-600 wrap-break-word">{item.email ?? "-"}</p>
+                  <p className="text-xs text-gray-600 wrap-break-word">{item.mobile_number ?? item.club_contact}</p>
                 </div>
-                <div className="flex flex-col gap-2 flex-shrink-0">
-                  <div className="flex gap-2 flex-shrink-0">
+                <div className="flex flex-col gap-2 shrink-0">
+                  <div className="flex gap-2 shrink-0">
                     <Link
                       to={`/view-client/${item.id}`}
                       className="p-2 bg-secClr text-white rounded-md hover:bg-secClr/90"

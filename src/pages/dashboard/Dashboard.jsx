@@ -1,9 +1,5 @@
 import React, { useState, useEffect } from "react";
-import {
-  FaFilter,
-  FaSearch,
-  FaCaretDown,
-} from "react-icons/fa";
+import { FaFilter, FaSearch, FaCaretDown } from "react-icons/fa";
 import "react-datepicker/dist/react-datepicker.css";
 import axios from "axios";
 import { toast } from "sonner";
@@ -37,6 +33,7 @@ import { FaBars, FaX } from "react-icons/fa6";
 import SideNav from "../../components/SideNav";
 import { useClients } from "../../context/ClientsContext";
 import { branchOptions } from "../../lib/branchList";
+import { parseSafeDate } from "../../utilities/formatterUtility";
 
 const API_URL = import.meta.env.VITE_API_BASE_URL;
 
@@ -93,24 +90,27 @@ const Dashboard = () => {
   const [branchLastDownload, setBranchLastDownload] = useState(null);
 
   const handleExcludeBranchChange = (branchKey) => {
-    setExcludedBranches(prev => 
-      prev.includes(branchKey) 
-        ? prev.filter(b => b !== branchKey) 
-        : [...prev, branchKey]
+    setExcludedBranches((prev) =>
+      prev.includes(branchKey)
+        ? prev.filter((b) => b !== branchKey)
+        : [...prev, branchKey],
     );
   };
-  const [selectedBranchForDownload, setSelectedBranchForDownload] = useState(null);
+  const [selectedBranchForDownload, setSelectedBranchForDownload] =
+    useState(null);
   const [branchStartDate, setBranchStartDate] = useState(null);
-  const [branchStartTime, setBranchStartTime] = useState('');
+  const [branchStartTime, setBranchStartTime] = useState("");
   const [branchInitialData, setBranchInitialData] = useState([]);
-  const [loadingBranchDownloadTime, setLoadingBranchDownloadTime] = useState(false);
-  const [siteLocationLastDownload, setSiteLocationLastDownload] = useState(null);
+  const [loadingBranchDownloadTime, setLoadingBranchDownloadTime] =
+    useState(false);
+  const [siteLocationLastDownload, setSiteLocationLastDownload] =
+    useState(null);
   const [siteLocationStartDate, setSiteLocationStartDate] = useState(null);
-  const [siteLocationStartTime, setSiteLocationStartTime] = useState('');
+  const [siteLocationStartTime, setSiteLocationStartTime] = useState("");
   const [newRecordsForSite, setNewRecordsForSite] = useState([]);
   const [loadingSiteDownloadTime, setLoadingSiteDownloadTime] = useState(false);
-  const [siteLocation, setSiteLocation] = useState('');
-  const [debouncedSiteLocation, setDebouncedSiteLocation] = useState('');
+  const [siteLocation, setSiteLocation] = useState("");
+  const [debouncedSiteLocation, setDebouncedSiteLocation] = useState("");
 
   useEffect(() => {
     const handler = setTimeout(() => {
@@ -120,11 +120,11 @@ const Dashboard = () => {
   }, [siteLocation]);
 
   const onSiteModalCloseCleanup = () => {
-    setSiteLocation('');
-    setDebouncedSiteLocation('');
+    setSiteLocation("");
+    setDebouncedSiteLocation("");
     setSiteLocationLastDownload(null);
     setSiteLocationStartDate(null);
-    setSiteLocationStartTime('');
+    setSiteLocationStartTime("");
     setNewRecordsForSite([]);
   };
 
@@ -136,9 +136,12 @@ const Dashboard = () => {
     setLoadingSiteDownloadTime(true);
     const token = localStorage.getItem("token");
     try {
-      const response = await axios.get(`${API_URL}/api/last/download-date?name=${siteLocation}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const response = await axios.get(
+        `${API_URL}/api/last/download-date?name=${siteLocation}`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        },
+      );
       if (response.data.data && response.data.data.updated_at) {
         setSiteLocationLastDownload(response.data.data.updated_at);
       } else {
@@ -148,7 +151,10 @@ const Dashboard = () => {
       if (error.response && error.response.status === 404) {
         setSiteLocationLastDownload(null);
       } else {
-        console.error("Error fetching site location last download time:", error);
+        console.error(
+          "Error fetching site location last download time:",
+          error,
+        );
         toast.error("Could not fetch last download time for this site.");
       }
     } finally {
@@ -158,10 +164,18 @@ const Dashboard = () => {
 
   useEffect(() => {
     if (debouncedSiteLocation && siteLocationLastDownload) {
-      const filterFrom = new Date(siteLocationLastDownload);
-      const data = allClients.filter(item => {
-        const createdDate = item.created_at ? new Date(parseISO(item.created_at)) : null;
-        return item.site_location && item.site_location.toLowerCase().includes(debouncedSiteLocation.toLowerCase()) && createdDate && createdDate >= filterFrom;
+      const filterFrom = parseSafeDate(siteLocationLastDownload);
+      const data = allClients.filter((item) => {
+        const createdDate = parseSafeDate(item.created_at);
+        return (
+          item.site_location &&
+          item.site_location
+            .toLowerCase()
+            .includes(debouncedSiteLocation.toLowerCase()) &&
+          createdDate &&
+          filterFrom &&
+          createdDate >= filterFrom
+        );
       });
       setNewRecordsForSite(data);
     } else {
@@ -173,21 +187,31 @@ const Dashboard = () => {
     setSelectedBranchForDownload(null);
     setBranchLastDownload(null);
     setBranchStartDate(null);
-    setBranchStartTime('');
+    setBranchStartTime("");
     setBranchInitialData([]);
   };
 
   useEffect(() => {
     if (selectedBranchForDownload && branchLastDownload) {
-      const filterFrom = new Date(branchLastDownload);
-      const selectedBranchTitle = branchOptions.find(opt => opt.keyWord === selectedBranchForDownload)?.title;
+      const filterFrom = parseSafeDate(branchLastDownload);
+      const selectedBranchTitle = branchOptions.find(
+        (opt) => opt.keyWord === selectedBranchForDownload,
+      )?.title;
       if (!selectedBranchTitle) {
         setBranchInitialData([]);
         return;
       }
-      const data = allClients.filter(item => {
-        const createdDate = item.created_at ? new Date(parseISO(item.created_at)) : null;
-        return item.branches === selectedBranchTitle && createdDate && createdDate >= filterFrom;
+      const data = allClients.filter((item) => {
+        const createdDate = parseSafeDate(item.created_at);
+        const branchMatch =
+          item.branches &&
+          item.branches.trim().toLowerCase() === selectedBranchTitle.trim().toLowerCase();
+        return (
+          branchMatch &&
+          createdDate &&
+          filterFrom &&
+          createdDate >= filterFrom
+        );
       });
       setBranchInitialData(data);
     } else {
@@ -196,23 +220,23 @@ const Dashboard = () => {
   }, [selectedBranchForDownload, branchLastDownload, allClients]);
 
   const updateBranchDownloadTime = async (branchKey, dateTime) => {
-    const token = localStorage.getItem('token');
+    const token = localStorage.getItem("token");
     try {
       await axios.put(
         `${API_URL}/api/last/download-date`,
-        { name: branchKey, date: format(dateTime, 'yyyy-MM-dd HH:mm:ss') },
+        { name: branchKey, date: format(dateTime, "yyyy-MM-dd HH:mm:ss") },
         {
           headers: {
             Authorization: `Bearer ${token}`,
           },
-        }
+        },
       );
     } catch (error) {
-      console.error('Error updating branch download time:', error);
-      toast.error('Could not update the download time for the branch.');
+      console.error("Error updating branch download time:", error);
+      toast.error("Could not update the download time for the branch.");
     }
   };
-  
+
   const handleBranchSelectForDownload = async (branchKey) => {
     if (!branchKey) {
       setSelectedBranchForDownload(null);
@@ -220,7 +244,7 @@ const Dashboard = () => {
       return;
     }
     setSelectedBranchForDownload(branchKey);
-    setLoadingBranchDownloadTime(true); 
+    setLoadingBranchDownloadTime(true);
     const token = localStorage.getItem("token");
     try {
       const response = await axios.get(
@@ -229,7 +253,7 @@ const Dashboard = () => {
           headers: {
             Authorization: `Bearer ${token}`,
           },
-        }
+        },
       );
       if (response.data.data && response.data.data.updated_at) {
         setBranchLastDownload(response.data.data.updated_at);
@@ -238,7 +262,7 @@ const Dashboard = () => {
       }
     } catch (error) {
       if (error.response && error.response.status === 404) {
-        setBranchLastDownload(null); 
+        setBranchLastDownload(null);
       } else {
         console.error("Error fetching branch last download time:", error);
         toast.error("Could not fetch last download time for this branch.");
@@ -256,24 +280,24 @@ const Dashboard = () => {
       let filterFrom;
 
       if (lastDownloadTime) {
-        filterFrom = new Date(lastDownloadTime);
+        filterFrom = parseSafeDate(lastDownloadTime);
       } else {
         if (!downloadDateFrom || !downloadTimeFrom) {
           setInitialDownloadData([]);
           return;
         }
-        filterFrom = new Date(downloadDateFrom);
-        const [fromHours, fromMinutes] = downloadTimeFrom
-          .split(":")
-          .map(Number);
-        filterFrom.setHours(fromHours, fromMinutes, 0, 0);
+        filterFrom = parseSafeDate(downloadDateFrom);
+        if (filterFrom) {
+          const [fromHours, fromMinutes] = downloadTimeFrom
+            .split(":")
+            .map(Number);
+          filterFrom.setHours(fromHours, fromMinutes, 0, 0);
+        }
       }
 
       const data = allClients.filter((item) => {
-        const createdDate = item.created_at
-          ? new Date(parseISO(item.created_at))
-          : null;
-        if (!createdDate) return false;
+        const createdDate = parseSafeDate(item.created_at);
+        if (!createdDate || !filterFrom) return false;
         return createdDate >= filterFrom && createdDate <= filterTo;
       });
       setInitialDownloadData(data);
@@ -286,20 +310,31 @@ const Dashboard = () => {
     downloadDateFrom,
     downloadTimeFrom,
   ]);
-  
-  useEffect(() => {
-    const sitesToExclude = excludedSites.split(',').map(site => site.trim().toLowerCase()).filter(Boolean);
-    const excludedBranchTitles = excludedBranches.map(key => {
-      const branch = branchOptions.find(opt => opt.keyWord === key);
-      return branch ? branch.title.toLowerCase() : '';
-    }).filter(Boolean);
 
-    const filtered = initialDownloadData.filter(item => {
-      const siteLocationLower = item.site_location?.toLowerCase() || '';
-      const branchLower = item.branches?.toLowerCase() || '';
-      
-      const siteMatch = sitesToExclude.length > 0 && sitesToExclude.some(excludedSite => siteLocationLower.includes(excludedSite));
-      const branchMatch = excludedBranchTitles.length > 0 && excludedBranchTitles.includes(branchLower);
+  useEffect(() => {
+    const sitesToExclude = excludedSites
+      .split(",")
+      .map((site) => site.trim().toLowerCase())
+      .filter(Boolean);
+    const excludedBranchTitles = excludedBranches
+      .map((key) => {
+        const branch = branchOptions.find((opt) => opt.keyWord === key);
+        return branch ? branch.title.toLowerCase() : "";
+      })
+      .filter(Boolean);
+
+    const filtered = initialDownloadData.filter((item) => {
+      const siteLocationLower = item.site_location?.toLowerCase() || "";
+      const branchLower = item.branches?.toLowerCase() || "";
+
+      const siteMatch =
+        sitesToExclude.length > 0 &&
+        sitesToExclude.some((excludedSite) =>
+          siteLocationLower.includes(excludedSite),
+        );
+      const branchMatch =
+        excludedBranchTitles.length > 0 &&
+        excludedBranchTitles.includes(branchLower);
 
       return !siteMatch && !branchMatch;
     });
@@ -321,7 +356,12 @@ const Dashboard = () => {
   }, [searchQuery]);
 
   useEffect(() => {
-    if (dateFilterModalOpen || branchFilterModalOpen || downloadModalOpen || siteDownloadModalOpen) {
+    if (
+      dateFilterModalOpen ||
+      branchFilterModalOpen ||
+      downloadModalOpen ||
+      siteDownloadModalOpen
+    ) {
       document.body.style.overflow = "hidden";
     } else {
       document.body.style.overflow = "auto";
@@ -349,7 +389,7 @@ const Dashboard = () => {
         });
 
         if (response.status === 200 && response.data.data.downloaded_date) {
-          setLastDownloadTime(new Date(response.data.data.downloaded_date));
+          setLastDownloadTime(parseSafeDate(response.data.data.downloaded_date));
         }
       } catch (error) {
         console.error("Error fetching last download time:", error);
@@ -370,7 +410,15 @@ const Dashboard = () => {
     if (!filterBranch && !filterDateFrom && !filterDateTo) {
       fetchApplications(currentPage, recordsPerPage, debouncedSearchQuery);
     }
-  }, [currentPage, debouncedSearchQuery, recordsPerPage, filterBranch, filterDateFrom, filterDateTo, fetchApplications]);
+  }, [
+    currentPage,
+    debouncedSearchQuery,
+    recordsPerPage,
+    filterBranch,
+    filterDateFrom,
+    filterDateTo,
+    fetchApplications,
+  ]);
 
   useEffect(() => {
     let filtered = [...allClients];
@@ -380,37 +428,37 @@ const Dashboard = () => {
         (item) =>
           item.branches &&
           item.branches.toLowerCase().trim() ===
-            filterBranch.toLowerCase().trim()
+            filterBranch.toLowerCase().trim(),
       );
     }
 
     if (filterDateFrom && filterTimeFrom) {
-      const filterFrom = new Date(filterDateFrom);
-      const [hours, minutes] = filterTimeFrom.split(":").map(Number);
-      filterFrom.setHours(hours, minutes, 0, 0);
-      filtered = filtered.filter((item) => {
-        const createdAt = item.created_at
-          ? new Date(parseISO(item.created_at))
-          : null;
-        return createdAt && createdAt >= filterFrom;
-      });
+      const filterFrom = parseSafeDate(filterDateFrom);
+      if (filterFrom) {
+        const [hours, minutes] = filterTimeFrom.split(":").map(Number);
+        filterFrom.setHours(hours, minutes, 0, 0);
+        filtered = filtered.filter((item) => {
+          const createdAt = parseSafeDate(item.created_at);
+          return createdAt && createdAt >= filterFrom;
+        });
+      }
     }
 
     if (filterDateTo && filterTimeTo) {
-      const filterTo = new Date(filterDateTo);
-      const [hours, minutes] = filterTimeTo.split(":").map(Number);
-      filterTo.setHours(hours, minutes, 59, 999);
-      filtered = filtered.filter((item) => {
-        const createdAt = item.created_at
-          ? new Date(parseISO(item.created_at))
-          : null;
-        return createdAt && createdAt <= filterTo;
-      });
+      const filterTo = parseSafeDate(filterDateTo);
+      if (filterTo) {
+        const [hours, minutes] = filterTimeTo.split(":").map(Number);
+        filterTo.setHours(hours, minutes, 59, 999);
+        filtered = filtered.filter((item) => {
+          const createdAt = parseSafeDate(item.created_at);
+          return createdAt && createdAt <= filterTo;
+        });
+      }
     }
 
     filtered = filtered.sort((a, b) => {
-      const dateA = a.created_at ? new Date(parseISO(a.created_at)) : new Date(0);
-      const dateB = b.created_at ? new Date(parseISO(b.created_at)) : new Date(0);
+      const dateA = parseSafeDate(a.created_at) || new Date(0);
+      const dateB = parseSafeDate(b.created_at) || new Date(0);
       return dateB - dateA;
     });
 
@@ -419,7 +467,7 @@ const Dashboard = () => {
     if (isFilterActive) {
       const nextRecords = filtered.length;
       const nextPages = Math.ceil(filtered.length / recordsPerPage);
-      
+
       if (totalRecords !== nextRecords) setTotalRecords(nextRecords);
       if (totalPages !== nextPages) setTotalPages(nextPages);
     }
@@ -427,7 +475,7 @@ const Dashboard = () => {
     const startIndex = (currentPage - 1) * recordsPerPage;
     const paginatedData = filtered.slice(
       startIndex,
-      startIndex + recordsPerPage
+      startIndex + recordsPerPage,
     );
 
     setFilteredData(isFilterActive ? paginatedData : applications);
@@ -444,12 +492,12 @@ const Dashboard = () => {
     totalRecords,
     totalPages,
     setTotalRecords,
-    setTotalPages
+    setTotalPages,
   ]);
 
   const applyBranchFilter = () => {
     const seenBranch = branchOptions.some(
-      (option) => option.title === branchInput
+      (option) => option.title === branchInput,
     );
     if (branchInput && !seenBranch) {
       toast.error("Please select a valid branch.");
@@ -485,7 +533,7 @@ const Dashboard = () => {
       dateFromInput,
       timeFromInput,
       dateToInput,
-      timeToInput
+      timeToInput,
     );
   };
 
@@ -568,7 +616,7 @@ const Dashboard = () => {
             Authorization: `Bearer ${token}`,
             "Content-Type": "application/json",
           },
-        }
+        },
       );
     } catch (error) {
       console.error("Error updating last download time:", error);
@@ -593,27 +641,52 @@ const Dashboard = () => {
         return;
       }
       if (branchLastDownload) {
-        filterFrom = new Date(branchLastDownload);
+        filterFrom = parseSafeDate(branchLastDownload);
       } else {
         if (!branchStartDate || !branchStartTime) {
-          toast.error('Please select a start date and time for this branch.');
+          toast.error("Please select a start date and time for this branch.");
           return;
         }
-        filterFrom = new Date(branchStartDate);
-        const [fromHours, fromMinutes] = branchStartTime.split(':').map(Number);
-        filterFrom.setHours(fromHours, fromMinutes, 0, 0);
+        filterFrom = parseSafeDate(branchStartDate);
+        if (filterFrom) {
+          const [fromHours, fromMinutes] = branchStartTime.split(":").map(Number);
+          filterFrom.setHours(fromHours, fromMinutes, 0, 0);
+        }
       }
-      const selectedBranchTitle = branchOptions.find(opt => opt.keyWord === selectedBranchForDownload)?.title;
+      const selectedBranchTitle = branchOptions.find(
+        (opt) => opt.keyWord === selectedBranchForDownload,
+      )?.title;
       if (!selectedBranchTitle) {
-        toast.error('Could not find the selected branch title.');
+        toast.error("Could not find the selected branch title.");
         return;
       }
-      dataToDownload = allClients.filter(item => {
-        const createdDate = item.created_at ? new Date(parseISO(item.created_at)) : null;
-        return item.branches === selectedBranchTitle && createdDate && createdDate >= filterFrom;
+
+      const sitesToExclude = excludedSites
+        .split(",")
+        .map((site) => site.trim().toLowerCase())
+        .filter(Boolean);
+
+      dataToDownload = allClients.filter((item) => {
+        const createdDate = parseSafeDate(item.created_at);
+        const branchMatch =
+          item.branches &&
+          item.branches.trim().toLowerCase() === selectedBranchTitle.trim().toLowerCase();
+        const siteLocationLower = item.site_location?.toLowerCase() || "";
+        const siteMatch =
+          sitesToExclude.length > 0 &&
+          sitesToExclude.some((excludedSite) =>
+            siteLocationLower.includes(excludedSite),
+          );
+        return (
+          branchMatch &&
+          createdDate &&
+          filterFrom &&
+          createdDate >= filterFrom &&
+          !siteMatch
+        );
       });
     } else {
-      filterFrom = lastDownloadTime ? new Date(lastDownloadTime) : null;
+      filterFrom = lastDownloadTime ? parseSafeDate(lastDownloadTime) : null;
       dataToDownload = filteredDownloadData;
     }
 
@@ -623,14 +696,20 @@ const Dashboard = () => {
     }
 
     const sortedForDownload = dataToDownload.sort((a, b) => {
-      const dateA = a.created_at ? new Date(parseISO(a.created_at)) : new Date(0);
-      const dateB = b.created_at ? new Date(parseISO(b.created_at)) : new Date(0);
+      const dateA = parseSafeDate(a.created_at) || new Date(0);
+      const dateB = parseSafeDate(b.created_at) || new Date(0);
       return dateB - dateA;
     });
 
     const headers = [
-      "Client Name", "State of Origin", "LGA", "Property Name",
-      "Number of Plot(s)", "Plot No(s)", "Land Price", "Branch",
+      "Client Name",
+      "State of Origin",
+      "LGA",
+      "Property Name",
+      "Number of Plot(s)",
+      "Plot No(s)",
+      "Land Price",
+      "Branch",
     ];
 
     const rows = sortedForDownload.map((item) =>
@@ -643,21 +722,26 @@ const Dashboard = () => {
         item.plot_number || "",
         item.land_price || "",
         item.branches || "",
-      ].map((field) => `"${String(field).replace(/"/g, '""')}"`)
+      ].map((field) => `"${String(field).replace(/"/g, '""')}"`),
     );
 
-    const csvContent = [headers, ...rows].map((row) => row.join(",")).join("\n");
+    const csvContent = [headers, ...rows]
+      .map((row) => row.join(","))
+      .join("\n");
     const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
-    link.setAttribute("download", `clients_${format(new Date(), "yyyy-MM-dd_HH-mm")}.csv`);
+    link.setAttribute(
+      "download",
+      `clients_${format(new Date(), "yyyy-MM-dd_HH-mm")}.csv`,
+    );
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
 
-    if (downloadMode === 'branch') {
+    if (downloadMode === "branch") {
       updateBranchDownloadTime(selectedBranchForDownload, downloadStartTime);
     } else {
       setLastDownloadTime(downloadStartTime);
@@ -678,27 +762,52 @@ const Dashboard = () => {
         return;
       }
       if (branchLastDownload) {
-        filterFrom = new Date(branchLastDownload);
+        filterFrom = parseSafeDate(branchLastDownload);
       } else {
         if (!branchStartDate || !branchStartTime) {
-          toast.error('Please select a start date and time for this branch.');
+          toast.error("Please select a start date and time for this branch.");
           return;
         }
-        filterFrom = new Date(branchStartDate);
-        const [fromHours, fromMinutes] = branchStartTime.split(':').map(Number);
-        filterFrom.setHours(fromHours, fromMinutes, 0, 0);
+        filterFrom = parseSafeDate(branchStartDate);
+        if (filterFrom) {
+          const [fromHours, fromMinutes] = branchStartTime.split(":").map(Number);
+          filterFrom.setHours(fromHours, fromMinutes, 0, 0);
+        }
       }
-      const selectedBranchTitle = branchOptions.find(opt => opt.keyWord === selectedBranchForDownload)?.title;
+      const selectedBranchTitle = branchOptions.find(
+        (opt) => opt.keyWord === selectedBranchForDownload,
+      )?.title;
       if (!selectedBranchTitle) {
-        toast.error('Could not find the selected branch title.');
+        toast.error("Could not find the selected branch title.");
         return;
       }
-      dataToDownload = allClients.filter(item => {
-        const createdDate = item.created_at ? new Date(parseISO(item.created_at)) : null;
-        return item.branches === selectedBranchTitle && createdDate && createdDate >= filterFrom;
+
+      const sitesToExclude = excludedSites
+        .split(",")
+        .map((site) => site.trim().toLowerCase())
+        .filter(Boolean);
+
+      dataToDownload = allClients.filter((item) => {
+        const createdDate = parseSafeDate(item.created_at);
+        const branchMatch =
+          item.branches &&
+          item.branches.trim().toLowerCase() === selectedBranchTitle.trim().toLowerCase();
+        const siteLocationLower = item.site_location?.toLowerCase() || "";
+        const siteMatch =
+          sitesToExclude.length > 0 &&
+          sitesToExclude.some((excludedSite) =>
+            siteLocationLower.includes(excludedSite),
+          );
+        return (
+          branchMatch &&
+          createdDate &&
+          filterFrom &&
+          createdDate >= filterFrom &&
+          !siteMatch
+        );
       });
     } else {
-      filterFrom = lastDownloadTime ? new Date(lastDownloadTime) : null;
+      filterFrom = lastDownloadTime ? parseSafeDate(lastDownloadTime) : null;
       dataToDownload = filteredDownloadData;
     }
 
@@ -708,13 +817,17 @@ const Dashboard = () => {
     }
 
     const sortedForDownload = dataToDownload.sort((a, b) => {
-      const dateA = a.created_at ? new Date(parseISO(a.created_at)) : new Date(0);
-      const dateB = b.created_at ? new Date(parseISO(b.created_at)) : new Date(0);
+      const dateA = parseSafeDate(a.created_at) || new Date(0);
+      const dateB = parseSafeDate(b.created_at) || new Date(0);
       return dateB - dateA;
     });
 
     try {
-      const pdf = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
+      const pdf = new jsPDF({
+        orientation: "portrait",
+        unit: "mm",
+        format: "a4",
+      });
       const pageWidth = pdf.internal.pageSize.getWidth();
       const margin = 15;
       let yPosition = margin;
@@ -728,11 +841,28 @@ const Dashboard = () => {
 
       if (filterFrom) {
         pdf.setFontSize(12);
-        pdf.text(`(${format(filterFrom, "dd/MM/yyyy HH:mm")} - ${format(downloadStartTime, "dd/MM/yyyy HH:mm")})`, pageWidth / 2, yPosition, { align: "center" });
+        pdf.text(
+          `(${format(filterFrom, "dd/MM/yyyy HH:mm")} - ${format(downloadStartTime, "dd/MM/yyyy HH:mm")})`,
+          pageWidth / 2,
+          yPosition,
+          { align: "center" },
+        );
         yPosition += 15;
       }
 
-      const tableHead = [["S/N", "Client Name", "State of Origin", "LGA", "Property Name", "No. of Plot(s)", "Plot No(s)", "Land Price", "Branch"]];
+      const tableHead = [
+        [
+          "S/N",
+          "Client Name",
+          "State of Origin",
+          "LGA",
+          "Property Name",
+          "No. of Plot(s)",
+          "Plot No(s)",
+          "Land Price",
+          "Branch",
+        ],
+      ];
       const tableBody = sortedForDownload.map((item, index) => [
         index + 1,
         item.client_name || "N/A",
@@ -750,16 +880,35 @@ const Dashboard = () => {
         head: tableHead,
         body: tableBody,
         theme: "grid",
-        styles: { fontSize: 9, cellPadding: 3, halign: "center", valign: "middle" },
-        headStyles: { fillColor: [47, 83, 24], textColor: [255, 255, 255], fontStyle: "bold" },
-        columnStyles: { 0: { cellWidth: 10 }, 1: { cellWidth: 35 }, 2: { cellWidth: 17.5 }, 3: { cellWidth: 17.5 }, 4: { cellWidth: 35 }, 5: { cellWidth: 15 }, 6: { cellWidth: 15 }, 7: { cellWidth: 17.5 }, 8: { cellWidth: 17.5 } },
+        styles: {
+          fontSize: 9,
+          cellPadding: 3,
+          halign: "center",
+          valign: "middle",
+        },
+        headStyles: {
+          fillColor: [47, 83, 24],
+          textColor: [255, 255, 255],
+          fontStyle: "bold",
+        },
+        columnStyles: {
+          0: { cellWidth: 10 },
+          1: { cellWidth: 35 },
+          2: { cellWidth: 17.5 },
+          3: { cellWidth: 17.5 },
+          4: { cellWidth: 35 },
+          5: { cellWidth: 15 },
+          6: { cellWidth: 15 },
+          7: { cellWidth: 17.5 },
+          8: { cellWidth: 17.5 },
+        },
         alternateRowStyles: { fillColor: [245, 245, 245] },
         margin: { left: margin, right: margin },
       });
 
       pdf.save(`clients_${format(new Date(), "yyyy-MM-dd_HH-mm")}.pdf`);
 
-      if (downloadMode === 'branch') {
+      if (downloadMode === "branch") {
         updateBranchDownloadTime(selectedBranchForDownload, downloadStartTime);
       } else {
         setLastDownloadTime(downloadStartTime);
@@ -769,29 +918,53 @@ const Dashboard = () => {
       toast.success("PDF downloaded successfully!");
     } catch (error) {
       console.error("Error generating PDF:", error);
-      toast.error("Failed to generate PDF: " + (error.message || "Unknown error"));
+      toast.error(
+        "Failed to generate PDF: " + (error.message || "Unknown error"),
+      );
     }
   };
 
   const handleDownloadAllCSV = () => {
     const sortedForDownload = [...allClients].sort((a, b) => {
-      const dateA = a.created_at ? new Date(parseISO(a.created_at)) : new Date(0);
-      const dateB = b.created_at ? new Date(parseISO(b.created_at)) : new Date(0);
+      const dateA = parseSafeDate(a.created_at) || new Date(0);
+      const dateB = parseSafeDate(b.created_at) || new Date(0);
       return dateB - dateA;
     });
 
-    const headers = ["Client Name", "State of Origin", "LGA", "Property Name", "Number of Plot(s)", "Plot No(s)", "Land Price", "Branch"];
+    const headers = [
+      "Client Name",
+      "State of Origin",
+      "LGA",
+      "Property Name",
+      "Number of Plot(s)",
+      "Plot No(s)",
+      "Land Price",
+      "Branch",
+    ];
     const rows = sortedForDownload.map((item) =>
-      [item.client_name || "", item.state_of_origin || "", item.lga || "", item.site_location || "", item.number_of_plot || "", item.plot_number || "", item.land_price || "", item.branches || ""]
-      .map((field) => `"${String(field).replace(/"/g, '""')}"`)
+      [
+        item.client_name || "",
+        item.state_of_origin || "",
+        item.lga || "",
+        item.site_location || "",
+        item.number_of_plot || "",
+        item.plot_number || "",
+        item.land_price || "",
+        item.branches || "",
+      ].map((field) => `"${String(field).replace(/"/g, '""')}"`),
     );
 
-    const csvContent = [headers, ...rows].map((row) => row.join(",")).join("\n");
+    const csvContent = [headers, ...rows]
+      .map((row) => row.join(","))
+      .join("\n");
     const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
-    link.setAttribute("download", `all_clients_${format(new Date(), "yyyy-MM-dd_HH-mm")}.csv`);
+    link.setAttribute(
+      "download",
+      `all_clients_${format(new Date(), "yyyy-MM-dd_HH-mm")}.csv`,
+    );
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -802,13 +975,17 @@ const Dashboard = () => {
 
   const handleDownloadAllPDF = async () => {
     const sortedForDownload = [...allClients].sort((a, b) => {
-      const dateA = a.created_at ? new Date(parseISO(a.created_at)) : new Date(0);
-      const dateB = b.created_at ? new Date(parseISO(b.created_at)) : new Date(0);
+      const dateA = parseSafeDate(a.created_at) || new Date(0);
+      const dateB = parseSafeDate(b.created_at) || new Date(0);
       return dateB - dateA;
     });
 
     try {
-      const pdf = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
+      const pdf = new jsPDF({
+        orientation: "portrait",
+        unit: "mm",
+        format: "a4",
+      });
       const pageWidth = pdf.internal.pageSize.getWidth();
       const margin = 15;
       let yPosition = margin;
@@ -817,10 +994,24 @@ const Dashboard = () => {
       yPosition += 35;
 
       pdf.setFontSize(18);
-      pdf.text("All Client Records", pageWidth / 2, yPosition, { align: "center" });
+      pdf.text("All Client Records", pageWidth / 2, yPosition, {
+        align: "center",
+      });
       yPosition += 15;
 
-      const tableHead = [["S/N", "Client Name", "State of Origin", "LGA", "Property Name", "No. of Plot(s)", "Plot No(s)", "Land Price", "Branch"]];
+      const tableHead = [
+        [
+          "S/N",
+          "Client Name",
+          "State of Origin",
+          "LGA",
+          "Property Name",
+          "No. of Plot(s)",
+          "Plot No(s)",
+          "Land Price",
+          "Branch",
+        ],
+      ];
       const tableBody = sortedForDownload.map((item, index) => [
         index + 1,
         item.client_name || "N/A",
@@ -838,9 +1029,28 @@ const Dashboard = () => {
         head: tableHead,
         body: tableBody,
         theme: "grid",
-        styles: { fontSize: 9, cellPadding: 3, halign: "center", valign: "middle" },
-        headStyles: { fillColor: [47, 83, 24], textColor: [255, 255, 255], fontStyle: "bold" },
-        columnStyles: { 0: { cellWidth: 10 }, 1: { cellWidth: 35 }, 2: { cellWidth: 17.5 }, 3: { cellWidth: 17.5 }, 4: { cellWidth: 35 }, 5: { cellWidth: 15 }, 6: { cellWidth: 15 }, 7: { cellWidth: 17.5 }, 8: { cellWidth: 17.5 } },
+        styles: {
+          fontSize: 9,
+          cellPadding: 3,
+          halign: "center",
+          valign: "middle",
+        },
+        headStyles: {
+          fillColor: [47, 83, 24],
+          textColor: [255, 255, 255],
+          fontStyle: "bold",
+        },
+        columnStyles: {
+          0: { cellWidth: 10 },
+          1: { cellWidth: 35 },
+          2: { cellWidth: 17.5 },
+          3: { cellWidth: 17.5 },
+          4: { cellWidth: 35 },
+          5: { cellWidth: 15 },
+          6: { cellWidth: 15 },
+          7: { cellWidth: 17.5 },
+          8: { cellWidth: 17.5 },
+        },
         alternateRowStyles: { fillColor: [245, 245, 245] },
         margin: { left: margin, right: margin },
       });
@@ -850,12 +1060,14 @@ const Dashboard = () => {
       toast.success("PDF downloaded successfully!");
     } catch (error) {
       console.error("Error generating PDF:", error);
-      toast.error("Failed to generate PDF: " + (error.message || "Unknown error"));
+      toast.error(
+        "Failed to generate PDF: " + (error.message || "Unknown error"),
+      );
     }
   };
 
   const handleSiteDownload = (format, siteLocation) => {
-    if (format === 'csv') handleSiteDownloadCSV(siteLocation);
+    if (format === "csv") handleSiteDownloadCSV(siteLocation);
     else handleSiteDownloadPDF(siteLocation);
   };
 
@@ -864,39 +1076,71 @@ const Dashboard = () => {
     let filterFrom;
 
     if (siteLocationLastDownload) {
-      filterFrom = new Date(siteLocationLastDownload);
+      filterFrom = parseSafeDate(siteLocationLastDownload);
     } else {
       if (!siteLocationStartDate || !siteLocationStartTime) {
-        toast.error('Please select a start date and time for this site.');
+        toast.error("Please select a start date and time for this site.");
         return;
       }
-      filterFrom = new Date(siteLocationStartDate);
-      const [fromHours, fromMinutes] = siteLocationStartTime.split(':').map(Number);
-      filterFrom.setHours(fromHours, fromMinutes, 0, 0);
+      filterFrom = parseSafeDate(siteLocationStartDate);
+      if (filterFrom) {
+        const [fromHours, fromMinutes] = siteLocationStartTime
+          .split(":")
+          .map(Number);
+        filterFrom.setHours(fromHours, fromMinutes, 0, 0);
+      }
     }
 
-    const dataToDownload = allClients.filter(item => {
-      const createdDate = item.created_at ? new Date(parseISO(item.created_at)) : null;
-      return item.site_location && item.site_location.toLowerCase().includes(siteLocation.toLowerCase()) && createdDate && createdDate >= filterFrom;
+    const dataToDownload = allClients.filter((item) => {
+      const createdDate = parseSafeDate(item.created_at);
+      return (
+        item.site_location &&
+        item.site_location.toLowerCase().includes(siteLocation.toLowerCase()) &&
+        createdDate &&
+        filterFrom &&
+        createdDate >= filterFrom
+      );
     });
 
     if (dataToDownload.length === 0) {
       toast.error("No new records found for the selected period.");
       return;
     }
-    
-    const headers = ['Client Name', 'State of Origin', 'LGA', 'Property Name', 'Number of Plot(s)', 'Plot No(s)', 'Land Price', 'Branch'];
+
+    const headers = [
+      "Client Name",
+      "State of Origin",
+      "LGA",
+      "Property Name",
+      "Number of Plot(s)",
+      "Plot No(s)",
+      "Land Price",
+      "Branch",
+    ];
     const rows = dataToDownload.map((item) =>
-      [item.client_name || "", item.state_of_origin || "", item.lga || "", item.site_location || "", item.number_of_plot || "", item.plot_number || "", item.land_price || "", item.branches || ""]
-      .map((field) => `"${String(field).replace(/"/g, '""')}"`)
+      [
+        item.client_name || "",
+        item.state_of_origin || "",
+        item.lga || "",
+        item.site_location || "",
+        item.number_of_plot || "",
+        item.plot_number || "",
+        item.land_price || "",
+        item.branches || "",
+      ].map((field) => `"${String(field).replace(/"/g, '""')}"`),
     );
 
-    const csvContent = [headers, ...rows].map((row) => row.join(",")).join("\n");
+    const csvContent = [headers, ...rows]
+      .map((row) => row.join(","))
+      .join("\n");
     const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
-    link.setAttribute("download", `clients_${siteLocation.replace(/ /g, "_")}_${format(new Date(), "yyyy-MM-dd_HH-mm")}.csv`);
+    link.setAttribute(
+      "download",
+      `clients_${siteLocation.replace(/ /g, "_")}_${format(new Date(), "yyyy-MM-dd_HH-mm")}.csv`,
+    );
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -912,29 +1156,43 @@ const Dashboard = () => {
     let filterFrom;
 
     if (siteLocationLastDownload) {
-      filterFrom = new Date(siteLocationLastDownload);
+      filterFrom = parseSafeDate(siteLocationLastDownload);
     } else {
       if (!siteLocationStartDate || !siteLocationStartTime) {
-        toast.error('Please select a start date and time for this site.');
+        toast.error("Please select a start date and time for this site.");
         return;
       }
-      filterFrom = new Date(siteLocationStartDate);
-      const [fromHours, fromMinutes] = siteLocationStartTime.split(':').map(Number);
-      filterFrom.setHours(fromHours, fromMinutes, 0, 0);
+      filterFrom = parseSafeDate(siteLocationStartDate);
+      if (filterFrom) {
+        const [fromHours, fromMinutes] = siteLocationStartTime
+          .split(":")
+          .map(Number);
+        filterFrom.setHours(fromHours, fromMinutes, 0, 0);
+      }
     }
 
-    const dataToDownload = allClients.filter(item => {
-      const createdDate = item.created_at ? new Date(parseISO(item.created_at)) : null;
-      return item.site_location && item.site_location.toLowerCase().includes(siteLocation.toLowerCase()) && createdDate && createdDate >= filterFrom;
+    const dataToDownload = allClients.filter((item) => {
+      const createdDate = parseSafeDate(item.created_at);
+      return (
+        item.site_location &&
+        item.site_location.toLowerCase().includes(siteLocation.toLowerCase()) &&
+        createdDate &&
+        filterFrom &&
+        createdDate >= filterFrom
+      );
     });
 
     if (dataToDownload.length === 0) {
       toast.error("No new records found for the selected period.");
       return;
     }
-    
+
     try {
-      const pdf = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
+      const pdf = new jsPDF({
+        orientation: "portrait",
+        unit: "mm",
+        format: "a4",
+      });
       const pageWidth = pdf.internal.pageSize.getWidth();
       const margin = 15;
       let yPosition = margin;
@@ -943,16 +1201,35 @@ const Dashboard = () => {
       yPosition += 35;
 
       pdf.setFontSize(18);
-      pdf.text(`Client Records for ${siteLocation}`, pageWidth / 2, yPosition, { align: "center" });
+      pdf.text(`Client Records for ${siteLocation}`, pageWidth / 2, yPosition, {
+        align: "center",
+      });
       yPosition += 10;
 
       if (filterFrom) {
         pdf.setFontSize(12);
-        pdf.text(`(${format(filterFrom, "dd/MM/yyyy HH:mm")} - ${format(downloadStartTime, "dd/MM/yyyy HH:mm")})`, pageWidth / 2, yPosition, { align: "center" });
+        pdf.text(
+          `(${format(filterFrom, "dd/MM/yyyy HH:mm")} - ${format(downloadStartTime, "dd/MM/yyyy HH:mm")})`,
+          pageWidth / 2,
+          yPosition,
+          { align: "center" },
+        );
         yPosition += 15;
       }
 
-      const tableHead = [["S/N", "Client Name", "State of Origin", "LGA", "Property Name", "No. of Plot(s)", "Plot No(s)", "Land Price", "Branch"]];
+      const tableHead = [
+        [
+          "S/N",
+          "Client Name",
+          "State of Origin",
+          "LGA",
+          "Property Name",
+          "No. of Plot(s)",
+          "Plot No(s)",
+          "Land Price",
+          "Branch",
+        ],
+      ];
       const tableBody = dataToDownload.map((item, index) => [
         index + 1,
         item.client_name || "N/A",
@@ -970,20 +1247,43 @@ const Dashboard = () => {
         head: tableHead,
         body: tableBody,
         theme: "grid",
-        styles: { fontSize: 9, cellPadding: 3, halign: "center", valign: "middle" },
-        headStyles: { fillColor: [47, 83, 24], textColor: [255, 255, 255], fontStyle: "bold" },
-        columnStyles: { 0: { cellWidth: 10 }, 1: { cellWidth: 35 }, 2: { cellWidth: 17.5 }, 3: { cellWidth: 17.5 }, 4: { cellWidth: 35 }, 5: { cellWidth: 15 }, 6: { cellWidth: 15 }, 7: { cellWidth: 17.5 }, 8: { cellWidth: 17.5 } },
+        styles: {
+          fontSize: 9,
+          cellPadding: 3,
+          halign: "center",
+          valign: "middle",
+        },
+        headStyles: {
+          fillColor: [47, 83, 24],
+          textColor: [255, 255, 255],
+          fontStyle: "bold",
+        },
+        columnStyles: {
+          0: { cellWidth: 10 },
+          1: { cellWidth: 35 },
+          2: { cellWidth: 17.5 },
+          3: { cellWidth: 17.5 },
+          4: { cellWidth: 35 },
+          5: { cellWidth: 15 },
+          6: { cellWidth: 15 },
+          7: { cellWidth: 17.5 },
+          8: { cellWidth: 17.5 },
+        },
         alternateRowStyles: { fillColor: [245, 245, 245] },
         margin: { left: margin, right: margin },
       });
 
-      pdf.save(`clients_${siteLocation.replace(/ /g, "_")}_${format(new Date(), "yyyy-MM-dd_HH-mm")}.pdf`);
+      pdf.save(
+        `clients_${siteLocation.replace(/ /g, "_")}_${format(new Date(), "yyyy-MM-dd_HH-mm")}.pdf`,
+      );
       updateBranchDownloadTime(siteLocation, downloadStartTime);
       setSiteDownloadModalOpen(false);
       toast.success("PDF downloaded successfully!");
     } catch (error) {
       console.error("Error generating PDF:", error);
-      toast.error("Failed to generate PDF: " + (error.message || "Unknown error"));
+      toast.error(
+        "Failed to generate PDF: " + (error.message || "Unknown error"),
+      );
     }
   };
 
@@ -1003,46 +1303,57 @@ const Dashboard = () => {
 
   const handleDelete = async (id) => {
     if (!id) return;
-    const toastId = toast.loading("Deleting entry...");
-    setIsDeleting(true);
-    try {
-      const token = localStorage.getItem("token");
-      if (!token) {
-        toast.error("Please log in to perform this action.", { id: toastId });
-        setIsDeleting(false);
-        return;
-      }
-
-      const response = await axios.delete(`${API_URL}/api/applications/${id}`, {
-        headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
-      });
-
-      if (response.status === 200 || response.status === 204) {
-        toast.success("Client entry deleted successfully!", { id: toastId });
-        removeClient(id);
-        if (filteredData.length === 1 && currentPage > 1) {
-          setCurrentPage(currentPage - 1);
-        } else if (!filterBranch && !filterDateFrom && !filterDateTo) {
-          fetchApplications(currentPage, recordsPerPage, debouncedSearchQuery);
+    if (confirm("Are you sure to delete this entry?. This action is irreversible.")) {
+      const toastId = toast.loading("Deleting entry...");
+      setIsDeleting(true);
+      try {
+        const token = localStorage.getItem("token");
+        if (!token) {
+          toast.error("Please log in to perform this action.", { id: toastId });
+          setIsDeleting(false);
+          return;
         }
-      } else {
-        toast.error(`Failed to delete client. Status: ${response.status}`, { id: toastId });
+  
+        const response = await axios.delete(`${API_URL}/api/applications/${id}`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        });
+  
+        if (response.status === 200 || response.status === 204) {
+          toast.success("Client entry deleted successfully!", { id: toastId });
+          removeClient(id);
+          if (filteredData.length === 1 && currentPage > 1) {
+            setCurrentPage(currentPage - 1);
+          } else if (!filterBranch && !filterDateFrom && !filterDateTo) {
+            fetchApplications(currentPage, recordsPerPage, debouncedSearchQuery);
+          }
+        } else {
+          toast.error(`Failed to delete client. Status: ${response.status}`, {
+            id: toastId,
+          });
+        }
+      } catch (error) {
+        console.error("Error deleting client:", error);
+        toast.error(
+          "Failed to delete client: " +
+            (error.response?.data?.message || error.message || "Unknown error"),
+          { id: toastId },
+        );
+        if (axios.isAxiosError(error) && error.response?.status === 401) {
+          toast.info("Session expired!. Logging out...");
+          setTimeout(() => localStorage.removeItem("token"), 500);
+        }
+      } finally {
+        setIsDeleting(false);
       }
-    } catch (error) {
-      console.error("Error deleting client:", error);
-      toast.error("Failed to delete client: " + (error.response?.data?.message || error.message || "Unknown error"), { id: toastId });
-      if (axios.isAxiosError(error) && error.response?.status === 401) {
-        toast.info("Session expired!. Logging out...");
-        setTimeout(() => localStorage.removeItem("token"), 500);
-      }
-    } finally {
-      setIsDeleting(false);
     }
   };
 
   return (
     <div className="min-h-screen bg-gray-100 flex flex-col p-0 md:p-5 relative">
-      <SideNav 
+      <SideNav
         openMenu={openMenu}
         setOpenMenu={setOpenMenu}
         branches={branchOptions}
@@ -1058,11 +1369,21 @@ const Dashboard = () => {
           <>
             <div className="flex flex-col gap-4 lg:flex-row lg:items-center md:justify-between mb-4 md:mb-6 border-b border-gray-200 pb-2 md:pb-4">
               <div className="flex items-center gap-2 md:gap-3">
-                <button type="button" onClick={() => setOpenMenu(true)} className="text-2xl cursor-pointer">
+                <button
+                  type="button"
+                  onClick={() => setOpenMenu(true)}
+                  className="text-2xl cursor-pointer"
+                >
                   <FaBars />
                 </button>
-                <img src={assets.logo} className="w-8 h-8 md:w-10 md:h-10" alt="Logo" />
-                <h1 className="text-lg md:text-2xl font-extrabold text-gray-900">Dashboard</h1>
+                <img
+                  src={assets.logo}
+                  className="w-8 h-8 md:w-10 md:h-10"
+                  alt="Logo"
+                />
+                <h1 className="text-lg md:text-2xl font-extrabold text-gray-900">
+                  Dashboard
+                </h1>
               </div>
 
               <div className="flex flex-col md:flex-row gap-2 md:gap-3 w-full lg:w-[65%]">
@@ -1080,34 +1401,82 @@ const Dashboard = () => {
                 <button
                   onClick={() => {
                     fetchAllClients(true);
-                    fetchApplications(currentPage, recordsPerPage, debouncedSearchQuery);
+                    fetchApplications(
+                      currentPage,
+                      recordsPerPage,
+                      debouncedSearchQuery,
+                    );
                   }}
                   disabled={loading || loadingAllClients || loadingApplications}
                   className="h-[45px] md:w-[45px] cursor-pointer flex gap-2 items-center justify-center text-sm bg-secClr text-white font-semibold rounded-lg hover:bg-secClr/90 transition duration-300 shadow-sm disabled:opacity-50"
                 >
-                  <TfiReload className={`${(loading || loadingAllClients || loadingApplications) && "animate-spin"} size-5`} />
+                  <TfiReload
+                    className={`${(loading || loadingAllClients || loadingApplications) && "animate-spin"} size-5`}
+                  />
                   <span className="md:hidden inline">Reload Data</span>
                 </button>
 
                 <div className="flex flex-col md:flex-row gap-2 md:gap-3 w-full md:w-auto">
                   <div className="flex flex-row gap-2 md:gap-3 w-full md:w-auto">
-                    <button onClick={() => { fetchAllClients(); setBranchFilterModalOpen(true); }} className="flex items-center justify-center flex-1 px-4 py-2.5 text-sm bg-secClr text-white font-semibold rounded-lg hover:bg-secClr/90 transition duration-300 shadow-sm">
+                    <button
+                      onClick={() => {
+                        fetchAllClients();
+                        setBranchFilterModalOpen(true);
+                      }}
+                      className="flex items-center justify-center flex-1 px-4 py-2.5 text-sm bg-secClr text-white font-semibold rounded-lg hover:bg-secClr/90 transition duration-300 shadow-sm"
+                    >
                       <FaFilter className="mr-2 w-4 h-4" /> Branch
                     </button>
-                    <button onClick={() => setDateFilterModalOpen(true)} className="flex items-center justify-center flex-1 px-4 py-2.5 text-sm bg-secClr text-white font-semibold rounded-lg hover:bg-secClr/90 transition duration-300 shadow-sm">
+                    <button
+                      onClick={() => setDateFilterModalOpen(true)}
+                      className="flex items-center justify-center flex-1 px-4 py-2.5 text-sm bg-secClr text-white font-semibold rounded-lg hover:bg-secClr/90 transition duration-300 shadow-sm"
+                    >
                       <FaFilter className="mr-2 w-4 h-4" /> Filter
                     </button>
                   </div>
 
                   <div className="relative">
-                    <button onClick={() => { fetchAllClients(); setShowMoreDownloadOptions((prev) => !prev); }} className="flex items-center justify-center px-4 h-[45px] text-sm bg-secClr text-white font-semibold rounded-lg hover:bg-secClr/90 transition duration-300 shadow-sm w-full md:w-auto">
+                    <button
+                      onClick={() => {
+                        fetchAllClients();
+                        setShowMoreDownloadOptions((prev) => !prev);
+                      }}
+                      className="flex items-center justify-center px-4 h-[45px] text-sm bg-secClr text-white font-semibold rounded-lg hover:bg-secClr/90 transition duration-300 shadow-sm w-full md:w-auto"
+                    >
                       Download <FaCaretDown className="ml-2 w-6 h-6" />
                     </button>
                     {showMoreDownloadOptions && (
                       <div className="absolute right-0 mt-2 min-w-[200px] bg-white border border-gray-200 rounded-lg shadow-xl z-50 text-sm font-semibold overflow-hidden">
-                        <button onClick={() => { if (!allClientsFetched) fetchAllClients(); setShowMoreDownloadOptions(false); setDownloadModalOpen(true); }} className="w-full text-left p-3 border-b border-gray-100 hover:bg-gray-50 transition">Continue from last download</button>
-                        <button onClick={() => { if (!allClientsFetched) fetchAllClients(); setShowMoreDownloadOptions(false); setDownloadAllModalOpen(true); }} className="w-full text-left p-3 border-b border-gray-100 hover:bg-gray-50 transition">Download from all times</button>
-                        <button onClick={() => { if (!allClientsFetched) fetchAllClients(); setShowMoreDownloadOptions(false); setSiteDownloadModalOpen(true); }} className="w-full text-left p-3 hover:bg-gray-50 transition">Download for a specific site</button>
+                        <button
+                          onClick={() => {
+                            fetchAllClients(true);
+                            setShowMoreDownloadOptions(false);
+                            setDownloadModalOpen(true);
+                          }}
+                          className="w-full text-left p-3 border-b border-gray-100 hover:bg-gray-50 transition"
+                        >
+                          Continue from last download
+                        </button>
+                        <button
+                          onClick={() => {
+                            fetchAllClients(true);
+                            setShowMoreDownloadOptions(false);
+                            setDownloadAllModalOpen(true);
+                          }}
+                          className="w-full text-left p-3 border-b border-gray-100 hover:bg-gray-50 transition"
+                        >
+                          Download from all times
+                        </button>
+                        <button
+                          onClick={() => {
+                            fetchAllClients(true);
+                            setShowMoreDownloadOptions(false);
+                            setSiteDownloadModalOpen(true);
+                          }}
+                          className="w-full text-left p-3 hover:bg-gray-50 transition"
+                        >
+                          Download for a specific site
+                        </button>
                       </div>
                     )}
                   </div>
@@ -1115,16 +1484,119 @@ const Dashboard = () => {
               </div>
             </div>
 
-            <ApplicationsList filteredData={filteredData} currentPage={currentPage} recordsPerPage={recordsPerPage} isDeleting={isDeleting} handleDelete={handleDelete} />
-            <PaginationControls currentPage={currentPage} totalPages={totalPages} setCurrentPage={setCurrentPage} getPageNumbers={getPageNumbers} totalRecords={totalRecords} filteredData={filteredData} />
+            <ApplicationsList
+              filteredData={filteredData}
+              currentPage={currentPage}
+              recordsPerPage={recordsPerPage}
+              isDeleting={isDeleting}
+              handleDelete={handleDelete}
+            />
+            <PaginationControls
+              currentPage={currentPage}
+              totalPages={totalPages}
+              setCurrentPage={setCurrentPage}
+              getPageNumbers={getPageNumbers}
+              totalRecords={totalRecords}
+              filteredData={filteredData}
+            />
           </>
         )}
 
-        <BranchFilterModal isLoadingAllclients={loadingAllClients} isOpen={branchFilterModalOpen} onClose={() => setBranchFilterModalOpen(false)} branchInput={branchInput} onBranchInputChange={setBranchInput} branchOptions={branchOptions} onReset={resetFilter} onApply={applyBranchFilter} />
-        <DateFilterModal isLoadingAllclients={loadingAllClients} isOpen={dateFilterModalOpen} onClose={() => setDateFilterModalOpen(false)} dateFromInput={dateFromInput} onDateFromChange={(date) => { setDateFromInput(date); setActivePreset(null); }} timeFromInput={timeFromInput} onTimeFromChange={(e) => { setTimeFromInput(e.target.value); setActivePreset(null); }} dateToInput={dateToInput} onDateToChange={(date) => { setDateToInput(date); setActivePreset(null); }} timeToInput={timeToInput} onTimeToChange={(e) => { setTimeToInput(e.target.value); setActivePreset(null); }} onReset={resetFilter} onApply={applyDateFilter} onPresetSelect={handlePresetDateFilter} activePreset={activePreset} />
-        <DownloadModal isLoadingAllclients={loadingAllClients} isOpen={downloadModalOpen} onClose={() => setDownloadModalOpen(false)} lastDownloadTime={lastDownloadTime} branchLastDownload={branchLastDownload} downloadDateFrom={downloadDateFrom} onDownloadDateFromChange={setDownloadDateFrom} downloadTimeFrom={downloadTimeFrom} onDownloadTimeFromChange={setDownloadTimeFrom} onDownloadCSV={handleDownloadCSV} onDownloadPDF={handleDownloadPDF} excludedSites={excludedSites} onExcludeChange={setExcludedSites} excludedBranches={excludedBranches} onExcludeBranchChange={handleExcludeBranchChange} initialCount={initialDownloadData.length} excludedCount={initialDownloadData.length - filteredDownloadData.length} remainingCount={filteredDownloadData.length} branchOptions={branchOptions} onBranchSelect={handleBranchSelectForDownload} selectedBranch={selectedBranchForDownload} branchStartDate={branchStartDate} setBranchStartDate={setBranchStartDate} branchStartTime={branchStartTime} setBranchStartTime={setBranchStartTime} branchInitialCount={branchInitialData.length} loadingBranchDownloadTime={loadingBranchDownloadTime} onModalCloseCleanup={onModalCloseCleanup} />
-        <DownloadAllModal isLoadingAllclients={loadingAllClients} isOpen={downloadAllModalOpen} onClose={() => setDownloadAllModalOpen(false)} onDownloadCSV={handleDownloadAllCSV} onDownloadPDF={handleDownloadAllPDF} />
-        <SiteDownloadModal isOpen={siteDownloadModalOpen} onClose={() => setSiteDownloadModalOpen(false)} onDownload={handleSiteDownload} onSiteSelect={handleSiteLocationSelectForDownload} siteLastDownload={siteLocationLastDownload} siteStartDate={siteLocationStartDate} setSiteStartDate={setSiteLocationStartDate} siteStartTime={siteLocationStartTime} setSiteStartTime={setSiteLocationStartTime} newRecordsCount={newRecordsForSite.length} loadingSiteTime={loadingSiteDownloadTime} onModalCloseCleanup={onSiteModalCloseCleanup} siteLocation={siteLocation} onSiteLocationChange={setSiteLocation} debouncedSiteLocation={debouncedSiteLocation} />
+        <BranchFilterModal
+          isLoadingAllclients={loadingAllClients}
+          isOpen={branchFilterModalOpen}
+          onClose={() => setBranchFilterModalOpen(false)}
+          branchInput={branchInput}
+          onBranchInputChange={setBranchInput}
+          branchOptions={branchOptions}
+          onReset={resetFilter}
+          onApply={applyBranchFilter}
+        />
+        <DateFilterModal
+          isLoadingAllclients={loadingAllClients}
+          isOpen={dateFilterModalOpen}
+          onClose={() => setDateFilterModalOpen(false)}
+          dateFromInput={dateFromInput}
+          onDateFromChange={(date) => {
+            setDateFromInput(date);
+            setActivePreset(null);
+          }}
+          timeFromInput={timeFromInput}
+          onTimeFromChange={(e) => {
+            setTimeFromInput(e.target.value);
+            setActivePreset(null);
+          }}
+          dateToInput={dateToInput}
+          onDateToChange={(date) => {
+            setDateToInput(date);
+            setActivePreset(null);
+          }}
+          timeToInput={timeToInput}
+          onTimeToChange={(e) => {
+            setTimeToInput(e.target.value);
+            setActivePreset(null);
+          }}
+          onReset={resetFilter}
+          onApply={applyDateFilter}
+          onPresetSelect={handlePresetDateFilter}
+          activePreset={activePreset}
+        />
+        <DownloadModal
+          isLoadingAllclients={loadingAllClients}
+          isOpen={downloadModalOpen}
+          onClose={() => setDownloadModalOpen(false)}
+          lastDownloadTime={lastDownloadTime}
+          branchLastDownload={branchLastDownload}
+          downloadDateFrom={downloadDateFrom}
+          onDownloadDateFromChange={setDownloadDateFrom}
+          downloadTimeFrom={downloadTimeFrom}
+          onDownloadTimeFromChange={setDownloadTimeFrom}
+          onDownloadCSV={handleDownloadCSV}
+          onDownloadPDF={handleDownloadPDF}
+          excludedSites={excludedSites}
+          onExcludeChange={setExcludedSites}
+          excludedBranches={excludedBranches}
+          onExcludeBranchChange={handleExcludeBranchChange}
+          initialCount={initialDownloadData.length}
+          excludedCount={
+            initialDownloadData.length - filteredDownloadData.length
+          }
+          remainingCount={filteredDownloadData.length}
+          branchOptions={branchOptions}
+          onBranchSelect={handleBranchSelectForDownload}
+          selectedBranch={selectedBranchForDownload}
+          branchStartDate={branchStartDate}
+          setBranchStartDate={setBranchStartDate}
+          branchStartTime={branchStartTime}
+          setBranchStartTime={setBranchStartTime}
+          branchInitialCount={branchInitialData.length}
+          loadingBranchDownloadTime={loadingBranchDownloadTime}
+          onModalCloseCleanup={onModalCloseCleanup}
+        />
+        <DownloadAllModal
+          isLoadingAllclients={loadingAllClients}
+          isOpen={downloadAllModalOpen}
+          onClose={() => setDownloadAllModalOpen(false)}
+          onDownloadCSV={handleDownloadAllCSV}
+          onDownloadPDF={handleDownloadAllPDF}
+        />
+        <SiteDownloadModal
+          isOpen={siteDownloadModalOpen}
+          onClose={() => setSiteDownloadModalOpen(false)}
+          onDownload={handleSiteDownload}
+          onSiteSelect={handleSiteLocationSelectForDownload}
+          siteLastDownload={siteLocationLastDownload}
+          siteStartDate={siteLocationStartDate}
+          setSiteStartDate={setSiteLocationStartDate}
+          siteStartTime={siteLocationStartTime}
+          setSiteStartTime={setSiteLocationStartTime}
+          newRecordsCount={newRecordsForSite.length}
+          loadingSiteTime={loadingSiteDownloadTime}
+          onModalCloseCleanup={onSiteModalCloseCleanup}
+          siteLocation={siteLocation}
+          onSiteLocationChange={setSiteLocation}
+          debouncedSiteLocation={debouncedSiteLocation}
+        />
       </div>
     </div>
   );
