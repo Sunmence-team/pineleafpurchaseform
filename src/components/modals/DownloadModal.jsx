@@ -43,7 +43,7 @@ const DownloadModal = ({
 
   if (isLoadingAllclients) {
     <div className="flex items-center justify-center p-4">
-      <div className="animate-spin rounded-full h-8 w-8 border-4 border-secondary2 border-t-transparent"></div>
+      <div className="animate-spin rounded-full h-8 w-8 border-4 border-primary border-t-transparent"></div>
       <span className="ml-3">Loading all clients...</span>
     </div>;
   }
@@ -66,13 +66,13 @@ const DownloadModal = ({
 
         <div className="grid grid-cols-2 justify-center gap-4 mb-6 border-b border-gray-400 pb-6">
           <button
-            className={`text-sm font-semibold outline-0 h-[50px] cursor-pointer rounded-lg border border-secondary2/50 ${downloadMode === "general" ? "bg-secondary2 text-primary2" : ""}`}
+            className={`text-sm font-semibold outline-0 h-[50px] cursor-pointer rounded-lg border border-primary/50 ${downloadMode === "general" ? "bg-primary text-secondary" : ""}`}
             onClick={() => setDownloadMode("general")}
           >
             General Download
           </button>
           <button
-            className={`text-sm font-semibold outline-0 h-[50px] cursor-pointer rounded-lg border border-secondary2/50 ${downloadMode === "branch" ? "bg-secondary2 text-primary2" : ""}`}
+            className={`text-sm font-semibold outline-0 h-[50px] cursor-pointer rounded-lg border border-primary/50 ${downloadMode === "branch" ? "bg-primary text-secondary" : ""}`}
             onClick={() => setDownloadMode("branch")}
           >
             Download by Branch
@@ -85,7 +85,7 @@ const DownloadModal = ({
               <>
                 <p className="text-sm md:text-base text-gray-700">
                   Your last general download was on:{" "}
-                  <span className="font-semibold text-secondary2">
+                  <span className="font-semibold text-primary">
                     {format(lastDownloadTime, "dd/MM/yyyy HH:mm")}
                   </span>
                 </p>
@@ -98,7 +98,7 @@ const DownloadModal = ({
                     value={excludedSites}
                     onChange={(e) => onExcludeChange(e.target.value)}
                     placeholder="e.g. siteA, siteB"
-                    className="w-full px-3 py-2 md:px-4 md:py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-secondary2 text-sm md:text-base bg-gray-50"
+                    className="w-full px-3 py-2 md:px-4 md:py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-sm md:text-base bg-gray-50"
                   />
                 </div>
                 <div className="mt-4">
@@ -108,7 +108,7 @@ const DownloadModal = ({
                   <select
                     onChange={(e) => onExcludeBranchChange(e.target.value)}
                     defaultValue={""}
-                    className="w-full px-3 py-2 md:px-4 md:py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-secondary2 text-sm md:text-base bg-gray-50"
+                    className="w-full px-3 py-2 md:px-4 md:py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-sm md:text-base bg-gray-50"
                   >
                     <option value="" disabled>
                       -- Select branches to exclude --
@@ -131,7 +131,7 @@ const DownloadModal = ({
                       return (
                         <div
                           key={branchKey}
-                          className="flex items-center bg-gray-200 border border-secondary2/30 rounded-full px-3 py-1 text-xs cursor-pointer"
+                          className="flex items-center bg-gray-200 border border-primary/30 rounded-full px-3 py-1 text-xs cursor-pointer"
                         >
                           <span>{branch ? branch.title : branchKey}</span>
                           <button
@@ -168,7 +168,7 @@ const DownloadModal = ({
             </label>
             <select
               onChange={(e) => onBranchSelect(e.target.value)}
-              className="w-full px-3 py-2 md:px-4 md:py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-secondary2 text-sm md:text-base bg-gray-50"
+              className="w-full px-3 py-2 md:px-4 md:py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-sm md:text-base bg-gray-50"
             >
               <option value="">-- Select a branch --</option>
               {branchOptions.map((option) => (
@@ -179,7 +179,7 @@ const DownloadModal = ({
             </select>
             {loadingBranchDownloadTime ? (
               <div className="flex items-center justify-center p-3 mt-4">
-                <div className="animate-spin rounded-full h-6 w-6 border-2 border-secondary2 border-t-transparent"></div>
+                <div className="animate-spin rounded-full h-6 w-6 border-2 border-primary border-t-transparent"></div>
                 <span className="ml-2 text-sm text-gray-600">
                   Loading branch download history...
                 </span>
@@ -196,7 +196,7 @@ const DownloadModal = ({
                   <>
                     <p className="text-sm text-gray-500 mt-2">
                       Last download for this branch was on:{" "}
-                      <span className="font-semibold text-secondary2">
+                      <span className="font-semibold text-primary">
                         {format(
                           new Date(branchLastDownload),
                           "dd/MM/yyyy HH:mm",
@@ -219,7 +219,7 @@ const DownloadModal = ({
                         onChange={setBranchStartDate}
                         dateFormat="dd-MM-yyyy"
                         placeholderText="Select start date"
-                        className="w-full px-3 py-2 md:px-4 md:py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-secondary2 text-sm md:text-base bg-gray-50"
+                        className="w-full px-3 py-2 md:px-4 md:py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-sm md:text-base bg-gray-50"
                       />
                     </div>
                     <div>
@@ -230,7 +230,7 @@ const DownloadModal = ({
                         type="time"
                         value={branchStartTime}
                         onChange={(e) => setBranchStartTime(e.target.value)}
-                        className="w-full px-3 py-2 md:px-4 md:py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-secondary2 text-sm md:text-base bg-gray-50"
+                        className="w-full px-3 py-2 md:px-4 md:py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-sm md:text-base bg-gray-50"
                       />
                     </div>
                   </div>
@@ -250,14 +250,14 @@ const DownloadModal = ({
           </button>
           <button
             onClick={() => onDownloadCSV(downloadMode)}
-            className="px-3 py-2 md:px-4 md:py-2 bg-secondary2 text-white font-semibold rounded-lg hover:bg-secondary2/90 transition duration-300 shadow-md w-full md:w-auto"
+            className="px-3 py-2 md:px-4 md:py-2 bg-primary text-white font-semibold rounded-lg hover:bg-primary/90 transition duration-300 shadow-md w-full md:w-auto"
             aria-label="Download CSV"
           >
             Download as CSV
           </button>
           <button
             onClick={() => onDownloadPDF(downloadMode)}
-            className="col-span-2 px-3 py-2 md:px-4 md:py-2 bg-secondary2 text-white font-semibold rounded-lg hover:bg-secondary2/90 transition duration-300 shadow-md w-full md:w-auto"
+            className="col-span-2 px-3 py-2 md:px-4 md:py-2 bg-primary text-white font-semibold rounded-lg hover:bg-primary/90 transition duration-300 shadow-md w-full md:w-auto"
             aria-label="Download PDF"
           >
             Download PDF

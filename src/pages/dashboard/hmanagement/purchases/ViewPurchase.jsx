@@ -125,7 +125,7 @@ const ViewPurchase = () => {
   if (isLoading) {
     return (
       <div className="flex justify-center items-center min-h-screen bg-gray-50">
-        <div className="animate-spin rounded-full h-12 w-12 border-4 border-t-transparent border-primary2"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-4 border-t-transparent border-secondary"></div>
       </div>
     );
   }
@@ -138,7 +138,7 @@ const ViewPurchase = () => {
         </p>
         <button
           onClick={() => navigate("/dashboard/manage/purchases")}
-          className="px-6 py-2 bg-primary2 text-white rounded-lg hover:bg-primary2"
+          className="px-6 py-2 bg-secondary text-white rounded-lg hover:bg-secondary"
         >
           Back to Purchases
         </button>
@@ -147,8 +147,8 @@ const ViewPurchase = () => {
   }
 
   const SectionHeader = ({ icon: Icon, title }) => (
-    <h3 className="text-lg font-bold text-gray-900 border-l-4 border-primary2 pl-3 mb-6 flex items-center gap-2">
-      {/* <Icon className="text-primary2" /> */}
+    <h3 className="text-lg font-bold text-gray-900 border-l-4 border-secondary pl-3 mb-6 flex items-center gap-2">
+      {/* <Icon className="text-secondary" /> */}
       {title}
     </h3>
   );
@@ -314,7 +314,7 @@ const ViewPurchase = () => {
                         </p>
                       </div>
                       <div className="text-right">
-                        <p className="text-sm font-bold text-primary2">
+                        <p className="text-sm font-bold text-secondary">
                           {formatterUtility(Number(tx.amount))}
                         </p>
                         <span
@@ -331,7 +331,7 @@ const ViewPurchase = () => {
                     <button
                       type="button"
                       onClick={() => setPaymentDetails(tx)}
-                      className="bg-secondary2 h-10 rounded-lg text-white w-full cursor-pointer"
+                      className="bg-primary h-10 rounded-lg text-white w-full cursor-pointer"
                     >
                       View Payment
                     </button>
@@ -407,7 +407,7 @@ const ViewPurchase = () => {
                     href={paymentProofUrl}
                     target="_blank"
                     rel="noreferrer"
-                    className="inline-block text-sm font-semibold text-primary2 underline"
+                    className="inline-block text-sm font-semibold text-secondary underline"
                   >
                     {isPaymentProofPdf
                       ? "Open / Download PDF"
