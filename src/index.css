@@ -1,10 +1,10 @@
 @import "tailwindcss";
 
 @theme {
-  --color-pryClr: #e6fff6;
-  --color-secClr: #2f5318;
-  --color-trdClr: #a5d6a7;
-  --color-tetClr: #f5dd00;
+  --color-primary: #2f5318;
+  --color-secondary: #f8faf8;
+  --color-tableHeading: #414141;
+  --color-tableData: #191717;
 }
 
 .react-datepicker-wrapper {
@@ -19,19 +19,23 @@
   width: 100% !important;
 }
 
+.no-scrollbar::-webkit-scrollbar {
+  @apply hidden;
+}
+
 .styled-scrollbar::-webkit-scrollbar {
   @apply w-1;
 }
 
 .styled-scrollbar::-webkit-scrollbar-thumb {
-  @apply bg-secClr/20 rounded-full;
+  @apply bg-primary/20 rounded-full;
 }
 
 .form-checkbox,
 .form-radio {
-  @apply accent-secClr;
+  @apply accent-primary;
 }
 
 button:disabled {
-  @apply opacity-50 cursor-not-allowed
+  @apply opacity-50 cursor-not-allowed;
 }

@@ -2,8 +2,8 @@ import React, { useState, useEffect } from "react";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { FaArrowLeft } from "react-icons/fa";
 import { toast } from "sonner";
-import assets from "../../../../../assets/assests";
-import api, { getErrorMessage } from "../../../../../utilities/api";
+import assets from "../../../../../assets/assets";
+import { api, getErrorMessage } from "../../../../../helpers/api";
 import {
   formatISODateToCustom,
   formatterUtility,
@@ -30,7 +30,7 @@ const ViewApplicant = () => {
       const fetchApplication = async () => {
         setIsLoading(true);
         try {
-          const response = await api.get(`/api/interest/${id}`, {
+          const response = await hmApi.get(`/api/interest/${id}`, {
             headers: {
               Authorization: `Bearer ${token}`,
             },
@@ -51,7 +51,7 @@ const ViewApplicant = () => {
   if (isLoading) {
     return (
       <div className="flex justify-center items-center min-h-screen bg-gray-50">
-        <div className="animate-spin rounded-full h-12 w-12 border-4 border-t-transparent border-primary"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-4 border-t-transparent border-primary2"></div>
       </div>
     );
   }
@@ -70,7 +70,7 @@ const ViewApplicant = () => {
                 : undefined,
             })
           }
-          className="px-6 py-2 bg-primary text-white rounded-lg hover:bg-primary/90"
+          className="px-6 py-2 bg-primary2 text-white rounded-lg hover:bg-primary2/90"
         >
           Back to applicants
         </button>
@@ -107,7 +107,7 @@ const ViewApplicant = () => {
         payload.note = paymentActionNote.trim();
       }
 
-      const response = await api.post(
+      const response = await hmApi.post(
         `/api/admin/interest/verify/manual`,
         payload,
         {
@@ -168,7 +168,7 @@ const ViewApplicant = () => {
                 href={`${HM_STORAGE_API_URL}${application?.user?.statement_of_account}`}
                 target="_blank"
                 download
-                className="flex items-center justify-center px-4 py-2 sm:px-5 sm:py-3 bg-secClr text-white font-semibold rounded-lg hover:bg-secClr transition-colors duration-200 w-full sm:w-auto text-sm"
+                className="flex items-center justify-center px-4 py-2 sm:px-5 sm:py-3 bg-secondary2 text-white font-semibold rounded-lg hover:bg-secondary2 transition-colors duration-200 w-full sm:w-auto text-sm"
               >
                 <FaDownload className="mr-2 text-sm" />
                 Download Statement
@@ -180,7 +180,7 @@ const ViewApplicant = () => {
         <div className="space-y-10">
           {/* Profile Section */}
           <section>
-            <h3 className="text-lg font-bold text-gray-900 border-l-4 border-primary pl-3 mb-6">
+            <h3 className="text-lg font-bold text-gray-900 border-l-4 border-primary2 pl-3 mb-6">
               Personal Information
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -208,7 +208,7 @@ const ViewApplicant = () => {
 
           {/* Address Section */}
           <section>
-            <h3 className="text-lg font-bold text-gray-900 border-l-4 border-primary pl-3 mb-6">
+            <h3 className="text-lg font-bold text-gray-900 border-l-4 border-primary2 pl-3 mb-6">
               Address Details
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -229,7 +229,7 @@ const ViewApplicant = () => {
 
           {/* Next of Kin Section */}
           <section>
-            <h3 className="text-lg font-bold text-gray-900 border-l-4 border-primary pl-3 mb-6">
+            <h3 className="text-lg font-bold text-gray-900 border-l-4 border-primary2 pl-3 mb-6">
               Next of Kin
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -258,7 +258,7 @@ const ViewApplicant = () => {
 
           {/* Professional Section */}
           <section>
-            <h3 className="text-lg font-bold text-gray-900 border-l-4 border-primary pl-3 mb-6">
+            <h3 className="text-lg font-bold text-gray-900 border-l-4 border-primary2 pl-3 mb-6">
               Professional Information
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -283,7 +283,7 @@ const ViewApplicant = () => {
 
           {/* Payment Section */}
           <section>
-            <h3 className="text-lg font-bold text-gray-900 border-l-4 border-primary pl-3 mb-6">
+            <h3 className="text-lg font-bold text-gray-900 border-l-4 border-primary2 pl-3 mb-6">
               Payment Information
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -336,7 +336,7 @@ const ViewApplicant = () => {
                 href={proofOfPaymentImage}
                 target="_blank"
                 download
-                className="flex items-center justify-center px-4 py-2 sm:px-5 sm:py-3 bg-secClr text-white font-semibold rounded-lg hover:bg-secClr transition-colors duration-200 w-full sm:w-auto text-sm"
+                className="flex items-center justify-center px-4 py-2 sm:px-5 sm:py-3 bg-secondary2 text-white font-semibold rounded-lg hover:bg-secondary2 transition-colors duration-200 w-full sm:w-auto text-sm"
               >
                 <FaDownload className="mr-2 text-sm" />
                 Download proof of payment
@@ -350,7 +350,7 @@ const ViewApplicant = () => {
                       handlePaymentAction(application?.reference, "success")
                     }
                     disabled={isVerifying}
-                    className="px-6 py-2 bg-secClr text-white font-semibold rounded-lg transition-colors disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer"
+                    className="px-6 py-2 bg-secondary2 text-white font-semibold rounded-lg transition-colors disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer"
                   >
                     {isVerifying ? "Processing..." : "Verify Payment"}
                   </button>

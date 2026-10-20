@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import assets from "../assets/assests";
+import assets from "../assets/assets";
 import { NavLink, useNavigate } from "react-router-dom";
 import { FaX } from "react-icons/fa6";
 import { IoChevronDown } from "react-icons/io5";
@@ -14,34 +14,7 @@ const SideNav = ({ openMenu, setOpenMenu, branches, isLoading }) => {
   const [openDropHMMenu, setOpenDropHMMenu] = useState(false);
 
   const houseManagementNavigation = [
-    {
-      name: "Manage Applicants",
-      relativeRoute: "manage/applicants",
-    },
-    {
-      name: "Manage Users",
-      relativeRoute: "manage/users",
-    },
-    {
-      name: "Manage Properties",
-      relativeRoute: "manage/properties",
-    },
-    {
-      name: "Manage Purchases",
-      relativeRoute: "manage/purchases",
-    },
-    {
-      name: "Manage Subscriptions",
-      relativeRoute: "manage/subscriptions",
-    },
-    {
-      name: "Manage Refunds",
-      relativeRoute: "manage/refunds",
-    },
-    {
-      name: "Flagged Accounts",
-      relativeRoute: "manage/flagged-accounts",
-    },
+    
   ];
 
   const role = localStorage.getItem("role").toLowerCase();
@@ -79,7 +52,7 @@ const SideNav = ({ openMenu, setOpenMenu, branches, isLoading }) => {
                 to={"/dashboard"}
                 end
                 className={({ isActive }) =>
-                  `py-3 text-sm flex items-center px-4 rounded-md font-medium ${isActive ? "bg-secClr text-white" : ""}`
+                  `py-3 text-sm flex items-center px-4 rounded-md font-medium ${isActive ? "bg-primary text-white" : ""}`
                 }
                 onClick={() => setOpenMenu(false)}
               >
@@ -87,7 +60,7 @@ const SideNav = ({ openMenu, setOpenMenu, branches, isLoading }) => {
               </NavLink>
               <div className="space-y-2">
                 <div
-                  className={`flex items-center gap-3 w-full text-black px-4 py-3 cursor-pointer text-sm rounded-md ${openDropMenu ? "bg-secClr text-white" : ""}`}
+                  className={`flex items-center gap-3 w-full text-black px-4 py-3 cursor-pointer text-sm rounded-md ${openDropMenu ? "bg-primary text-white" : ""}`}
                   title={"branches"}
                   onClick={() => setOpenDropMenu(!openDropMenu)}
                 >
@@ -102,13 +75,13 @@ const SideNav = ({ openMenu, setOpenMenu, branches, isLoading }) => {
                 </div>
                 {openDropMenu && (
                   <div
-                    className={`border-l border-secClr/30 lg:pl-2 flex flex-col`}
+                    className={`border-l border-primary/30 lg:pl-2 flex flex-col`}
                   >
                     {branches.map((branch) => (
                       <NavLink
                         to={`/dashboard/branch/${branch.keyWord}`}
                         className={({ isActive }) =>
-                          `h-10 flex items-center px-4 last:border-b-0 border-b border-secClr/30 text-xs ${isActive ? "bg-secClr text-white" : "hover:bg-secClr/30"}`
+                          `h-10 flex items-center px-4 last:border-b-0 border-b border-primary/30 text-xs ${isActive ? "bg-primary text-white" : "hover:bg-primary/30"}`
                         }
                         onClick={() => setOpenMenu(false)}
                       >
@@ -120,7 +93,7 @@ const SideNav = ({ openMenu, setOpenMenu, branches, isLoading }) => {
               </div>
               <div className="space-y-2">
                 <div
-                  className={`flex items-center gap-3 w-full text-black px-4 py-3 cursor-pointer text-sm rounded-md ${openDropHMMenu ? "bg-secClr text-white" : ""}`}
+                  className={`flex items-center gap-3 w-full text-black px-4 py-3 cursor-pointer text-sm rounded-md ${openDropHMMenu ? "bg-primary text-white" : ""}`}
                   title={"branches"}
                   onClick={() => setOpenDropHMMenu(!openDropHMMenu)}
                 >
@@ -135,14 +108,14 @@ const SideNav = ({ openMenu, setOpenMenu, branches, isLoading }) => {
                 </div>
                 {openDropHMMenu && (
                   <div
-                    className={`border-l border-secClr/30 lg:pl-2 flex flex-col`}
+                    className={`border-l border-primary/30 lg:pl-2 flex flex-col`}
                   >
                     {houseManagementNavigation.map((nav) => (
                       <NavLink
                         to={`/dashboard/${nav.relativeRoute}`}
                         key={`/dashboard/${nav.relativeRoute}`}
                         className={({ isActive }) =>
-                          `h-10 flex items-center px-4 last:border-b-0 border-b border-secClr/30 text-xs ${isActive ? "bg-secClr text-white" : "hover:bg-secClr/30"}`
+                          `h-10 flex items-center px-4 last:border-b-0 border-b border-primary/30 text-xs ${isActive ? "bg-primary text-white" : "hover:bg-primary/30"}`
                         }
                         onClick={() => setOpenMenu(false)}
                       >
@@ -159,7 +132,7 @@ const SideNav = ({ openMenu, setOpenMenu, branches, isLoading }) => {
                 to={"/dashboard"}
                 end
                 className={({ isActive }) =>
-                  `py-3 text-sm flex items-center px-4 rounded-md font-medium ${isActive ? "bg-secClr text-white" : ""}`
+                  `py-3 text-sm flex items-center px-4 rounded-md font-medium ${isActive ? "bg-primary text-white" : ""}`
                 }
                 onClick={() => setOpenMenu(false)}
               >
@@ -167,7 +140,7 @@ const SideNav = ({ openMenu, setOpenMenu, branches, isLoading }) => {
               </NavLink>
               <div className="space-y-2">
                 <div
-                  className={`flex items-center gap-3 w-full text-black px-4 py-3 cursor-pointer text-sm rounded-md ${openDropMenu ? "bg-secClr text-white" : ""}`}
+                  className={`flex items-center gap-3 w-full text-black px-4 py-3 cursor-pointer text-sm rounded-md ${openDropMenu ? "bg-primary text-white" : ""}`}
                   title={"branches"}
                   onClick={() => setOpenDropMenu(!openDropMenu)}
                 >
@@ -182,13 +155,13 @@ const SideNav = ({ openMenu, setOpenMenu, branches, isLoading }) => {
                 </div>
                 {openDropMenu && (
                   <div
-                    className={`border-l border-secClr/30 lg:pl-2 flex flex-col`}
+                    className={`border-l border-primary/30 lg:pl-2 flex flex-col`}
                   >
                     {branches.map((branch) => (
                       <NavLink
                         to={`/dashboard/branch/${branch.keyWord}`}
                         className={({ isActive }) =>
-                          `h-10 flex items-center px-4 last:border-b-0 border-b border-secClr/30 text-xs ${isActive ? "bg-secClr text-white" : "hover:bg-secClr/30"}`
+                          `h-10 flex items-center px-4 last:border-b-0 border-b border-primary/30 text-xs ${isActive ? "bg-primary text-white" : "hover:bg-primary/30"}`
                         }
                         onClick={() => setOpenMenu(false)}
                       >
@@ -206,7 +179,7 @@ const SideNav = ({ openMenu, setOpenMenu, branches, isLoading }) => {
           <NavLink
             to="/change-password"
             className={({ isActive }) =>
-              `py-3 text-sm flex items-center px-4 rounded-md font-medium ${isActive ? "bg-secClr text-white" : ""}`
+              `py-3 text-sm flex items-center px-4 rounded-md font-medium ${isActive ? "bg-primary text-white" : ""}`
             }
             onClick={() => setOpenMenu(false)}
           >

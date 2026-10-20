@@ -5,7 +5,7 @@ import axios from "axios";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { useReactToPrint } from "react-to-print";
-import assets from "../assets/assests";
+import assets from "../assets/assets";
 import { formatterUtility } from "../utilities/formatterUtility";
 
 const API_URL = import.meta.env.VITE_API_BASE_URL;
@@ -27,7 +27,7 @@ const ViewClient = () => {
           return;
         }
 
-        const response = await axios.post(
+        const response = await api.post(
           `${API_URL}/api/applications/${id}`,
           {},
           {
@@ -149,7 +149,7 @@ const ViewClient = () => {
   if (!client) {
     return (
       <div className="flex justify-center items-center min-h-screen bg-gray-50">
-        <div className="animate-spin rounded-full h-12 w-12 md:h-16 md:w-16 border-4 border-t-transparent border-secClr"></div>
+        <div className="animate-spin rounded-full h-12 w-12 md:h-16 md:w-16 border-4 border-t-transparent border-primary"></div>
       </div>
     );
   }
@@ -178,7 +178,7 @@ const ViewClient = () => {
           </div>
           <button
             onClick={handlePrint}
-            className="flex items-center justify-center px-4 py-2 md:px-5 md:py-3 bg-secClr text-white font-semibold rounded-lg hover:bg-secClr transition-colors duration-200 w-full md:w-auto"
+            className="flex items-center justify-center px-4 py-2 md:px-5 md:py-3 bg-primary text-white font-semibold rounded-lg hover:bg-primary transition-colors duration-200 w-full md:w-auto"
           >
             <FaDownload className="mr-2 text-sm md:text-base" />
             Download PDF
@@ -213,7 +213,7 @@ const ViewClient = () => {
               </>
             ) : (
               <div className="space-y-2 w-full">
-                <div className="inline-block px-3 py-1 bg-secClr/10 text-secClr text-xs font-semibold rounded-full uppercase tracking-wider">
+                <div className="inline-block px-3 py-1 bg-primary/10 text-primary text-xs font-semibold rounded-full uppercase tracking-wider">
                   {client.purchase_type}
                 </div>
                 <h2 className="text-2xl md:text-3xl font-bold text-gray-900 capitalize">
@@ -229,7 +229,7 @@ const ViewClient = () => {
           {/* Personal Information / Club Details dynamic block */}
           {client.purchase_type === "individual" ? (
             <div>
-              <h3 className="text-lg md:text-2xl font-semibold text-secClr border-b border-gray-200 py-3 mb-6">
+              <h3 className="text-lg md:text-2xl font-semibold text-primary border-b border-gray-200 py-3 mb-6">
                 Personal Information
               </h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
@@ -271,7 +271,7 @@ const ViewClient = () => {
           ) : (
             <div className="space-y-6">
               <div>
-                <h3 className="text-lg md:text-2xl font-semibold text-secClr border-b border-gray-200 py-3 mb-6">
+                <h3 className="text-lg md:text-2xl font-semibold text-primary border-b border-gray-200 py-3 mb-6">
                   {client.purchase_type === "club"
                     ? "Club Details"
                     : "Association Details"}
@@ -304,7 +304,7 @@ const ViewClient = () => {
               </div>
 
               <div>
-                <h3 className="text-lg md:text-2xl font-semibold text-secClr border-b border-gray-200 py-3 mb-4">
+                <h3 className="text-lg md:text-2xl font-semibold text-primary border-b border-gray-200 py-3 mb-4">
                   Registered Members
                 </h3>
                 {client.club_members && client.club_members.length > 0 ? (
@@ -323,7 +323,7 @@ const ViewClient = () => {
                             <td className="py-3 px-4 text-gray-500 font-medium">
                               {index + 1}
                             </td>
-                            <td className="py-3 px-4 font-semibold text-secClr">
+                            <td className="py-3 px-4 font-semibold text-primary">
                               {member.title || member.Title || ""}
                             </td>
                             <td className="py-3 px-4">
@@ -352,7 +352,7 @@ const ViewClient = () => {
           {client.purchase_type === "individual" &&
             (client.first_name_of_spouse || client.last_name_of_spouse) && (
               <div>
-                <h3 className="text-lg md:text-2xl font-semibold text-secClr border-b border-gray-200 py-3 mb-6">
+                <h3 className="text-lg md:text-2xl font-semibold text-primary border-b border-gray-200 py-3 mb-6">
                   Spouse Information
                 </h3>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
@@ -375,7 +375,7 @@ const ViewClient = () => {
           {/* Contact Info */}
           {client.purchase_type === "individual" && (
             <div>
-              <h3 className="text-lg md:text-2xl font-semibold text-secClr border-b border-gray-200 py-3 mb-6">
+              <h3 className="text-lg md:text-2xl font-semibold text-primary border-b border-gray-200 py-3 mb-6">
                 Contact Information
               </h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
@@ -392,7 +392,7 @@ const ViewClient = () => {
 
           {/* Next of Kin / Representative Details */}
           <div>
-            <h3 className="text-lg md:text-2xl font-semibold text-secClr border-b border-gray-200 py-3 mb-6">
+            <h3 className="text-lg md:text-2xl font-semibold text-primary border-b border-gray-200 py-3 mb-6">
               {client.purchase_type === "individual"
                 ? "Next of Kin"
                 : "Representative / Trustee Details"}
@@ -435,7 +435,7 @@ const ViewClient = () => {
 
           {/* Land Details */}
           <div>
-            <h3 className="text-lg md:text-2xl font-semibold text-secClr border-b border-gray-200 py-3 mb-6">
+            <h3 className="text-lg md:text-2xl font-semibold text-primary border-b border-gray-200 py-3 mb-6">
               Land Details
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
@@ -463,7 +463,7 @@ const ViewClient = () => {
 
           {/* Declaration */}
           <div>
-            <h3 className="text-lg md:text-2xl font-semibold text-secClr border-b border-gray-200 py-3 mb-6">
+            <h3 className="text-lg md:text-2xl font-semibold text-primary border-b border-gray-200 py-3 mb-6">
               Declaration
             </h3>
             <div className="flex flex-col md:flex-row justify-between gap-4 md:gap-6">
@@ -495,7 +495,7 @@ const ViewClient = () => {
           {/* Referral */}
           {client.referral_name && (
             <div>
-              <h3 className="text-lg md:text-2xl font-semibold text-secClr border-b border-gray-200 py-3 mb-6">
+              <h3 className="text-lg md:text-2xl font-semibold text-primary border-b border-gray-200 py-3 mb-6">
                 Referral
               </h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">

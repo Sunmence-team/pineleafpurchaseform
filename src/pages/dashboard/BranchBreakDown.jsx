@@ -7,7 +7,7 @@ import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import { FaSearch, FaCaretDown, FaBars } from "react-icons/fa";
 import { TfiReload } from "react-icons/tfi";
-import assets from "../../assets/assests";
+import assets from "../../assets/assets";
 import logo from "../../assets/logo.png";
 import SideNav from "../../components/SideNav";
 import ApplicationsList from "../../components/ApplicationsList";
@@ -16,8 +16,8 @@ import DownloadAllModal from "../../components/modals/DownloadAllModal";
 import BranchDownloadModal from "../../components/modals/BranchDownloadModal";
 import "react-datepicker/dist/react-datepicker.css";
 import { useClients } from "../../context/ClientsContext";
-import { branchOptions } from "../../lib/branchList";
 import { parseSafeDate } from "../../utilities/formatterUtility";
+import { branchOptions } from "../../lib/branchList";
 
 const API_URL = import.meta.env.VITE_API_BASE_URL;
 
@@ -63,7 +63,7 @@ const BranchBreakDown = () => {
     setLoadingDownloadTime(true);
     const token = localStorage.getItem("token");
     try {
-      const response = await axios.get(
+      const response = await api.get(
         `${API_URL}/api/last/download-date?name=${branchKey}`,
         { headers: { Authorization: `Bearer ${token}` } },
       );
@@ -206,7 +206,7 @@ const BranchBreakDown = () => {
   const updateDownloadTime = async (downloadTime) => {
     const token = localStorage.getItem("token");
     try {
-      await axios.put(
+      await api.put(
         `${API_URL}/api/last/download-date`,
         { name: branchKey, date: format(downloadTime, "yyyy-MM-dd HH:mm:ss") },
         { headers: { Authorization: `Bearer ${token}` } },
@@ -442,7 +442,11 @@ const BranchBreakDown = () => {
 
   const handleDelete = async (id) => {
     if (!id) return;
-    if (confirm("Are you sure to delete this entry?. This action is irreversible.")) {
+    if (
+      confirm(
+        "Are you sure to delete this entry?. This action is irreversible.",
+      )
+    ) {
       const toastId = toast.loading("Deleting entry...");
       setIsDeleting(true);
       try {
@@ -452,14 +456,14 @@ const BranchBreakDown = () => {
           setIsDeleting(false);
           return;
         }
-  
-        const response = await axios.delete(`${API_URL}/api/applications/${id}`, {
+
+        const response = await api.delete(`${API_URL}/api/applications/${id}`, {
           headers: {
             Authorization: `Bearer ${token}`,
             "Content-Type": "application/json",
           },
         });
-  
+
         if (response.status === 200 || response.status === 204) {
           toast.success("Client entry deleted successfully!", { id: toastId });
           removeClient(id);
@@ -517,7 +521,7 @@ const BranchBreakDown = () => {
           <div className="w-full space-y-6">
             {(loadingAllClients || loadingApplications) && (
               <div className="flex justify-center items-center min-h-[200px]">
-                <div className="animate-spin rounded-full h-12 w-12 border-4 border-secClr border-t-transparent"></div>
+                <div className="animate-spin rounded-full h-12 w-12 border-4 border-primary border-t-transparent"></div>
               </div>
             )}
 
@@ -532,7 +536,7 @@ const BranchBreakDown = () => {
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
                         placeholder="Search in this branch..."
-                        className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-secClr outline-none"
+                        className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary outline-none"
                       />
                       <FaSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
                     </div>
@@ -553,7 +557,7 @@ const BranchBreakDown = () => {
                           onClick={() =>
                             setShowDownloadOptions(!showDownloadOptions)
                           }
-                          className="w-full md:w-auto px-6 py-2.5 bg-secClr text-white font-semibold rounded-lg hover:bg-secClr/90 flex items-center justify-center gap-2"
+                          className="w-full md:w-auto px-6 py-2.5 bg-primary text-white font-semibold rounded-lg hover:bg-primary/90 flex items-center justify-center gap-2"
                         >
                           Download <FaCaretDown />
                         </button>
@@ -589,7 +593,7 @@ const BranchBreakDown = () => {
 
                 {/* Stats Summary */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div className="bg-white p-6 rounded-xl shadow-sm border border-secClr/20">
+                  <div className="bg-white p-6 rounded-xl shadow-sm border border-primary/20">
                     <p className="text-sm text-gray-500 font-medium">
                       Total Entries
                     </p>
@@ -597,7 +601,7 @@ const BranchBreakDown = () => {
                       {fullFilteredData.length}
                     </h3>
                   </div>
-                  <div className="bg-white p-6 rounded-xl shadow-sm border border-secClr/20">
+                  <div className="bg-white p-6 rounded-xl shadow-sm border border-primary/20">
                     <p className="text-sm text-gray-500 font-medium">
                       Last Download
                     </p>
@@ -612,7 +616,7 @@ const BranchBreakDown = () => {
                           : "Never"}
                     </h3>
                   </div>
-                  <div className="bg-white p-6 rounded-xl shadow-sm border border-secClr/20">
+                  <div className="bg-white p-6 rounded-xl shadow-sm border border-primary/20">
                     <p className="text-sm text-gray-500 font-medium">
                       Selected Branch
                     </p>

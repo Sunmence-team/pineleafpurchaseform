@@ -2,22 +2,23 @@ import React, { useState, useEffect, useRef } from "react";
 import { FaEye } from "react-icons/fa6";
 import { FiEdit, FiTrash2 } from "react-icons/fi";
 import { TfiMore } from "react-icons/tfi";
-import { useFloating, offset, flip, shift, autoUpdate, FloatingPortal } from '@floating-ui/react';
+import {
+  useFloating,
+  offset,
+  flip,
+  shift,
+  autoUpdate,
+  FloatingPortal,
+} from "@floating-ui/react";
 
-const ActionCell = ({
-  rowId,
-  onEdit,
-  onDelete,
-  onView,
-  canView = false,
-}) => {
+const ActionCell = ({ rowId, onEdit, onDelete, onView, canView = false }) => {
   const [open, setOpen] = useState(false);
   const dropdownRef = useRef(null);
 
   const { refs, floatingStyles } = useFloating({
     open,
     onOpenChange: setOpen,
-    placement: 'bottom-end',
+    placement: "bottom-end",
     middleware: [offset(10), flip(), shift()],
     whileElementsMounted: autoUpdate,
   });
@@ -29,7 +30,7 @@ const ActionCell = ({
         // Only close if the click isn't inside the floating element itself
         const floatingEl = refs.floating.current;
         if (floatingEl && floatingEl.contains(event.target)) return;
-        
+
         setOpen(false);
       }
     };
@@ -40,18 +41,18 @@ const ActionCell = ({
 
   return (
     <div className="flex justify-center items-center" ref={dropdownRef}>
-      <div 
-        ref={refs.setReference} 
-        className={`hover:bg-primary/10 w-10 h-10 flex items-center justify-center rounded-lg cursor-pointer ${open ? "bg-primary/20" : ""}`}
+      <div
+        ref={refs.setReference}
+        className={`hover:bg-secondary/10 w-10 h-10 flex items-center justify-center rounded-lg cursor-pointer ${open ? "bg-secondary/20" : ""}`}
         onClick={() => setOpen(!open)}
       >
-        <TfiMore size={20} className="rotate-90 text-primary" />
+        <TfiMore size={20} className="rotate-90 text-secondary" />
       </div>
 
       {/* 2. Wrap the menu in FloatingPortal */}
       {open && (
         <FloatingPortal>
-          <div 
+          <div
             ref={refs.setFloating}
             style={{ ...floatingStyles, zIndex: 9999 }} // Ensure it's above everything
             className="flex flex-col bg-white rounded shadow-xl border border-gray-100 min-w-32 text-xs"
@@ -59,7 +60,10 @@ const ActionCell = ({
             {(canView || onView) && (
               <button
                 className="flex items-center gap-2 px-3 py-2 hover:bg-gray-100 cursor-pointer"
-                onClick={() => { onView?.(rowId); setOpen(false); }}
+                onClick={() => {
+                  onView?.(rowId);
+                  setOpen(false);
+                }}
               >
                 <FaEye /> View
               </button>
@@ -67,7 +71,10 @@ const ActionCell = ({
             {onEdit && (
               <button
                 className="flex items-center gap-2 px-3 py-2 hover:bg-gray-100 cursor-pointer"
-                onClick={() => { onEdit(rowId); setOpen(false); }}
+                onClick={() => {
+                  onEdit(rowId);
+                  setOpen(false);
+                }}
               >
                 <FiEdit /> Edit
               </button>
@@ -75,7 +82,10 @@ const ActionCell = ({
             {onDelete && (
               <button
                 className="flex items-center gap-2 px-3 py-2 hover:bg-gray-100 cursor-pointer text-red-600 border-t border-gray-50"
-                onClick={() => { onDelete(rowId); setOpen(false); }}
+                onClick={() => {
+                  onDelete(rowId);
+                  setOpen(false);
+                }}
               >
                 <FiTrash2 /> Delete
               </button>

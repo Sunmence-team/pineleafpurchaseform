@@ -4,8 +4,8 @@ import { Formik, Form, Field, ErrorMessage } from "formik";
 import * as Yup from "yup";
 import { FaArrowLeft, FaCloudUploadAlt, FaTimes } from "react-icons/fa";
 import { toast } from "sonner";
-import api, { getErrorMessage } from "../../../../utilities/api";
-import assets from "../../../../assets/assests";
+import { api, getErrorMessage } from "../../../../helpers/api";
+import assets from "../../../../assets/assets";
 import FormattedNumberInput from "../../../../components/FormattedNumberInput";
 
 const HM_STORAGE_API_URL = import.meta.env.VITE_HM_STORAGE_BASE_URL;
@@ -36,7 +36,7 @@ const CreateProperties = () => {
     if (isEditMode) {
       const fetchProperty = async () => {
         try {
-          const response = await api.get(`/api/admin/properties/${id}`, {
+          const response = await hmApi.get(`/api/admin/properties/${id}`, {
             headers: {
               Authorization: `Bearer ${token}`,
             },
@@ -55,7 +55,9 @@ const CreateProperties = () => {
           // If there are existing images, we might want to show them
           if (data.images && Array.isArray(data.images)) {
             // Map through the array and prepend the base URL to each item
-            const fullImageUrls = data.images.map(img => `${HM_STORAGE_API_URL}${img}`);
+            const fullImageUrls = data.images.map(
+              (img) => `${HM_STORAGE_API_URL}${img}`,
+            );
 
             setImagePreviews(fullImageUrls);
           }
@@ -99,17 +101,17 @@ const CreateProperties = () => {
     const files = Array.from(e.dataTransfer.files);
     updateImages(files);
   };
-  
+
   const updateImages = (files) => {
     setImages((prev) => [...prev, ...files]);
     const newPreviews = files.map((file) => URL.createObjectURL(file));
     setImagePreviews((prev) => [...prev, ...newPreviews]);
   };
-  
+
   const handleDragOver = (e) => {
     e.preventDefault();
   };
-  
+
   const removeImage = (index) => {
     setImages((prev) => prev.filter((_, i) => i !== index));
     setImagePreviews((prev) => prev.filter((_, i) => i !== index));
@@ -129,7 +131,7 @@ const CreateProperties = () => {
       if (isEditMode) {
         // Many APIs require _method="PUT" for FormData with PUT
         // formData.append("_method", "PUT");
-        await api.post(`/api/admin/properties/${id}`, formData, {
+        await hmApi.post(`/api/admin/properties/${id}`, formData, {
           headers: {
             Authorization: `Bearer ${token}`,
             "Content-Type": "multipart/form-data",
@@ -137,7 +139,7 @@ const CreateProperties = () => {
         });
         toast.success("Property updated successfully");
       } else {
-        await api.post("/api/admin/properties", formData, {
+        await hmApi.post("/api/admin/properties", formData, {
           headers: {
             Authorization: `Bearer ${token}`,
             "Content-Type": "multipart/form-data",
@@ -156,13 +158,13 @@ const CreateProperties = () => {
   if (isLoading) {
     return (
       <div className="flex justify-center items-center min-h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-4 border-t-transparent border-primary"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-4 border-t-transparent border-primary2"></div>
       </div>
     );
   }
 
   const inputClasses =
-    "mt-1 block w-full rounded-md border border-gray-300 focus:border-primary focus:ring-primary h-[50px] px-3 text-sm outline-none";
+    "mt-1 block w-full rounded-md border border-gray-300 focus:border-primary2 focus:ring-primary2 h-[50px] px-3 text-sm outline-none";
   const labelClasses = "block text-sm font-medium text-gray-700";
 
   return (
@@ -331,7 +333,7 @@ const CreateProperties = () => {
                   name="description"
                   as="textarea"
                   rows="4"
-                  className="mt-1 block w-full rounded-md border border-gray-300 focus:border-primary focus:ring-primary p-3 text-sm outline-none"
+                  className="mt-1 block w-full rounded-md border border-gray-300 focus:border-primary2 focus:ring-primary2 p-3 text-sm outline-none"
                   placeholder="Describe the property details..."
                 />
                 <ErrorMessage
@@ -343,16 +345,16 @@ const CreateProperties = () => {
 
               <div>
                 <span className={labelClasses}>Property Images</span>
-                <label 
-                  htmlFor="propertyImages" 
+                <label
+                  htmlFor="propertyImages"
                   onDragOver={handleDragOver}
                   onDrop={handleDrop}
-                  className="mt-2 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-md hover:border-primary transition cursor-pointer relative"
+                  className="mt-2 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-md hover:border-primary2 transition cursor-pointer relative"
                 >
                   <div className="space-y-1 text-center">
                     <FaCloudUploadAlt className="mx-auto h-12 w-12 text-gray-400" />
                     <div className="flex text-sm text-gray-600">
-                      <p className="relative cursor-pointer bg-white rounded-md font-medium text-primary hover:text-secClr">
+                      <p className="relative cursor-pointer bg-white rounded-md font-medium text-primary2 hover:text-secondary2">
                         <span>Upload files</span>
                         <input
                           type="file"
@@ -404,7 +406,7 @@ const CreateProperties = () => {
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className="px-6 py-2 bg-secClr text-white rounded-lg hover:bg-secClr/90 transition disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                  className="px-6 py-2 bg-secondary2 text-white rounded-lg hover:bg-secondary2/90 transition disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
                 >
                   {isSubmitting
                     ? "Saving..."
