@@ -6,7 +6,7 @@ import { FaEye, FaEyeSlash, FaLock } from "react-icons/fa6";
 import { FaBars } from "react-icons/fa";
 import axios from "axios";
 import { toast } from "sonner";
-import assets from "../assets/assests";
+import assets from "../assets/assets";
 import SideNav from "../components/SideNav";
 import { branchOptions } from "../lib/branchList";
 
@@ -44,7 +44,7 @@ const ChangePassword = () => {
           return;
         }
 
-        const response = await axios.post(
+        const response = await api.post(
           `${API_URL}/api/change-password`,
           values,
           {
@@ -121,7 +121,7 @@ const ChangePassword = () => {
                   Current Password
                 </label>
                 <div className={inputClass}>
-                  <FaLock className="text-secClr" />
+                  <FaLock className="text-primary" />
                   <input
                     id="current_password"
                     name="current_password"
@@ -134,7 +134,7 @@ const ChangePassword = () => {
                   <button
                     type="button"
                     onClick={() => setShowCurrent(!showCurrent)}
-                    className="absolute right-3 text-gray-500 hover:text-secClr transition"
+                    className="absolute right-3 text-gray-500 hover:text-primary transition"
                   >
                     {showCurrent ? <FaEyeSlash /> : <FaEye />}
                   </button>
@@ -155,7 +155,7 @@ const ChangePassword = () => {
                   New Password
                 </label>
                 <div className={inputClass}>
-                  <FaLock className="text-secClr" />
+                  <FaLock className="text-primary" />
                   <input
                     id="new_password"
                     name="new_password"
@@ -168,7 +168,7 @@ const ChangePassword = () => {
                   <button
                     type="button"
                     onClick={() => setShowNew(!showNew)}
-                    className="absolute right-3 text-gray-500 hover:text-secClr transition"
+                    className="absolute right-3 text-gray-500 hover:text-primary transition"
                   >
                     {showNew ? <FaEyeSlash /> : <FaEye />}
                   </button>
@@ -188,7 +188,7 @@ const ChangePassword = () => {
                   Confirm New Password
                 </label>
                 <div className={inputClass}>
-                  <FaLock className="text-secClr" />
+                  <FaLock className="text-primary" />
                   <input
                     id="new_password_confirmation"
                     name="new_password_confirmation"
@@ -201,7 +201,7 @@ const ChangePassword = () => {
                   <button
                     type="button"
                     onClick={() => setShowConfirm(!showConfirm)}
-                    className="absolute right-3 text-gray-500 hover:text-secClr transition"
+                    className="absolute right-3 text-gray-500 hover:text-primary transition"
                   >
                     {showConfirm ? <FaEyeSlash /> : <FaEye />}
                   </button>
@@ -225,7 +225,7 @@ const ChangePassword = () => {
                 <button
                   type="submit"
                   disabled={formik.isSubmitting}
-                  className="flex-1 py-3 bg-secClr text-white font-semibold rounded-lg hover:bg-secClr/80 transition duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="flex-1 py-3 bg-primary text-white font-semibold rounded-lg hover:bg-primary/80 transition duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {formik.isSubmitting ? "Updating..." : "Update Password"}
                 </button>

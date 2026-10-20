@@ -48,7 +48,7 @@ const Section3 = ({ formData, setFormData, prevSection, nextSection }) => {
       if (searchTerm.trim() !== "") {
         const fetchSiteLocations = async () => {
           try {
-            const response = await axios.get(
+            const response = await api.get(
               `${PROPERTY_URL}/api/properties/search?name=${searchTerm}`,
             );
 
@@ -196,11 +196,11 @@ const Section3 = ({ formData, setFormData, prevSection, nextSection }) => {
               {isIndividual ? (
                 <>
                   I{" "}
-                  <span className="font-semibold text-secClr">
+                  <span className="font-semibold text-primary">
                     {fullName || "Your Name"}
                   </span>{" "}
                   {spouseName && (
-                    <span className="font-semibold text-secClr">
+                    <span className="font-semibold text-primary">
                       {spouseName}
                     </span>
                   )}{" "}
@@ -208,9 +208,9 @@ const Section3 = ({ formData, setFormData, prevSection, nextSection }) => {
               ) : (
                 <>
                   We,{" "}
-                  <span className="font-semibold text-secClr">{clubName}</span>{" "}
+                  <span className="font-semibold text-primary">{clubName}</span>{" "}
                   (represented by Representative{" "}
-                  <span className="font-semibold text-secClr">{repName}</span>
+                  <span className="font-semibold text-primary">{repName}</span>
                   ){" "}
                 </>
               )}
@@ -230,7 +230,7 @@ const Section3 = ({ formData, setFormData, prevSection, nextSection }) => {
               Client Name
             </label>
             <div className={parentClass}>
-              <FaUser className="text-secClr" />
+              <FaUser className="text-primary" />
               <Field
                 type="text"
                 name="clientDeclarationClientName"
@@ -251,7 +251,7 @@ const Section3 = ({ formData, setFormData, prevSection, nextSection }) => {
                 Land Price
               </label>
               <div className={parentClass}>
-                <BiMoney className="text-secClr" />
+                <BiMoney className="text-primary" />
                 <Field
                   type="text"
                   name="clientDeclarationLandPrice"
@@ -282,7 +282,7 @@ const Section3 = ({ formData, setFormData, prevSection, nextSection }) => {
                 Number of Plots
               </label>
               <div className={parentClass}>
-                <BiMap className="text-secClr" />
+                <BiMap className="text-primary" />
                 <Field
                   type="number"
                   name="clientDeclarationNumberOfPlots"
@@ -307,7 +307,7 @@ const Section3 = ({ formData, setFormData, prevSection, nextSection }) => {
                 Property Name
               </label>
               <div className={parentClass}>
-                <BiMap className="text-secClr" />
+                <BiMap className="text-primary" />
                 <input
                   type="text"
                   id="clientDeclarationSiteLocation"
@@ -342,7 +342,7 @@ const Section3 = ({ formData, setFormData, prevSection, nextSection }) => {
                     siteLocations.map((location) => (
                       <div
                         key={location.id}
-                        className="px-4 py-2 hover:bg-secClr hover:text-white cursor-pointer transition-colors duration-200 text-sm"
+                        className="px-4 py-2 hover:bg-primary hover:text-white cursor-pointer transition-colors duration-200 text-sm"
                         onMouseDown={(e) => {
                           e.preventDefault();
                           setFieldValue(
@@ -378,7 +378,7 @@ const Section3 = ({ formData, setFormData, prevSection, nextSection }) => {
                 Branch (Please select the branch closest to you)
               </label>
               <div className={parentClass}>
-                <BiMap className="text-secClr" />
+                <BiMap className="text-primary" />
                 <Field
                   as="select"
                   name="branches"
@@ -407,7 +407,7 @@ const Section3 = ({ formData, setFormData, prevSection, nextSection }) => {
                 Please list out your plot numbers
               </label>
               <div className={parentClass + " h-[100px]! py-2 items-start"}>
-                <BiMap className="text-secClr" />
+                <BiMap className="text-primary" />
                 <Field
                   as="textarea"
                   rows={4}
@@ -432,7 +432,7 @@ const Section3 = ({ formData, setFormData, prevSection, nextSection }) => {
               Signature
             </label>
             <div className="relative mt-1">
-              <MdOutlineSignLanguage className="absolute top-8 transform -translate-y-1/2 left-3 text-secClr text-sm sm:text-base" />
+              <MdOutlineSignLanguage className="absolute top-8 transform -translate-y-1/2 left-3 text-primary text-sm sm:text-base" />
               <canvas
                 ref={canvasRef}
                 id="clientDeclarationSignature"
@@ -537,7 +537,7 @@ const Section3 = ({ formData, setFormData, prevSection, nextSection }) => {
                 <button
                   type="button"
                   onClick={() => clearSignature(setFieldValue)}
-                  className="px-4 py-2 bg-secClr text-white font-semibold rounded-lg hover:bg-secClr transition duration-300"
+                  className="px-4 py-2 bg-primary text-white font-semibold rounded-lg hover:bg-primary transition duration-300"
                 >
                   Clear Signature
                 </button>
@@ -558,7 +558,7 @@ const Section3 = ({ formData, setFormData, prevSection, nextSection }) => {
               Date
             </label>
             <div className={parentClass}>
-              <FaCalendarAlt className="text-secClr z-10" />
+              <FaCalendarAlt className="text-primary z-10" />
               <DatePicker
                 selected={values.clientDeclarationDate}
                 onChange={(date) =>
@@ -591,7 +591,7 @@ const Section3 = ({ formData, setFormData, prevSection, nextSection }) => {
             </button>
             <button
               type="submit"
-              className="px-4 py-2 sm:px-5 sm:py-3 bg-secClr text-white font-semibold rounded-lg hover:bg-secClr transition duration-300 w-full sm:w-auto"
+              className="px-4 py-2 sm:px-5 sm:py-3 bg-primary text-white font-semibold rounded-lg hover:bg-primary transition duration-300 w-full sm:w-auto"
             >
               Next
             </button>

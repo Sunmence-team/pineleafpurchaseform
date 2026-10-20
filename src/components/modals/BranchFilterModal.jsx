@@ -1,5 +1,5 @@
-import React from 'react';
-import { FaTimes } from 'react-icons/fa';
+import React from "react";
+import { FaTimes } from "react-icons/fa";
 
 const BranchFilterModal = ({
   isOpen,
@@ -15,16 +15,18 @@ const BranchFilterModal = ({
 
   if (isLoadingAllclients) {
     <div className="flex items-center justify-center p-4">
-      <div className="animate-spin rounded-full h-8 w-8 border-4 border-secClr border-t-transparent"></div>
+      <div className="animate-spin rounded-full h-8 w-8 border-4 border-primary border-t-transparent"></div>
       <span className="ml-3">Loading all clients...</span>
-    </div>
+    </div>;
   }
 
   return (
     <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-2 sm:p-4">
       <div className="bg-white rounded-2xl p-4 sm:p-6 w-full max-w-md shadow-2xl max-h-[calc(100vh-2rem)] overflow-y-auto">
         <div className="flex justify-between items-center mb-4">
-          <h3 className="text-lg md:text-xl font-bold text-gray-900">Filter by Branch</h3>
+          <h3 className="text-lg md:text-xl font-bold text-gray-900">
+            Filter by Branch
+          </h3>
           <button
             onClick={onClose}
             className="p-2 text-gray-600 hover:text-gray-900"
@@ -35,11 +37,13 @@ const BranchFilterModal = ({
         </div>
         <div className="flex flex-col gap-3 md:gap-4 mb-6">
           <div>
-            <label className="block text-sm md:text-base font-medium text-gray-700 mb-1 md:mb-2">Branch</label>
+            <label className="block text-sm md:text-base font-medium text-gray-700 mb-1 md:mb-2">
+              Branch
+            </label>
             <select
               value={branchInput}
-              onChange={e => onBranchInputChange(e.target.value)}
-              className="w-full px-3 py-2 md:px-4 md:py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-secClr text-sm md:text-base bg-gray-50"
+              onChange={(e) => onBranchInputChange(e.target.value)}
+              className="w-full px-3 py-2 md:px-4 md:py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-sm md:text-base bg-gray-50"
               aria-label="Select branch"
             >
               <option value="">Select Branch</option>
@@ -61,7 +65,7 @@ const BranchFilterModal = ({
           </button>
           <button
             onClick={onApply}
-            className="px-3 py-2 md:px-4 md:py-2 bg-secClr text-white font-semibold rounded-lg hover:bg-secClr/90 transition duration-300 shadow-md w-full md:w-auto"
+            className="px-3 py-2 md:px-4 md:py-2 bg-primary text-white font-semibold rounded-lg hover:bg-primary/90 transition duration-300 shadow-md w-full md:w-auto"
             aria-label="Apply branch filter"
           >
             Apply

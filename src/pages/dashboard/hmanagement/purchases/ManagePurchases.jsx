@@ -1,15 +1,15 @@
 import React, { useState, useEffect, useRef } from "react";
 import SideNav from "../../../../components/SideNav";
-import { branchOptions } from "../../../../lib/branchList";
 import { FaBars } from "react-icons/fa6";
-import assets from "../../../../assets/assests";
+import assets from "../../../../assets/assets";
 import ReusableTable from "../../../../utilities/ReusableTable";
 import { useNavigate, useLocation } from "react-router-dom";
 import ActionCell from "../../../../components/ActionCell";
-import api, { getErrorMessage } from "../../../../utilities/api";
+import { api, getErrorMessage } from "../../../../helpers/api";
 import { toast } from "sonner";
 import { formatterUtility } from "../../../../utilities/formatterUtility";
 import { FaSearch } from "react-icons/fa";
+import { branchOptions } from "../../../../lib/branchList";
 
 const ManagePurchases = () => {
   const token = localStorage.getItem("token");
@@ -69,7 +69,7 @@ const ManagePurchases = () => {
     setIsLoading(true);
     setError(null);
     try {
-      const response = await api.get("/api/admin/applications", {
+      const response = await hmApi.get("/api/admin/applications", {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -191,7 +191,7 @@ const ManagePurchases = () => {
 
         <main className="flex-1 overflow-y-auto p-4 md:p-8">
           <div className="grid gap-4 mb-8 grid-cols-12 items-end">
-            <div className="relative w-full md:col-span-6 h-12 border border-gray-300 rounded-lg focus-within:ring-2 focus-within:ring-primary/50 flex gap-2 items-center px-3">
+            <div className="relative w-full md:col-span-6 h-12 border border-gray-300 rounded-lg focus-within:ring-2 focus-within:ring-secondary/50 flex gap-2 items-center px-3">
               <FaSearch className="text-gray-400" />
               <input
                 type="text"

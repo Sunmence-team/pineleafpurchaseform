@@ -13,7 +13,7 @@ import { useNavigate } from "react-router-dom";
 const API_URL = import.meta.env.VITE_API_BASE_URL;
 
 const Section4 = ({ formData, setFormData, prevSection, onSubmit }) => {
-    console.log("formData", formData)
+  console.log("formData", formData);
   const navigate = useNavigate();
   const parentClass =
     "mt-1 block w-full rounded-md border border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 h-[50px] px-2 flex items-center bg-white";
@@ -137,7 +137,10 @@ const Section4 = ({ formData, setFormData, prevSection, onSubmit }) => {
                                 : field === "club_contact"
                                   ? formData.clubContact
                                   : field === "club_members"
-                                    ? (formData.clubMembers && formData.clubMembers.length > 0 ? "filled" : "")
+                                    ? formData.clubMembers &&
+                                      formData.clubMembers.length > 0
+                                      ? "filled"
+                                      : ""
                                     : field === "country"
                                       ? formData.countryOfResidence
                                       : field === "state_of_origin"
@@ -146,9 +149,11 @@ const Section4 = ({ formData, setFormData, prevSection, onSubmit }) => {
                                           ? formData.lga
                                           : field === "next_of_kin_full_name"
                                             ? formData.nextOfKinFullName
-                                            : field === "next_of_kin_relationship"
+                                            : field ===
+                                                "next_of_kin_relationship"
                                               ? formData.nextOfKinRelationship
-                                              : field === "next_of_kin_mobile_number"
+                                              : field ===
+                                                  "next_of_kin_mobile_number"
                                                 ? formData.nextOfKinMobileNumber
                                                 : field === "next_of_kin_email"
                                                   ? formData.nextOfKinEmail
@@ -156,13 +161,16 @@ const Section4 = ({ formData, setFormData, prevSection, onSubmit }) => {
                                                     ? formData.clientDeclarationLandPrice
                                                     : field === "number_of_plot"
                                                       ? formData.clientDeclarationNumberOfPlots
-                                                      : field === "site_location"
+                                                      : field ===
+                                                          "site_location"
                                                         ? formData.clientDeclarationSiteLocation
-                                                        : field === "plot_number"
+                                                        : field ===
+                                                            "plot_number"
                                                           ? formData.clientDeclarationPlotNumber
                                                           : field === "branches"
                                                             ? formData.branches
-                                                            : field === "signature"
+                                                            : field ===
+                                                                "signature"
                                                               ? formData.clientDeclarationSignature
                                                                 ? base64ToFile(
                                                                     formData.clientDeclarationSignature,
@@ -181,10 +189,14 @@ const Section4 = ({ formData, setFormData, prevSection, onSubmit }) => {
                                                                   : ""
                                                                 : field ===
                                                                     "declaration_name"
-                                                                  ? (isIndividual ? formData.clientDeclarationClientName : formData.nextOfKinFullName)
+                                                                  ? isIndividual
+                                                                    ? formData.clientDeclarationClientName
+                                                                    : formData.nextOfKinFullName
                                                                   : field ===
                                                                       "client_name"
-                                                                    ? (isIndividual ? formData.clientDeclarationClientName : formData.clubName)
+                                                                    ? isIndividual
+                                                                      ? formData.clientDeclarationClientName
+                                                                      : formData.clubName
                                                                     : field ===
                                                                         "referral_name"
                                                                       ? values.referralFullName
@@ -217,27 +229,60 @@ const Section4 = ({ formData, setFormData, prevSection, onSubmit }) => {
             formDataToSend.append("first_name", formData.firstName || "");
             formDataToSend.append("middle_name", formData.middleName || "");
             formDataToSend.append("last_name", formData.lastName || "");
-            formDataToSend.append("marital_status", formData.maritalStatus || "");
+            formDataToSend.append(
+              "marital_status",
+              formData.maritalStatus || "",
+            );
             formDataToSend.append("gender", formData.gender || "");
-            formDataToSend.append("should_spouse_name_show", formData.shouldSpouseNameShow ? "1" : "0");
-            if (formData.maritalStatus === "Married" && formData.shouldSpouseNameShow) {
-              formDataToSend.append("title_of_spouse", formData.spouseTitle || "");
-              formDataToSend.append("first_name_of_spouse", formData.spouseFirstName || "");
-              formDataToSend.append("middle_name_of_spouse", formData.spouseMiddleName || "");
-              formDataToSend.append("last_name_of_spouse", formData.spouseLastName || "");
+            formDataToSend.append(
+              "should_spouse_name_show",
+              formData.shouldSpouseNameShow ? "1" : "0",
+            );
+            if (
+              formData.maritalStatus === "Married" &&
+              formData.shouldSpouseNameShow
+            ) {
+              formDataToSend.append(
+                "title_of_spouse",
+                formData.spouseTitle || "",
+              );
+              formDataToSend.append(
+                "first_name_of_spouse",
+                formData.spouseFirstName || "",
+              );
+              formDataToSend.append(
+                "middle_name_of_spouse",
+                formData.spouseMiddleName || "",
+              );
+              formDataToSend.append(
+                "last_name_of_spouse",
+                formData.spouseLastName || "",
+              );
             }
             formDataToSend.append("email", formData.email || "");
             formDataToSend.append("mobile_number", formData.mobileNumber || "");
           } else {
             formDataToSend.append("club_name", formData.clubName || "");
             formDataToSend.append("club_contact", formData.clubContact || "");
-            
+
             // Append club members index-based
             formData.clubMembers.forEach((member, index) => {
-              formDataToSend.append(`club_members[${index}][title]`, member.title);
-              formDataToSend.append(`club_members[${index}][first_name]`, member.firstName);
-              formDataToSend.append(`club_members[${index}][middle_name]`, member.middleName || "");
-              formDataToSend.append(`club_members[${index}][last_name]`, member.lastName);
+              formDataToSend.append(
+                `club_members[${index}][title]`,
+                member.title,
+              );
+              formDataToSend.append(
+                `club_members[${index}][first_name]`,
+                member.firstName,
+              );
+              formDataToSend.append(
+                `club_members[${index}][middle_name]`,
+                member.middleName || "",
+              );
+              formDataToSend.append(
+                `club_members[${index}][last_name]`,
+                member.lastName,
+              );
             });
 
             // Set empty strings for individual properties to avoid backend validation failure
@@ -254,18 +299,45 @@ const Section4 = ({ formData, setFormData, prevSection, onSubmit }) => {
 
           formDataToSend.append("address", formData.address || "");
           formDataToSend.append("country", formData.countryOfResidence || "");
-          formDataToSend.append("state_of_origin", formData.stateOfOrigin || "");
+          formDataToSend.append(
+            "state_of_origin",
+            formData.stateOfOrigin || "",
+          );
           formDataToSend.append("lga", formData.lga || "");
 
-          formDataToSend.append("next_of_kin_full_name", formData.nextOfKinFullName || "");
-          formDataToSend.append("next_of_kin_relationship", formData.nextOfKinRelationship || "");
-          formDataToSend.append("next_of_kin_mobile_number", formData.nextOfKinMobileNumber || "");
-          formDataToSend.append("next_of_kin_email", formData.nextOfKinEmail || "");
+          formDataToSend.append(
+            "next_of_kin_full_name",
+            formData.nextOfKinFullName || "",
+          );
+          formDataToSend.append(
+            "next_of_kin_relationship",
+            formData.nextOfKinRelationship || "",
+          );
+          formDataToSend.append(
+            "next_of_kin_mobile_number",
+            formData.nextOfKinMobileNumber || "",
+          );
+          formDataToSend.append(
+            "next_of_kin_email",
+            formData.nextOfKinEmail || "",
+          );
 
-          formDataToSend.append("land_price", formData.clientDeclarationLandPrice || "");
-          formDataToSend.append("number_of_plot", formData.clientDeclarationNumberOfPlots || "");
-          formDataToSend.append("site_location", formData.clientDeclarationSiteLocation || "");
-          formDataToSend.append("plot_number", formData.clientDeclarationPlotNumber || "");
+          formDataToSend.append(
+            "land_price",
+            formData.clientDeclarationLandPrice || "",
+          );
+          formDataToSend.append(
+            "number_of_plot",
+            formData.clientDeclarationNumberOfPlots || "",
+          );
+          formDataToSend.append(
+            "site_location",
+            formData.clientDeclarationSiteLocation || "",
+          );
+          formDataToSend.append(
+            "plot_number",
+            formData.clientDeclarationPlotNumber || "",
+          );
           formDataToSend.append("branches", formData.branches || "");
 
           const signatureFile = formData.clientDeclarationSignature
@@ -285,21 +357,28 @@ const Section4 = ({ formData, setFormData, prevSection, onSubmit }) => {
           );
           formDataToSend.append(
             "declaration_name",
-            isIndividual ? (formData.clientDeclarationClientName || "") : (formData.nextOfKinFullName || ""),
+            isIndividual
+              ? formData.clientDeclarationClientName || ""
+              : formData.nextOfKinFullName || "",
           );
           formDataToSend.append(
             "client_name",
-            isIndividual ? (formData.clientDeclarationClientName || "") : (formData.clubName || ""),
+            isIndividual
+              ? formData.clientDeclarationClientName || ""
+              : formData.clubName || "",
           );
           formDataToSend.append("referral_name", values.referralFullName || "");
-          formDataToSend.append("referral_number", values.referralMobileNumber || "");
+          formDataToSend.append(
+            "referral_number",
+            values.referralMobileNumber || "",
+          );
 
           console.log("FormData being sent to POST /api/clients:");
           for (let [key, value] of formDataToSend.entries()) {
             console.log(`${key}:`, value instanceof File ? value.name : value);
           }
 
-          const response = await axios.post(
+          const response = await api.post(
             `${API_URL}/api/clients`,
             formDataToSend,
             {
@@ -417,7 +496,7 @@ const Section4 = ({ formData, setFormData, prevSection, onSubmit }) => {
               Referral Full Name
             </label>
             <div className={parentClass}>
-              <FaUser className="text-secClr" />
+              <FaUser className="text-primary" />
               <Field
                 type="text"
                 name="referralFullName"
@@ -441,7 +520,7 @@ const Section4 = ({ formData, setFormData, prevSection, onSubmit }) => {
               Mobile Number
             </label>
             <div className={parentClass}>
-              <FaPhoneAlt className="text-secClr" />
+              <FaPhoneAlt className="text-primary" />
               <Field
                 type="tel"
                 name="referralMobileNumber"
@@ -468,7 +547,7 @@ const Section4 = ({ formData, setFormData, prevSection, onSubmit }) => {
             </button>
             <button
               type="submit"
-              className="px-4 py-2 bg-secClr text-white rounded-md hover:bg-secClr/80 disabled:opacity-50"
+              className="px-4 py-2 bg-primary text-white rounded-md hover:bg-primary/80 disabled:opacity-50"
               disabled={isSubmitting}
             >
               {isSubmitting ? "Submitting..." : "Submit"}

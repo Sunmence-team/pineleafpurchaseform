@@ -307,7 +307,7 @@ const Section1 = ({ formData, setFormData, nextSection, prevSection }) => {
                 >
                   Upload Image
                 </label>
-                <div className="mt-2 flex flex-col items-center justify-center px-6 pt-5 pb-6 border-2 border-secClr/50 border-dashed rounded-md relative">
+                <div className="mt-2 flex flex-col items-center justify-center px-6 pt-5 pb-6 border-2 border-primary/50 border-dashed rounded-md relative">
                   {imagePreview ? (
                     <div className="flex flex-col items-center space-y-3">
                       <img
@@ -317,7 +317,7 @@ const Section1 = ({ formData, setFormData, nextSection, prevSection }) => {
                       />
                       <label
                         htmlFor="image"
-                        className="cursor-pointer px-3 py-1 bg-secClr text-white text-sm rounded-md hover:bg-secClr/80"
+                        className="cursor-pointer px-3 py-1 bg-primary text-white text-sm rounded-md hover:bg-primary/80"
                       >
                         Re-upload
                         <input
@@ -344,7 +344,7 @@ const Section1 = ({ formData, setFormData, nextSection, prevSection }) => {
                   ) : (
                     <div className="space-y-1 text-center flex flex-col items-center">
                       <svg
-                        className="mx-auto h-12 w-12 text-secClr"
+                        className="mx-auto h-12 w-12 text-primary"
                         stroke="currentColor"
                         fill="none"
                         viewBox="0 0 48 48"
@@ -360,7 +360,7 @@ const Section1 = ({ formData, setFormData, nextSection, prevSection }) => {
                       <div className="flex text-sm text-gray-600">
                         <label
                           htmlFor="image"
-                          className="relative cursor-pointer bg-white rounded-md font-medium text-secClr hover:text-secClr flex"
+                          className="relative cursor-pointer bg-white rounded-md font-medium text-primary hover:text-primary flex"
                         >
                           <span>Upload a file</span>
                           <input
@@ -406,7 +406,7 @@ const Section1 = ({ formData, setFormData, nextSection, prevSection }) => {
                     Title
                   </label>
                   <div className={parentClass}>
-                    <MdTitle className="text-secClr" />
+                    <MdTitle className="text-primary" />
                     <Field
                       as="select"
                       id="title"
@@ -436,7 +436,7 @@ const Section1 = ({ formData, setFormData, nextSection, prevSection }) => {
                     First Name
                   </label>
                   <div className={parentClass}>
-                    <FaUser className="text-secClr" />
+                    <FaUser className="text-primary" />
                     <Field
                       type="text"
                       name="firstName"
@@ -459,7 +459,7 @@ const Section1 = ({ formData, setFormData, nextSection, prevSection }) => {
                     Middle Name
                   </label>
                   <div className={parentClass}>
-                    <FaUser className="text-secClr" />
+                    <FaUser className="text-primary" />
                     <Field
                       type="text"
                       name="middleName"
@@ -477,7 +477,7 @@ const Section1 = ({ formData, setFormData, nextSection, prevSection }) => {
                     Last Name
                   </label>
                   <div className={parentClass}>
-                    <FaUser className="text-secClr" />
+                    <FaUser className="text-primary" />
                     <Field
                       type="text"
                       name="lastName"
@@ -505,7 +505,7 @@ const Section1 = ({ formData, setFormData, nextSection, prevSection }) => {
                           type="radio"
                           name="gender"
                           value={gen}
-                          className="form-radio h-4 w-4 text-secClr"
+                          className="form-radio h-4 w-4 text-primary"
                         />
                         <span className="ml-2 text-sm text-black/70">
                           {gen}
@@ -535,7 +535,7 @@ const Section1 = ({ formData, setFormData, nextSection, prevSection }) => {
                             type="radio"
                             name="maritalStatus"
                             value={status}
-                            className="form-radio h-4 w-4 text-secClr"
+                            className="form-radio h-4 w-4 text-primary"
                           />
                           <span className="ml-2 text-sm text-black/70">
                             {status}
@@ -557,7 +557,7 @@ const Section1 = ({ formData, setFormData, nextSection, prevSection }) => {
                       type="checkbox"
                       name="shouldSpouseNameShow"
                       id="shouldSpouseNameShow"
-                      className="form-checkbox h-5 w-5 text-secClr rounded border-gray-300"
+                      className="form-checkbox h-5 w-5 text-primary rounded border-gray-300"
                     />
                     <label
                       htmlFor="shouldSpouseNameShow"
@@ -580,7 +580,7 @@ const Section1 = ({ formData, setFormData, nextSection, prevSection }) => {
                         Spouse Title
                       </label>
                       <div className={parentClass}>
-                        <MdTitle className="text-secClr" />
+                        <MdTitle className="text-primary" />
                         <Field
                           as="select"
                           id="spouseTitle"
@@ -610,7 +610,7 @@ const Section1 = ({ formData, setFormData, nextSection, prevSection }) => {
                         First Name
                       </label>
                       <div className={parentClass}>
-                        <FaUser className="text-secClr" />
+                        <FaUser className="text-primary" />
                         <Field
                           type="text"
                           name="spouseFirstName"
@@ -633,7 +633,7 @@ const Section1 = ({ formData, setFormData, nextSection, prevSection }) => {
                         Middle Name
                       </label>
                       <div className={parentClass}>
-                        <FaUser className="text-secClr" />
+                        <FaUser className="text-primary" />
                         <Field
                           type="text"
                           name="spouseMiddleName"
@@ -656,7 +656,7 @@ const Section1 = ({ formData, setFormData, nextSection, prevSection }) => {
                         Last Name
                       </label>
                       <div className={parentClass}>
-                        <FaUser className="text-secClr" />
+                        <FaUser className="text-primary" />
                         <Field
                           type="text"
                           name="spouseLastName"
@@ -690,7 +690,7 @@ const Section1 = ({ formData, setFormData, nextSection, prevSection }) => {
                       : "Association Name"}
                   </label>
                   <div className={parentClass}>
-                    <BiBriefcase className="text-secClr text-lg" />
+                    <BiBriefcase className="text-primary text-lg" />
                     <Field
                       type="text"
                       name="clubName"
@@ -714,7 +714,7 @@ const Section1 = ({ formData, setFormData, nextSection, prevSection }) => {
                     Official Contact Number
                   </label>
                   <div className={parentClass}>
-                    <FaPhoneAlt className="text-secClr" />
+                    <FaPhoneAlt className="text-primary" />
                     <Field
                       type="text"
                       name="clubContact"
@@ -739,7 +739,7 @@ const Section1 = ({ formData, setFormData, nextSection, prevSection }) => {
                 {({ push, remove }) => (
                   <div className="space-y-4">
                     {/* Add Member form */}
-                    <div className="bg-white p-4 rounded-xl border border-secClr/10 space-y-3">
+                    <div className="bg-white p-4 rounded-xl border border-primary/10 space-y-3">
                       <div className="flex md:flex-row flex-col md:items-center justify-between mb-5 gap-4">
                         <p className="text-sm font-bold text-gray-700 uppercase tracking-wide">
                           Add New Member
@@ -765,7 +765,7 @@ const Section1 = ({ formData, setFormData, nextSection, prevSection }) => {
                             setNewLastName("");
                             toast.success("Member added!");
                           }}
-                          className="inline-flex items-center justify-center gap-2 px-4 h-10 bg-secClr text-white text-xs font-bold rounded-lg hover:bg-secClr/95 shadow"
+                          className="inline-flex items-center justify-center gap-2 px-4 h-10 bg-primary text-white text-xs font-bold rounded-lg hover:bg-primary/95 shadow"
                         >
                           <FaPlus /> <span>Add Member</span>
                         </button>
@@ -809,7 +809,7 @@ const Section1 = ({ formData, setFormData, nextSection, prevSection }) => {
 
                     {/* Members table */}
                     {values.clubMembers && values.clubMembers.length > 0 ? (
-                      <div className="overflow-x-auto bg-white rounded-xl border border-secClr/10">
+                      <div className="overflow-x-auto bg-white rounded-xl border border-primary/10">
                         <table className="w-full text-left text-sm">
                           <thead className="bg-gray-50 text-gray-700">
                             <tr>
@@ -827,7 +827,7 @@ const Section1 = ({ formData, setFormData, nextSection, prevSection }) => {
                                 <td className="py-2.5 px-4 text-gray-500 font-medium">
                                   {index + 1}
                                 </td>
-                                <td className="py-2.5 px-4 font-semibold text-secClr">
+                                <td className="py-2.5 px-4 font-semibold text-primary">
                                   {member.title}
                                 </td>
                                 <td className="py-2.5 px-4">
@@ -856,7 +856,7 @@ const Section1 = ({ formData, setFormData, nextSection, prevSection }) => {
                       </div>
                     ) : (
                       <div className="text-center p-6 border-2 border-dashed border-gray-200 rounded-xl bg-gray-50/50">
-                        <p className="text-sm text-secClr font-medium">
+                        <p className="text-sm text-primary font-medium">
                           No members added yet. Please use the form above to add
                           members.
                         </p>
@@ -882,7 +882,7 @@ const Section1 = ({ formData, setFormData, nextSection, prevSection }) => {
               Address
             </label>
             <div className={parentClass}>
-              <FaAddressCard className="text-secClr" />
+              <FaAddressCard className="text-primary" />
               <Field
                 type="text"
                 name="address"
@@ -911,7 +911,7 @@ const Section1 = ({ formData, setFormData, nextSection, prevSection }) => {
                 Country of Residence
               </label>
               <div className={parentClass}>
-                <BiGlobe className="text-secClr" />
+                <BiGlobe className="text-primary" />
                 <Field
                   as="select"
                   name="countryOfResidence"
@@ -955,7 +955,7 @@ const Section1 = ({ formData, setFormData, nextSection, prevSection }) => {
                 State {values.purchase_type === "individual" && " of Origin"}
               </label>
               <div className={parentClass}>
-                <FaMapMarkerAlt className="text-secClr" />
+                <FaMapMarkerAlt className="text-primary" />
                 <Field
                   as="select"
                   name="stateOfOrigin"
@@ -1003,7 +1003,7 @@ const Section1 = ({ formData, setFormData, nextSection, prevSection }) => {
               Town, Village, Local Government (LGA)
             </label>
             <div className={parentClass}>
-              <FaMapMarkerAlt className="text-secClr" />
+              <FaMapMarkerAlt className="text-primary" />
               <Field
                 type="text"
                 name="lga"
@@ -1030,7 +1030,7 @@ const Section1 = ({ formData, setFormData, nextSection, prevSection }) => {
                   Email Address
                 </label>
                 <div className={parentClass}>
-                  <BiEnvelope className="text-secClr" />
+                  <BiEnvelope className="text-primary" />
                   <Field
                     type="email"
                     name="email"
@@ -1053,7 +1053,7 @@ const Section1 = ({ formData, setFormData, nextSection, prevSection }) => {
                   Mobile Number
                 </label>
                 <div className={parentClass}>
-                  <FaPhoneAlt className="text-secClr" />
+                  <FaPhoneAlt className="text-primary" />
                   <Field
                     type="tel"
                     name="mobileNumber"
@@ -1085,7 +1085,7 @@ const Section1 = ({ formData, setFormData, nextSection, prevSection }) => {
             )}
             <button
               type="submit"
-              className="px-6 py-2 bg-secClr text-white rounded-md hover:bg-secClr/80 ml-auto font-semibold"
+              className="px-6 py-2 bg-primary text-white rounded-md hover:bg-primary/80 ml-auto font-semibold"
             >
               Next
             </button>

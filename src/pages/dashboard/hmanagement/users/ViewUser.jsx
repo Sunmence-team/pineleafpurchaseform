@@ -2,8 +2,8 @@ import React, { useState, useEffect } from "react";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { FaArrowLeft } from "react-icons/fa";
 import { toast } from "sonner";
-import assets from "../../../../assets/assests";
-import api, { getErrorMessage } from "../../../../utilities/api";
+import assets from "../../../../assets/assets";
+import { api, getErrorMessage } from "../../../../helpers/api";
 import { FaDownload } from "react-icons/fa6";
 import Modal from "../../../../components/modals/Modal";
 import { useFormik } from "formik";
@@ -31,7 +31,7 @@ const ViewUser = () => {
       const fetchUser = async () => {
         setIsLoading(true);
         try {
-          const response = await api.get(`/api/users/${id}`, {
+          const response = await hmApi.get(`/api/users/${id}`, {
             headers: {
               Authorization: `Bearer ${token}`,
             },
@@ -67,7 +67,7 @@ const ViewUser = () => {
     onSubmit: async (values, { resetForm }) => {
       setIsVerifying(true);
       try {
-        const response = await api.post(
+        const response = await hmApi.post(
           `/api/admin/users/${user?.id}/verify`,
           values,
           {
@@ -96,7 +96,7 @@ const ViewUser = () => {
   if (isLoading) {
     return (
       <div className="flex justify-center items-center min-h-screen bg-gray-50">
-        <div className="animate-spin rounded-full h-12 w-12 border-4 border-t-transparent border-primary"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-4 border-t-transparent border-primary2"></div>
       </div>
     );
   }
@@ -115,7 +115,7 @@ const ViewUser = () => {
                 : undefined,
             })
           }
-          className="px-6 py-2 bg-primary text-white rounded-lg hover:bg-primary/90"
+          className="px-6 py-2 bg-primary2 text-white rounded-lg hover:bg-primary2/90"
         >
           Back to Users
         </button>
@@ -176,7 +176,7 @@ const ViewUser = () => {
               <a
                 href={`${HM_STORAGE_API_URL}${user?.statement_of_account}`}
                 target="_blank"
-                className="flex items-center justify-center px-4 py-2 sm:px-5 sm:py-3 bg-secClr text-white font-semibold rounded-lg hover:bg-secClr transition-colors duration-200 w-full sm:w-auto text-sm"
+                className="flex items-center justify-center px-4 py-2 sm:px-5 sm:py-3 bg-secondary2 text-white font-semibold rounded-lg hover:bg-secondary2 transition-colors duration-200 w-full sm:w-auto text-sm"
               >
                 <FaDownload className="mr-2 text-sm" />
                 Download Statement
@@ -188,7 +188,7 @@ const ViewUser = () => {
         <div className="space-y-10">
           {/* Profile Section */}
           <section>
-            <h3 className="text-lg font-bold text-gray-900 border-l-4 border-primary pl-3 mb-6">
+            <h3 className="text-lg font-bold text-gray-900 border-l-4 border-primary2 pl-3 mb-6">
               Personal Information
             </h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
@@ -208,7 +208,7 @@ const ViewUser = () => {
 
           {/* Address Section */}
           <section>
-            <h3 className="text-lg font-bold text-gray-900 border-l-4 border-primary pl-3 mb-6">
+            <h3 className="text-lg font-bold text-gray-900 border-l-4 border-primary2 pl-3 mb-6">
               Address Details
             </h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
@@ -223,7 +223,7 @@ const ViewUser = () => {
 
           {/* Next of Kin Section */}
           <section>
-            <h3 className="text-lg font-bold text-gray-900 border-l-4 border-primary pl-3 mb-6">
+            <h3 className="text-lg font-bold text-gray-900 border-l-4 border-primary2 pl-3 mb-6">
               Next of Kin
             </h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
@@ -240,7 +240,7 @@ const ViewUser = () => {
 
           {/* Professional Section */}
           <section>
-            <h3 className="text-lg font-bold text-gray-900 border-l-4 border-primary pl-3 mb-6">
+            <h3 className="text-lg font-bold text-gray-900 border-l-4 border-primary2 pl-3 mb-6">
               Professional Information
             </h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
@@ -261,7 +261,7 @@ const ViewUser = () => {
           {awaitingVerification && !isVerified && (
             <button
               onClick={() => setOpenVerificationModal(true)}
-              className="px-6 py-2 bg-secClr text-white font-semibold rounded-lg transition-colors disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer"
+              className="px-6 py-2 bg-secondary2 text-white font-semibold rounded-lg transition-colors disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer"
             >
               Verify
             </button>

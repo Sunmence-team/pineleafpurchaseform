@@ -13,8 +13,27 @@ const Section2 = ({ formData, setFormData, prevSection, nextSection }) => {
   const isIndividual = formData.purchase_type === "individual";
 
   const standardRelationships = isIndividual
-    ? ["brother", "sister", "father", "mother", "husband", "hussband", "wife", "son", "daughter"]
-    : ["board member / trustee", "board member", "trustee", "president / chairman", "president", "chairman", "general secretary", "representative"];
+    ? [
+        "brother",
+        "sister",
+        "father",
+        "mother",
+        "husband",
+        "hussband",
+        "wife",
+        "son",
+        "daughter",
+      ]
+    : [
+        "board member / trustee",
+        "board member",
+        "trustee",
+        "president / chairman",
+        "president",
+        "chairman",
+        "general secretary",
+        "representative",
+      ];
 
   const isStandard = formData.nextOfKinRelationship
     ? standardRelationships.includes(
@@ -75,7 +94,9 @@ const Section2 = ({ formData, setFormData, prevSection, nextSection }) => {
       {({ values }) => (
         <Form className="space-y-6">
           <p className="font-semibold text-xl md:text-2xl text-center">
-            {isIndividual ? "Section 2: Next of Kin Details" : "Section 2: Representative / Trustee Details"}
+            {isIndividual
+              ? "Section 2: Next of Kin Details"
+              : "Section 2: Representative / Trustee Details"}
           </p>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -84,15 +105,19 @@ const Section2 = ({ formData, setFormData, prevSection, nextSection }) => {
                 htmlFor="nextOfKinFullName"
                 className="block text-sm font-medium text-black/70 font-semibold"
               >
-                {isIndividual ? "Full Name" : "Representative / Trustee Full Name"}
+                {isIndividual
+                  ? "Full Name"
+                  : "Representative / Trustee Full Name"}
               </label>
               <div className={parentClass}>
-                <FaUser className="text-secClr" />
+                <FaUser className="text-primary" />
                 <Field
                   type="text"
                   name="nextOfKinFullName"
                   id="nextOfKinFullName"
-                  placeholder={isIndividual ? "Enter Full Name" : "e.g. Michael Smith"}
+                  placeholder={
+                    isIndividual ? "Enter Full Name" : "e.g. Michael Smith"
+                  }
                   className={inputClass}
                 />
               </div>
@@ -107,10 +132,12 @@ const Section2 = ({ formData, setFormData, prevSection, nextSection }) => {
                 htmlFor="nextOfKinMobileNumber"
                 className="block text-sm font-medium text-black/70 font-semibold"
               >
-                {isIndividual ? "Mobile Number" : "Representative Contact Mobile"}
+                {isIndividual
+                  ? "Mobile Number"
+                  : "Representative Contact Mobile"}
               </label>
               <div className={parentClass}>
-                <FaPhoneAlt className="text-secClr" />
+                <FaPhoneAlt className="text-primary" />
                 <Field
                   type="tel"
                   name="nextOfKinMobileNumber"
@@ -130,10 +157,12 @@ const Section2 = ({ formData, setFormData, prevSection, nextSection }) => {
                 htmlFor="nextOfKinEmail"
                 className="block text-sm font-medium text-black/70 font-semibold"
               >
-                {isIndividual ? "Email Address" : "Representative Contact Email"}
+                {isIndividual
+                  ? "Email Address"
+                  : "Representative Contact Email"}
               </label>
               <div className={parentClass}>
-                <BiEnvelope className="text-secClr" />
+                <BiEnvelope className="text-primary" />
                 <Field
                   type="email"
                   name="nextOfKinEmail"
@@ -156,7 +185,7 @@ const Section2 = ({ formData, setFormData, prevSection, nextSection }) => {
                 {isIndividual ? "Relationship" : "Role / Designation"}
               </label>
               <div className={parentClass}>
-                <FaUser className="text-secClr" />
+                <FaUser className="text-primary" />
                 <Field
                   as="select"
                   name="nextOfKinRelationship"
@@ -164,7 +193,9 @@ const Section2 = ({ formData, setFormData, prevSection, nextSection }) => {
                   className={inputClass}
                 >
                   <option value="" disabled>
-                    {isIndividual ? "Select Relationship" : "Select Role / Designation"}
+                    {isIndividual
+                      ? "Select Relationship"
+                      : "Select Role / Designation"}
                   </option>
                   {isIndividual ? (
                     <>
@@ -179,9 +210,15 @@ const Section2 = ({ formData, setFormData, prevSection, nextSection }) => {
                     </>
                   ) : (
                     <>
-                      <option value="Board Member / Trustee">Board Member / Trustee</option>
-                      <option value="President / Chairman">President / Chairman</option>
-                      <option value="General Secretary">General Secretary</option>
+                      <option value="Board Member / Trustee">
+                        Board Member / Trustee
+                      </option>
+                      <option value="President / Chairman">
+                        President / Chairman
+                      </option>
+                      <option value="General Secretary">
+                        General Secretary
+                      </option>
                       <option value="Representative">Representative</option>
                     </>
                   )}
@@ -200,15 +237,19 @@ const Section2 = ({ formData, setFormData, prevSection, nextSection }) => {
                   htmlFor="nextOfKinRelationshipOther"
                   className="block text-sm font-medium text-black/70 font-semibold"
                 >
-                  {isIndividual ? "Specify Relationship" : "Specify Role / Designation"}
+                  {isIndividual
+                    ? "Specify Relationship"
+                    : "Specify Role / Designation"}
                 </label>
                 <div className={parentClass}>
-                  <FaUser className="text-secClr" />
+                  <FaUser className="text-primary" />
                   <Field
                     type="text"
                     name="nextOfKinRelationshipOther"
                     id="nextOfKinRelationshipOther"
-                    placeholder={isIndividual ? "Enter relationship" : "Enter designation"}
+                    placeholder={
+                      isIndividual ? "Enter relationship" : "Enter designation"
+                    }
                     className={inputClass}
                   />
                 </div>
@@ -231,7 +272,7 @@ const Section2 = ({ formData, setFormData, prevSection, nextSection }) => {
             </button>
             <button
               type="submit"
-              className="px-6 py-2 bg-secClr text-white rounded-md hover:bg-secClr/80 font-semibold"
+              className="px-6 py-2 bg-primary text-white rounded-md hover:bg-primary/80 font-semibold"
             >
               Next
             </button>

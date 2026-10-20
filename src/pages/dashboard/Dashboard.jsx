@@ -18,7 +18,7 @@ import {
   subMonths,
 } from "date-fns";
 import jsPDF from "jspdf";
-import assets from "../../assets/assests";
+import assets from "../../assets/assets";
 import logo from "../../assets/logo.png";
 import autoTable from "jspdf-autotable";
 import BranchFilterModal from "../../components/modals/BranchFilterModal";
@@ -32,8 +32,8 @@ import { TfiReload } from "react-icons/tfi";
 import { FaBars, FaX } from "react-icons/fa6";
 import SideNav from "../../components/SideNav";
 import { useClients } from "../../context/ClientsContext";
-import { branchOptions } from "../../lib/branchList";
 import { parseSafeDate } from "../../utilities/formatterUtility";
+import { branchOptions } from "../../lib/branchList";
 
 const API_URL = import.meta.env.VITE_API_BASE_URL;
 
@@ -136,7 +136,7 @@ const Dashboard = () => {
     setLoadingSiteDownloadTime(true);
     const token = localStorage.getItem("token");
     try {
-      const response = await axios.get(
+      const response = await api.get(
         `${API_URL}/api/last/download-date?name=${siteLocation}`,
         {
           headers: { Authorization: `Bearer ${token}` },
@@ -205,12 +205,10 @@ const Dashboard = () => {
         const createdDate = parseSafeDate(item.created_at);
         const branchMatch =
           item.branches &&
-          item.branches.trim().toLowerCase() === selectedBranchTitle.trim().toLowerCase();
+          item.branches.trim().toLowerCase() ===
+            selectedBranchTitle.trim().toLowerCase();
         return (
-          branchMatch &&
-          createdDate &&
-          filterFrom &&
-          createdDate >= filterFrom
+          branchMatch && createdDate && filterFrom && createdDate >= filterFrom
         );
       });
       setBranchInitialData(data);
@@ -222,7 +220,7 @@ const Dashboard = () => {
   const updateBranchDownloadTime = async (branchKey, dateTime) => {
     const token = localStorage.getItem("token");
     try {
-      await axios.put(
+      await api.put(
         `${API_URL}/api/last/download-date`,
         { name: branchKey, date: format(dateTime, "yyyy-MM-dd HH:mm:ss") },
         {
@@ -247,7 +245,7 @@ const Dashboard = () => {
     setLoadingBranchDownloadTime(true);
     const token = localStorage.getItem("token");
     try {
-      const response = await axios.get(
+      const response = await api.get(
         `${API_URL}/api/last/download-date?name=${branchKey}`,
         {
           headers: {
@@ -382,14 +380,16 @@ const Dashboard = () => {
       try {
         if (!token) return;
 
-        const response = await axios.get(`${API_URL}/api/admin/download-date`, {
+        const response = await api.get(`${API_URL}/api/admin/download-date`, {
           headers: {
             Authorization: `Bearer ${token}`,
           },
         });
 
         if (response.status === 200 && response.data.data.downloaded_date) {
-          setLastDownloadTime(parseSafeDate(response.data.data.downloaded_date));
+          setLastDownloadTime(
+            parseSafeDate(response.data.data.downloaded_date),
+          );
         }
       } catch (error) {
         console.error("Error fetching last download time:", error);
@@ -608,7 +608,7 @@ const Dashboard = () => {
       const token = localStorage.getItem("token");
       if (!token) return;
 
-      await axios.put(
+      await api.put(
         `${API_URL}/api/applications/download-date`,
         { downloaded_date: format(downloadTime, "yyyy-MM-dd HH:mm:ss") },
         {
@@ -649,7 +649,9 @@ const Dashboard = () => {
         }
         filterFrom = parseSafeDate(branchStartDate);
         if (filterFrom) {
-          const [fromHours, fromMinutes] = branchStartTime.split(":").map(Number);
+          const [fromHours, fromMinutes] = branchStartTime
+            .split(":")
+            .map(Number);
           filterFrom.setHours(fromHours, fromMinutes, 0, 0);
         }
       }
@@ -670,7 +672,8 @@ const Dashboard = () => {
         const createdDate = parseSafeDate(item.created_at);
         const branchMatch =
           item.branches &&
-          item.branches.trim().toLowerCase() === selectedBranchTitle.trim().toLowerCase();
+          item.branches.trim().toLowerCase() ===
+            selectedBranchTitle.trim().toLowerCase();
         const siteLocationLower = item.site_location?.toLowerCase() || "";
         const siteMatch =
           sitesToExclude.length > 0 &&
@@ -770,7 +773,9 @@ const Dashboard = () => {
         }
         filterFrom = parseSafeDate(branchStartDate);
         if (filterFrom) {
-          const [fromHours, fromMinutes] = branchStartTime.split(":").map(Number);
+          const [fromHours, fromMinutes] = branchStartTime
+            .split(":")
+            .map(Number);
           filterFrom.setHours(fromHours, fromMinutes, 0, 0);
         }
       }
@@ -791,7 +796,8 @@ const Dashboard = () => {
         const createdDate = parseSafeDate(item.created_at);
         const branchMatch =
           item.branches &&
-          item.branches.trim().toLowerCase() === selectedBranchTitle.trim().toLowerCase();
+          item.branches.trim().toLowerCase() ===
+            selectedBranchTitle.trim().toLowerCase();
         const siteLocationLower = item.site_location?.toLowerCase() || "";
         const siteMatch =
           sitesToExclude.length > 0 &&
@@ -1303,7 +1309,11 @@ const Dashboard = () => {
 
   const handleDelete = async (id) => {
     if (!id) return;
-    if (confirm("Are you sure to delete this entry?. This action is irreversible.")) {
+    if (
+      confirm(
+        "Are you sure to delete this entry?. This action is irreversible.",
+      )
+    ) {
       const toastId = toast.loading("Deleting entry...");
       setIsDeleting(true);
       try {
@@ -1313,21 +1323,25 @@ const Dashboard = () => {
           setIsDeleting(false);
           return;
         }
-  
-        const response = await axios.delete(`${API_URL}/api/applications/${id}`, {
+
+        const response = await api.delete(`${API_URL}/api/applications/${id}`, {
           headers: {
             Authorization: `Bearer ${token}`,
             "Content-Type": "application/json",
           },
         });
-  
+
         if (response.status === 200 || response.status === 204) {
           toast.success("Client entry deleted successfully!", { id: toastId });
           removeClient(id);
           if (filteredData.length === 1 && currentPage > 1) {
             setCurrentPage(currentPage - 1);
           } else if (!filterBranch && !filterDateFrom && !filterDateTo) {
-            fetchApplications(currentPage, recordsPerPage, debouncedSearchQuery);
+            fetchApplications(
+              currentPage,
+              recordsPerPage,
+              debouncedSearchQuery,
+            );
           }
         } else {
           toast.error(`Failed to delete client. Status: ${response.status}`, {
@@ -1362,7 +1376,7 @@ const Dashboard = () => {
       <div className="mx-auto bg-white rounded-2xl shadow-2xl p-4 md:p-5 w-full py-8 transition-all duration-300">
         {(loading || loadingApplications) && (
           <div className="flex justify-center items-center min-h-[200px]">
-            <div className="animate-spin rounded-full h-12 w-12 border-4 border-secClr border-t-transparent"></div>
+            <div className="animate-spin rounded-full h-12 w-12 border-4 border-primary border-t-transparent"></div>
           </div>
         )}
         {!(loading || loadingApplications) && (
@@ -1393,7 +1407,7 @@ const Dashboard = () => {
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     placeholder="Search clients..."
-                    className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-secClr text-sm md:text-base"
+                    className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-sm md:text-base"
                   />
                   <FaSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4 md:w-5 md:h-5" />
                 </div>
@@ -1408,7 +1422,7 @@ const Dashboard = () => {
                     );
                   }}
                   disabled={loading || loadingAllClients || loadingApplications}
-                  className="h-[45px] md:w-[45px] cursor-pointer flex gap-2 items-center justify-center text-sm bg-secClr text-white font-semibold rounded-lg hover:bg-secClr/90 transition duration-300 shadow-sm disabled:opacity-50"
+                  className="h-[45px] md:w-[45px] cursor-pointer flex gap-2 items-center justify-center text-sm bg-primary text-white font-semibold rounded-lg hover:bg-primary/90 transition duration-300 shadow-sm disabled:opacity-50"
                 >
                   <TfiReload
                     className={`${(loading || loadingAllClients || loadingApplications) && "animate-spin"} size-5`}
@@ -1423,13 +1437,13 @@ const Dashboard = () => {
                         fetchAllClients();
                         setBranchFilterModalOpen(true);
                       }}
-                      className="flex items-center justify-center flex-1 px-4 py-2.5 text-sm bg-secClr text-white font-semibold rounded-lg hover:bg-secClr/90 transition duration-300 shadow-sm"
+                      className="flex items-center justify-center flex-1 px-4 py-2.5 text-sm bg-primary text-white font-semibold rounded-lg hover:bg-primary/90 transition duration-300 shadow-sm"
                     >
                       <FaFilter className="mr-2 w-4 h-4" /> Branch
                     </button>
                     <button
                       onClick={() => setDateFilterModalOpen(true)}
-                      className="flex items-center justify-center flex-1 px-4 py-2.5 text-sm bg-secClr text-white font-semibold rounded-lg hover:bg-secClr/90 transition duration-300 shadow-sm"
+                      className="flex items-center justify-center flex-1 px-4 py-2.5 text-sm bg-primary text-white font-semibold rounded-lg hover:bg-primary/90 transition duration-300 shadow-sm"
                     >
                       <FaFilter className="mr-2 w-4 h-4" /> Filter
                     </button>
@@ -1441,7 +1455,7 @@ const Dashboard = () => {
                         fetchAllClients();
                         setShowMoreDownloadOptions((prev) => !prev);
                       }}
-                      className="flex items-center justify-center px-4 h-[45px] text-sm bg-secClr text-white font-semibold rounded-lg hover:bg-secClr/90 transition duration-300 shadow-sm w-full md:w-auto"
+                      className="flex items-center justify-center px-4 h-[45px] text-sm bg-primary text-white font-semibold rounded-lg hover:bg-primary/90 transition duration-300 shadow-sm w-full md:w-auto"
                     >
                       Download <FaCaretDown className="ml-2 w-6 h-6" />
                     </button>

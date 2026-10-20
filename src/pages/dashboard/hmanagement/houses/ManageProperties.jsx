@@ -1,15 +1,15 @@
 import React, { useState, useEffect } from "react";
 import SideNav from "../../../../components/SideNav";
-import { branchOptions } from "../../../../lib/branchList";
-import assets from "../../../../assets/assests";
+import assets from "../../../../assets/assets";
 import ReusableTable from "../../../../utilities/ReusableTable";
 import { useNavigate } from "react-router-dom";
 import ActionCell from "../../../../components/ActionCell";
-import api, { getErrorMessage } from "../../../../utilities/api";
+import { api, getErrorMessage } from "../../../../helpers/api";
 import { toast } from "sonner";
 import ConfirmDialog from "../../../../components/modals/ConfirmDialog";
 import { FaBars, FaPlus } from "react-icons/fa6";
 import { FaSearch } from "react-icons/fa";
+import { branchOptions } from "../../../../lib/branchList";
 
 const ManageProperties = () => {
   const token = localStorage.getItem("token");
@@ -41,7 +41,7 @@ const ManageProperties = () => {
     setIsLoading(true);
     setError(null);
     try {
-      const response = await api.get("/api/admin/properties", {
+      const response = await hmApi.get("/api/admin/properties", {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -56,7 +56,6 @@ const ManageProperties = () => {
         const { data, total } = response.data.data;
         setProperties(data);
         setTotalItems(total);
-
       }
     } catch (err) {
       const msg = getErrorMessage(err);
@@ -75,7 +74,7 @@ const ManageProperties = () => {
     if (!propertyToDelete) return;
     setIsDeleting(true);
     try {
-      await api.delete(`/api/admin/properties/${propertyToDelete}`, {
+      await hmApi.delete(`/api/admin/properties/${propertyToDelete}`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -115,8 +114,12 @@ const ManageProperties = () => {
       render: (item) => (
         <ActionCell
           rowId={item.id}
-          onView={() => navigate(`/dashboard/manage/properties/${item.id}/view`)}
-          onEdit={() => navigate(`/dashboard/manage/properties/${item.id}/edit`)}
+          onView={() =>
+            navigate(`/dashboard/manage/properties/${item.id}/view`)
+          }
+          onEdit={() =>
+            navigate(`/dashboard/manage/properties/${item.id}/edit`)
+          }
           onDelete={() => setPropertyToDelete(item.id)}
           canView
         />
@@ -155,13 +158,13 @@ const ManageProperties = () => {
                 placeholder="Search properties..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50"
+                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-secondary/50"
               />
               <FaSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
             </div>
             <button
               onClick={() => navigate("/dashboard/manage/properties/create")}
-              className="flex items-center gap-2 bg-secClr text-white px-4 py-2 rounded-lg transition"
+              className="flex items-center gap-2 bg-primary text-white px-4 py-2 rounded-lg transition"
             >
               <FaPlus /> Create New property
             </button>

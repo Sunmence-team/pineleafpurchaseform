@@ -103,7 +103,7 @@ export const ClientsProvider = ({ children }) => {
 
         do {
           const payload = { page, per_page: 200 };
-          const response = await axios.post(
+          const response = await api.post(
             `${API_URL}/api/all_clients`,
             payload,
             {
@@ -146,7 +146,7 @@ export const ClientsProvider = ({ children }) => {
     try {
       let response;
       if (query.trim()) {
-        response = await axios.get(
+        response = await api.get(
           `${API_URL}/api/applications/search?query=${encodeURIComponent(query)}`,
           {
             headers: { Authorization: `Bearer ${token}` },
@@ -155,7 +155,7 @@ export const ClientsProvider = ({ children }) => {
         );
       } else {
         const payload = { page, per_page: perPage };
-        response = await axios.post(`${API_URL}/api/all_clients`, payload, {
+        response = await api.post(`${API_URL}/api/all_clients`, payload, {
           headers: {
             Authorization: `Bearer ${token}`,
             "Content-Type": "application/json",
