@@ -1,7 +1,7 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import { FaEye, FaEdit, FaTrashAlt } from "react-icons/fa";
-import { formatISODateToCustom } from "../utilities/formatterUtility";
+import { formatISODateToCustom } from "../helpers/formatterUtility";
 
 const ApplicationsList = ({
   filteredData,

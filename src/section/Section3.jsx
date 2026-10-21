@@ -9,7 +9,7 @@ import { MdOutlineSignLanguage } from "react-icons/md";
 import {
   formatNumberWithCommas,
   unformatNumber,
-} from "../utilities/formatterUtility";
+} from "../helpers/formatterUtility";
 import axios from "axios";
 import { branchOptions } from "../lib/branchList";
 

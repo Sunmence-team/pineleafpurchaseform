@@ -1,14 +1,12 @@
 import { Route, Routes } from "react-router-dom";
 import Form from "./pages/Form";
 
-import Dashboard from "./pages/dashboard/Dashboard";
 import { Toaster } from "sonner";
 import ViewClient from "./pages/View";
 import EditClient from "./pages/Edit";
 import Success from "./pages/Success";
 import { useEffect } from "react";
 import BranchBreakDown from "./pages/dashboard/BranchBreakDown";
-import { ClientsProvider } from "./context/ClientsContext";
 import ManageUsers from "./pages/dashboard/hmanagement/users/ManageUsers";
 import ViewUser from "./pages/dashboard/hmanagement/users/ViewUser";
 import ManageProperties from "./pages/dashboard/hmanagement/houses/ManageProperties";
@@ -26,6 +24,7 @@ import ChangePassword from "./pages/ChangePassword";
 import Login from "./pages/auth/Login";
 import MainLayout from "./layout/MainLayout";
 import ProtectedRoute from "./helpers/ProtectRoute";
+import Dashboard from "./pages/dashboard/Dashboard";
 
 function App() {
   useEffect(() => {
@@ -52,68 +51,70 @@ function App() {
           <Route path="/change-password" element={<ChangePassword />} />
           
           <Route element={<ProtectedRoute />}>
-            <Route path="/dashboard" element={<MainLayout pageName="Dashboard" children={<Dashboard />} />} />
-            <Route
-              path="/dashboard/branch/:branch"
-              element={<BranchBreakDown />}
-            />
-            <Route path="/view-client/:id" element={<ViewClient />} />
-            <Route path="/edit-client/:id" element={<EditClient />} />
-            {/* User Management */}
-            <Route path="/dashboard/manage/users" element={<ManageUsers />} />
-            <Route
-              path="/dashboard/manage/users/:id/view"
-              element={<ViewUser />}
-            />
-            <Route
-              path="/dashboard/manage/applicants"
-              element={<ManageApplicants />}
-            />
-            <Route
-              path="/dashboard/manage/applicants/:id/view"
-              element={<ViewApplicant />}
-            />
+            <Route element={<MainLayout />}>
+              <Route path="/dashboard/overview" element={<Dashboard />} />
+              <Route
+                path="/dashboard/branch/:branch"
+                element={<BranchBreakDown />}
+              />
+              <Route path="/view-client/:id" element={<ViewClient />} />
+              <Route path="/edit-client/:id" element={<EditClient />} />
+              {/* User Management */}
+              <Route path="/dashboard/manage/users" element={<ManageUsers />} />
+              <Route
+                path="/dashboard/manage/users/:id/view"
+                element={<ViewUser />}
+              />
+              <Route
+                path="/dashboard/manage/applicants"
+                element={<ManageApplicants />}
+              />
+              <Route
+                path="/dashboard/manage/applicants/:id/view"
+                element={<ViewApplicant />}
+              />
 
-            {/* Property Management */}
-            <Route
-              path="/dashboard/manage/properties"
-              element={<ManageProperties />}
-            />
-            <Route
-              path="/dashboard/manage/properties/create"
-              element={<CreateProperties />}
-            />
-            <Route
-              path="/dashboard/manage/properties/:id/edit"
-              element={<CreateProperties />}
-            />
-            <Route
-              path="/dashboard/manage/properties/:id/view"
-              element={<ViewProperty />}
-            />
+              {/* Property Management */}
+              <Route
+                path="/dashboard/manage/properties"
+                element={<ManageProperties />}
+              />
+              <Route
+                path="/dashboard/manage/properties/create"
+                element={<CreateProperties />}
+              />
+              <Route
+                path="/dashboard/manage/properties/:id/edit"
+                element={<CreateProperties />}
+              />
+              <Route
+                path="/dashboard/manage/properties/:id/view"
+                element={<ViewProperty />}
+              />
 
-            {/* Purchase/Application Management */}
-            <Route
-              path="/dashboard/manage/purchases"
-              element={<ManagePurchases />}
-            />
-            <Route
-              path="/dashboard/manage/purchases/:id/view"
-              element={<ViewPurchase />}
-            />
-            <Route
-              path="/dashboard/manage/subscriptions"
-              element={<ManageSubscriptions />}
-            />
-            <Route
-              path="/dashboard/manage/flagged-accounts"
-              element={<ManageFlaggedAccounts />}
-            />
-            <Route path="/dashboard/manage/refunds" element={<ManageRefunds />} />
-            <Route
-              path="/dashboard/manage/refunds/:id/view"
-              element={<ViewRefund />}
-            />
+              {/* Purchase/Application Management */}
+              <Route
+                path="/dashboard/manage/purchases"
+                element={<ManagePurchases />}
+              />
+              <Route
+                path="/dashboard/manage/purchases/:id/view"
+                element={<ViewPurchase />}
+              />
+              <Route
+                path="/dashboard/manage/subscriptions"
+                element={<ManageSubscriptions />}
+              />
+              <Route
+                path="/dashboard/manage/flagged-accounts"
+                element={<ManageFlaggedAccounts />}
+              />
+              <Route path="/dashboard/manage/refunds" element={<ManageRefunds />} />
+              <Route
+                path="/dashboard/manage/refunds/:id/view"
+                element={<ViewRefund />}
+              />
+            </Route>
           </Route>
         </Routes>
       {/* </ClientsProvider> */}

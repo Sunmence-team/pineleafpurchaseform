@@ -6,7 +6,7 @@ import assets from "../../assets/assets";
 
 const TopNav: React.FC = () => {
   return (
-    <div className="w-full pb-3 flex gap-3 items-center justify-between">
+    <div className="w-full pb-4 flex gap-3 items-center justify-between">
       <div className=""></div>
       <div className="flex gap-6 items-center">
         <Link to="">

@@ -1,3 +1,43 @@
+import { parseISO } from "date-fns";
+
+export const parseSafeDate = (dateVal: string) => {
+  if (!dateVal) return null;
+  if (dateVal instanceof Date) {
+    return isNaN(dateVal.getTime()) ? null : dateVal;
+  }
+  if (typeof dateVal === "number") {
+    const d = new Date(dateVal);
+    return isNaN(d.getTime()) ? null : d;
+  }
+  if (typeof dateVal === "string") {
+    const trimmed = dateVal.trim();
+    if (!trimmed || trimmed === "N/A" || trimmed === "null" || trimmed === "undefined") {
+      return null;
+    }
+
+    // Convert MySQL "YYYY-MM-DD HH:mm:ss" to ISO "YYYY-MM-DDTHH:mm:ss" for cross-browser support (e.g. Safari)
+    const normalized =
+      trimmed.includes(" ") && !trimmed.includes("T")
+        ? trimmed.replace(" ", "T")
+        : trimmed;
+
+    try {
+      const parsed = parseISO(normalized);
+      if (!isNaN(parsed.getTime())) {
+        return parsed;
+      }
+    } catch {
+      // Fall back to native Date
+    }
+
+    const nativeDate = new Date(normalized);
+    if (!isNaN(nativeDate.getTime())) {
+      return nativeDate;
+    }
+  }
+  return null;
+};
+
 export const formatterUtility = (amount: number, noSign=false) => {
   if (amount === null || amount === undefined) {
     return '';

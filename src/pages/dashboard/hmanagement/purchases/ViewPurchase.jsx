@@ -13,7 +13,7 @@ import {
   formatISODateToCustom,
   formatterUtility,
   formatUnderScores,
-} from "../../../../utilities/formatterUtility";
+} from "../../../../helpers/formatterUtility";
 import { StatusTurnPriorityCard } from "../../../../components/cards/StatusCard";
 import Modal from "../../../../components/modals/Modal";
 

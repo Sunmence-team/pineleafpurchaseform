@@ -9,14 +9,13 @@ import { FaSearch, FaCaretDown, FaBars } from "react-icons/fa";
 import { TfiReload } from "react-icons/tfi";
 import assets from "../../assets/assets";
 import logo from "../../assets/logo.png";
-import SideNav from "../../components/SideNav";
 import ApplicationsList from "../../components/ApplicationsList";
 import PaginationControls from "../../components/PaginationControls";
 import DownloadAllModal from "../../components/modals/DownloadAllModal";
 import BranchDownloadModal from "../../components/modals/BranchDownloadModal";
 import "react-datepicker/dist/react-datepicker.css";
 import { useClients } from "../../context/ClientsContext";
-import { parseSafeDate } from "../../utilities/formatterUtility";
+import { parseSafeDate } from "../../helpers/formatterUtility";
 import { branchOptions } from "../../lib/branchList";
 
 const API_URL = import.meta.env.VITE_API_BASE_URL;
@@ -496,12 +495,6 @@ const BranchBreakDown = () => {
 
   return (
     <div className="flex flex-col md:flex-row min-h-screen bg-gray-100">
-      <SideNav
-        openMenu={openMenu}
-        setOpenMenu={setOpenMenu}
-        branches={branchOptions}
-      />
-
       <div className="flex-1 flex flex-col overflow-hidden">
         {/* Top Header */}
         <header className="flex items-center bg-white shadow-sm z-10 w-full px-4 md:px-6 lg:px-8 py-4">

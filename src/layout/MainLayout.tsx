@@ -1,23 +1,26 @@
 import React, { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import type { Variants } from "framer-motion";
-import { useLocation } from "react-router-dom";
+import { useLocation, Outlet } from "react-router-dom";
 import TopNav from "../components/navs/TopNav";
 import { HiBars3 } from "react-icons/hi2";
 import { FaXmark } from "react-icons/fa6";
 import Sidebar from "../components/navs/Sidebar";
+import { getPageTitle } from "../lib/routeTitles";
 
 type LayoutProps = {
-  children: React.ReactNode;
-  pageName: string;
+  children?: React.ReactNode;
+  pageName?: string;
 };
 
 const MainLayout = ({ children, pageName }: LayoutProps) => {
-  useEffect(() => {
-    document.title = "Pineleaf Forms - " + pageName;
-  }, [pageName]);
-
   const location = useLocation();
+  const currentTitle = pageName || getPageTitle(location.pathname);
+
+  useEffect(() => {
+    document.title = "Pineleaf Forms - " + currentTitle;
+  }, [currentTitle]);
+
   const mainContentRef = useRef<HTMLDivElement | null>(null);
   const pageVariants: Variants = {
     initial: {
@@ -151,7 +154,7 @@ const MainLayout = ({ children, pageName }: LayoutProps) => {
               }}
               className="md:px-6 px-4 h-full overflow-y-scroll no- pb-6"
             >
-              {children}
+              {children ? children : <Outlet />}
             </motion.div>
           </AnimatePresence>
         </div>

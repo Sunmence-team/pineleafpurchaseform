@@ -30,10 +30,10 @@ import ApplicationsList from "../../components/ApplicationsList";
 import PaginationControls from "../../components/PaginationControls";
 import { TfiReload } from "react-icons/tfi";
 import { FaBars, FaX } from "react-icons/fa6";
-import SideNav from "../../components/SideNav";
 import { useClients } from "../../context/ClientsContext";
-import { parseSafeDate } from "../../utilities/formatterUtility";
+import { parseSafeDate } from "../../helpers/formatterUtility";
 import { branchOptions } from "../../lib/branchList";
+import { api } from "../../helpers/api";
 
 const API_URL = import.meta.env.VITE_API_BASE_URL;
 
@@ -608,8 +608,7 @@ const Dashboard = () => {
       const token = localStorage.getItem("token");
       if (!token) return;
 
-      await api.put(
-        `${API_URL}/api/applications/download-date`,
+      await api.put(`api/applications/download-date`,
         { downloaded_date: format(downloadTime, "yyyy-MM-dd HH:mm:ss") },
         {
           headers: {
@@ -1366,52 +1365,29 @@ const Dashboard = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-100 flex flex-col p-0 md:p-5 relative">
-      <SideNav
-        openMenu={openMenu}
-        setOpenMenu={setOpenMenu}
-        branches={branchOptions}
-        isLoading={isGettingBranches}
-      />
-      <div className="mx-auto bg-white rounded-2xl shadow-2xl p-4 md:p-5 w-full py-8 transition-all duration-300">
-        {(loading || loadingApplications) && (
-          <div className="flex justify-center items-center min-h-[200px]">
-            <div className="animate-spin rounded-full h-12 w-12 border-4 border-primary border-t-transparent"></div>
-          </div>
-        )}
-        {!(loading || loadingApplications) && (
-          <>
-            <div className="flex flex-col gap-4 lg:flex-row lg:items-center md:justify-between mb-4 md:mb-6 border-b border-gray-200 pb-2 md:pb-4">
-              <div className="flex items-center gap-2 md:gap-3">
-                <button
-                  type="button"
-                  onClick={() => setOpenMenu(true)}
-                  className="text-2xl cursor-pointer"
-                >
-                  <FaBars />
-                </button>
-                <img
-                  src={assets.logo}
-                  className="w-8 h-8 md:w-10 md:h-10"
-                  alt="Logo"
+    <div className="w-full py-8 transition-all duration-300">
+      {(loading || loadingApplications) && (
+        <div className="flex justify-center items-center min-h-[200px]">
+          <div className="animate-spin rounded-full h-12 w-12 border-4 border-primary border-t-transparent"></div>
+        </div>
+      )}
+      {!(loading || loadingApplications) && (
+        <>
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-center md:justify-between mb-4 md:mb-6 border-b border-gray-200 pb-2 md:pb-4">
+            <div className="flex flex-col justify-between md:flex-row gap-2 md:gap-3 w-full">
+              <div className="md:w-1/2 w-full bg-gray-50 border border-gray-300 rounded-lg relative flex gap-2 items-center h-[50px] px-4">
+                <FaSearch className="text-gray-400 w-4 h-4 md:w-5 md:h-5" />
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Search clients..."
+                  className="w-full h-full focus:outline-none focus:ring-2 focus:ring-primary text-sm md:text-base"
                 />
-                <h1 className="text-lg md:text-2xl font-extrabold text-gray-900">
-                  Dashboard
-                </h1>
               </div>
 
-              <div className="flex flex-col md:flex-row gap-2 md:gap-3 w-full lg:w-[65%]">
-                <div className="relative flex-1">
-                  <input
-                    type="text"
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    placeholder="Search clients..."
-                    className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-sm md:text-base"
-                  />
-                  <FaSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4 md:w-5 md:h-5" />
-                </div>
 
+              <div className="flex flex-row items-center gap-2 md:gap-3 w-full md:w-auto">
                 <button
                   onClick={() => {
                     fetchAllClients(true);
@@ -1429,189 +1405,183 @@ const Dashboard = () => {
                   />
                   <span className="md:hidden inline">Reload Data</span>
                 </button>
-
-                <div className="flex flex-col md:flex-row gap-2 md:gap-3 w-full md:w-auto">
-                  <div className="flex flex-row gap-2 md:gap-3 w-full md:w-auto">
-                    <button
-                      onClick={() => {
-                        fetchAllClients();
-                        setBranchFilterModalOpen(true);
-                      }}
-                      className="flex items-center justify-center flex-1 px-4 py-2.5 text-sm bg-primary text-white font-semibold rounded-lg hover:bg-primary/90 transition duration-300 shadow-sm"
-                    >
-                      <FaFilter className="mr-2 w-4 h-4" /> Branch
-                    </button>
-                    <button
-                      onClick={() => setDateFilterModalOpen(true)}
-                      className="flex items-center justify-center flex-1 px-4 py-2.5 text-sm bg-primary text-white font-semibold rounded-lg hover:bg-primary/90 transition duration-300 shadow-sm"
-                    >
-                      <FaFilter className="mr-2 w-4 h-4" /> Filter
-                    </button>
-                  </div>
-
-                  <div className="relative">
-                    <button
-                      onClick={() => {
-                        fetchAllClients();
-                        setShowMoreDownloadOptions((prev) => !prev);
-                      }}
-                      className="flex items-center justify-center px-4 h-[45px] text-sm bg-primary text-white font-semibold rounded-lg hover:bg-primary/90 transition duration-300 shadow-sm w-full md:w-auto"
-                    >
-                      Download <FaCaretDown className="ml-2 w-6 h-6" />
-                    </button>
-                    {showMoreDownloadOptions && (
-                      <div className="absolute right-0 mt-2 min-w-[200px] bg-white border border-gray-200 rounded-lg shadow-xl z-50 text-sm font-semibold overflow-hidden">
-                        <button
-                          onClick={() => {
-                            fetchAllClients(true);
-                            setShowMoreDownloadOptions(false);
-                            setDownloadModalOpen(true);
-                          }}
-                          className="w-full text-left p-3 border-b border-gray-100 hover:bg-gray-50 transition"
-                        >
-                          Continue from last download
-                        </button>
-                        <button
-                          onClick={() => {
-                            fetchAllClients(true);
-                            setShowMoreDownloadOptions(false);
-                            setDownloadAllModalOpen(true);
-                          }}
-                          className="w-full text-left p-3 border-b border-gray-100 hover:bg-gray-50 transition"
-                        >
-                          Download from all times
-                        </button>
-                        <button
-                          onClick={() => {
-                            fetchAllClients(true);
-                            setShowMoreDownloadOptions(false);
-                            setSiteDownloadModalOpen(true);
-                          }}
-                          className="w-full text-left p-3 hover:bg-gray-50 transition"
-                        >
-                          Download for a specific site
-                        </button>
-                      </div>
-                    )}
-                  </div>
+                <button
+                  onClick={() => {
+                    fetchAllClients();
+                    setBranchFilterModalOpen(true);
+                  }}
+                  className="flex items-center justify-center flex-1 px-4 h-[45px] text-sm bg-primary text-white font-semibold rounded-lg hover:bg-primary/90 transition duration-300 shadow-sm"
+                >
+                  <FaFilter className="mr-2 w-4 h-4" /> Branch
+                </button>
+                <button
+                  onClick={() => setDateFilterModalOpen(true)}
+                  className="flex items-center justify-center flex-1 px-4 h-[45px] text-sm bg-primary text-white font-semibold rounded-lg hover:bg-primary/90 transition duration-300 shadow-sm"
+                >
+                  <FaFilter className="mr-2 w-4 h-4" /> Filter
+                </button>
+                <div className="relative">
+                  <button
+                    onClick={() => {
+                      fetchAllClients();
+                      setShowMoreDownloadOptions((prev) => !prev);
+                    }}
+                    className="flex items-center justify-center px-4 h-[45px] text-sm bg-primary text-white font-semibold rounded-lg hover:bg-primary/90 transition duration-300 shadow-sm w-full md:w-auto"
+                  >
+                    Download <FaCaretDown className="ml-2 w-6 h-6" />
+                  </button>
+                  {showMoreDownloadOptions && (
+                    <div className="absolute right-0 mt-2 min-w-[200px] bg-white border border-gray-200 rounded-lg shadow-xl z-50 text-sm font-semibold overflow-hidden">
+                      <button
+                        onClick={() => {
+                          fetchAllClients(true);
+                          setShowMoreDownloadOptions(false);
+                          setDownloadModalOpen(true);
+                        }}
+                        className="w-full text-left p-3 border-b border-gray-100 hover:bg-gray-50 transition"
+                      >
+                        Continue from last download
+                      </button>
+                      <button
+                        onClick={() => {
+                          fetchAllClients(true);
+                          setShowMoreDownloadOptions(false);
+                          setDownloadAllModalOpen(true);
+                        }}
+                        className="w-full text-left p-3 border-b border-gray-100 hover:bg-gray-50 transition"
+                      >
+                        Download from all times
+                      </button>
+                      <button
+                        onClick={() => {
+                          fetchAllClients(true);
+                          setShowMoreDownloadOptions(false);
+                          setSiteDownloadModalOpen(true);
+                        }}
+                        className="w-full text-left p-3 hover:bg-gray-50 transition"
+                      >
+                        Download for a specific site
+                      </button>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
+          </div>
 
-            <ApplicationsList
-              filteredData={filteredData}
-              currentPage={currentPage}
-              recordsPerPage={recordsPerPage}
-              isDeleting={isDeleting}
-              handleDelete={handleDelete}
-            />
-            <PaginationControls
-              currentPage={currentPage}
-              totalPages={totalPages}
-              setCurrentPage={setCurrentPage}
-              getPageNumbers={getPageNumbers}
-              totalRecords={totalRecords}
-              filteredData={filteredData}
-            />
-          </>
-        )}
+          <ApplicationsList
+            filteredData={filteredData}
+            currentPage={currentPage}
+            recordsPerPage={recordsPerPage}
+            isDeleting={isDeleting}
+            handleDelete={handleDelete}
+          />
+          <PaginationControls
+            currentPage={currentPage}
+            totalPages={totalPages}
+            setCurrentPage={setCurrentPage}
+            getPageNumbers={getPageNumbers}
+            totalRecords={totalRecords}
+            filteredData={filteredData}
+          />
+        </>
+      )}
 
-        <BranchFilterModal
-          isLoadingAllclients={loadingAllClients}
-          isOpen={branchFilterModalOpen}
-          onClose={() => setBranchFilterModalOpen(false)}
-          branchInput={branchInput}
-          onBranchInputChange={setBranchInput}
-          branchOptions={branchOptions}
-          onReset={resetFilter}
-          onApply={applyBranchFilter}
-        />
-        <DateFilterModal
-          isLoadingAllclients={loadingAllClients}
-          isOpen={dateFilterModalOpen}
-          onClose={() => setDateFilterModalOpen(false)}
-          dateFromInput={dateFromInput}
-          onDateFromChange={(date) => {
-            setDateFromInput(date);
-            setActivePreset(null);
-          }}
-          timeFromInput={timeFromInput}
-          onTimeFromChange={(e) => {
-            setTimeFromInput(e.target.value);
-            setActivePreset(null);
-          }}
-          dateToInput={dateToInput}
-          onDateToChange={(date) => {
-            setDateToInput(date);
-            setActivePreset(null);
-          }}
-          timeToInput={timeToInput}
-          onTimeToChange={(e) => {
-            setTimeToInput(e.target.value);
-            setActivePreset(null);
-          }}
-          onReset={resetFilter}
-          onApply={applyDateFilter}
-          onPresetSelect={handlePresetDateFilter}
-          activePreset={activePreset}
-        />
-        <DownloadModal
-          isLoadingAllclients={loadingAllClients}
-          isOpen={downloadModalOpen}
-          onClose={() => setDownloadModalOpen(false)}
-          lastDownloadTime={lastDownloadTime}
-          branchLastDownload={branchLastDownload}
-          downloadDateFrom={downloadDateFrom}
-          onDownloadDateFromChange={setDownloadDateFrom}
-          downloadTimeFrom={downloadTimeFrom}
-          onDownloadTimeFromChange={setDownloadTimeFrom}
-          onDownloadCSV={handleDownloadCSV}
-          onDownloadPDF={handleDownloadPDF}
-          excludedSites={excludedSites}
-          onExcludeChange={setExcludedSites}
-          excludedBranches={excludedBranches}
-          onExcludeBranchChange={handleExcludeBranchChange}
-          initialCount={initialDownloadData.length}
-          excludedCount={
-            initialDownloadData.length - filteredDownloadData.length
-          }
-          remainingCount={filteredDownloadData.length}
-          branchOptions={branchOptions}
-          onBranchSelect={handleBranchSelectForDownload}
-          selectedBranch={selectedBranchForDownload}
-          branchStartDate={branchStartDate}
-          setBranchStartDate={setBranchStartDate}
-          branchStartTime={branchStartTime}
-          setBranchStartTime={setBranchStartTime}
-          branchInitialCount={branchInitialData.length}
-          loadingBranchDownloadTime={loadingBranchDownloadTime}
-          onModalCloseCleanup={onModalCloseCleanup}
-        />
-        <DownloadAllModal
-          isLoadingAllclients={loadingAllClients}
-          isOpen={downloadAllModalOpen}
-          onClose={() => setDownloadAllModalOpen(false)}
-          onDownloadCSV={handleDownloadAllCSV}
-          onDownloadPDF={handleDownloadAllPDF}
-        />
-        <SiteDownloadModal
-          isOpen={siteDownloadModalOpen}
-          onClose={() => setSiteDownloadModalOpen(false)}
-          onDownload={handleSiteDownload}
-          onSiteSelect={handleSiteLocationSelectForDownload}
-          siteLastDownload={siteLocationLastDownload}
-          siteStartDate={siteLocationStartDate}
-          setSiteStartDate={setSiteLocationStartDate}
-          siteStartTime={siteLocationStartTime}
-          setSiteStartTime={setSiteLocationStartTime}
-          newRecordsCount={newRecordsForSite.length}
-          loadingSiteTime={loadingSiteDownloadTime}
-          onModalCloseCleanup={onSiteModalCloseCleanup}
-          siteLocation={siteLocation}
-          onSiteLocationChange={setSiteLocation}
-          debouncedSiteLocation={debouncedSiteLocation}
-        />
-      </div>
+      <BranchFilterModal
+        isLoadingAllclients={loadingAllClients}
+        isOpen={branchFilterModalOpen}
+        onClose={() => setBranchFilterModalOpen(false)}
+        branchInput={branchInput}
+        onBranchInputChange={setBranchInput}
+        branchOptions={branchOptions}
+        onReset={resetFilter}
+        onApply={applyBranchFilter}
+      />
+      <DateFilterModal
+        isLoadingAllclients={loadingAllClients}
+        isOpen={dateFilterModalOpen}
+        onClose={() => setDateFilterModalOpen(false)}
+        dateFromInput={dateFromInput}
+        onDateFromChange={(date) => {
+          setDateFromInput(date);
+          setActivePreset(null);
+        }}
+        timeFromInput={timeFromInput}
+        onTimeFromChange={(e) => {
+          setTimeFromInput(e.target.value);
+          setActivePreset(null);
+        }}
+        dateToInput={dateToInput}
+        onDateToChange={(date) => {
+          setDateToInput(date);
+          setActivePreset(null);
+        }}
+        timeToInput={timeToInput}
+        onTimeToChange={(e) => {
+          setTimeToInput(e.target.value);
+          setActivePreset(null);
+        }}
+        onReset={resetFilter}
+        onApply={applyDateFilter}
+        onPresetSelect={handlePresetDateFilter}
+        activePreset={activePreset}
+      />
+      <DownloadModal
+        isLoadingAllclients={loadingAllClients}
+        isOpen={downloadModalOpen}
+        onClose={() => setDownloadModalOpen(false)}
+        lastDownloadTime={lastDownloadTime}
+        branchLastDownload={branchLastDownload}
+        downloadDateFrom={downloadDateFrom}
+        onDownloadDateFromChange={setDownloadDateFrom}
+        downloadTimeFrom={downloadTimeFrom}
+        onDownloadTimeFromChange={setDownloadTimeFrom}
+        onDownloadCSV={handleDownloadCSV}
+        onDownloadPDF={handleDownloadPDF}
+        excludedSites={excludedSites}
+        onExcludeChange={setExcludedSites}
+        excludedBranches={excludedBranches}
+        onExcludeBranchChange={handleExcludeBranchChange}
+        initialCount={initialDownloadData.length}
+        excludedCount={
+          initialDownloadData.length - filteredDownloadData.length
+        }
+        remainingCount={filteredDownloadData.length}
+        branchOptions={branchOptions}
+        onBranchSelect={handleBranchSelectForDownload}
+        selectedBranch={selectedBranchForDownload}
+        branchStartDate={branchStartDate}
+        setBranchStartDate={setBranchStartDate}
+        branchStartTime={branchStartTime}
+        setBranchStartTime={setBranchStartTime}
+        branchInitialCount={branchInitialData.length}
+        loadingBranchDownloadTime={loadingBranchDownloadTime}
+        onModalCloseCleanup={onModalCloseCleanup}
+      />
+      <DownloadAllModal
+        isLoadingAllclients={loadingAllClients}
+        isOpen={downloadAllModalOpen}
+        onClose={() => setDownloadAllModalOpen(false)}
+        onDownloadCSV={handleDownloadAllCSV}
+        onDownloadPDF={handleDownloadAllPDF}
+      />
+      <SiteDownloadModal
+        isOpen={siteDownloadModalOpen}
+        onClose={() => setSiteDownloadModalOpen(false)}
+        onDownload={handleSiteDownload}
+        onSiteSelect={handleSiteLocationSelectForDownload}
+        siteLastDownload={siteLocationLastDownload}
+        siteStartDate={siteLocationStartDate}
+        setSiteStartDate={setSiteLocationStartDate}
+        siteStartTime={siteLocationStartTime}
+        setSiteStartTime={setSiteLocationStartTime}
+        newRecordsCount={newRecordsForSite.length}
+        loadingSiteTime={loadingSiteDownloadTime}
+        onModalCloseCleanup={onSiteModalCloseCleanup}
+        siteLocation={siteLocation}
+        onSiteLocationChange={setSiteLocation}
+        debouncedSiteLocation={debouncedSiteLocation}
+      />
     </div>
   );
 };

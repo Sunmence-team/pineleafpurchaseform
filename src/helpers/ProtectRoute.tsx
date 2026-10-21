@@ -22,7 +22,7 @@ const ProtectedRoute = ({
   }
 
   if (!isLoggedIn) {
-    return <Navigate to={redirectPath} state={{ from: location }} replace />;
+    return <Navigate to={"/login"} state={{ from: redirectPath }} replace />;
   }
 
   return children ? <>{children}</> : <Outlet />;

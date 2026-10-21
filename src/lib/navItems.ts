@@ -1,6 +1,6 @@
 import type { IconType } from "react-icons";
 import { RxDashboard } from "react-icons/rx";
-import { BsBuildings } from "react-icons/bs";
+import { BsBuildings, } from "react-icons/bs";
 import { branchOptions } from "./branchList";
 
 export interface NavItem {
@@ -36,37 +36,37 @@ export const navItems: NavItem[] = [
       {
         name: "Manage Applicants",
         path: "dashboard/manage/applicants",
-        role: ["admin"]
+        role: ["admin", "sub-admin"]
       },
       {
         name: "Manage Users",
         path: "dashboard/manage/users",
-        role: ["admin"]
+        role: ["admin", "sub-admin"]
       },
       {
         name: "Manage Properties",
         path: "dashboard/manage/properties",
-        role: ["admin"]
+        role: ["admin", "sub-admin"]
       },
       {
         name: "Manage Purchases",
         path: "dashboard/manage/purchases",
-        role: ["admin"]
+        role: ["admin", "sub-admin"]
       },
       {
         name: "Manage Subscriptions",
         path: "dashboard/manage/subscriptions",
-        role: ["admin"]
+        role: ["admin", "sub-admin"]
       },
       {
         name: "Manage Refunds",
         path: "dashboard/manage/refunds",
-        role: ["admin"]
+        role: ["admin", "sub-admin"]
       },
       {
         name: "Flagged Accounts",
         path: "dashboard/manage/flagged-accounts",
-        role: ["admin"]
+        role: ["admin", "sub-admin"]
       },
     ],
   },

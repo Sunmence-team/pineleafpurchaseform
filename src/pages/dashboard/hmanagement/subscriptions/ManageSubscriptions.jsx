@@ -1,14 +1,13 @@
 import React, { useState, useEffect } from "react";
-import SideNav from "../../../../components/SideNav";
 import { FaBars } from "react-icons/fa6";
 import assets from "../../../../assets/assets";
-import ReusableTable from "../../../../utilities/ReusableTable";
 import { api, getErrorMessage } from "../../../../helpers/api";
 import { toast } from "sonner";
 import { FaSearch } from "react-icons/fa";
-import { formatterUtility } from "../../../../utilities/formatterUtility";
+import { formatterUtility } from "../../../../helpers/formatterUtility";
 import { StatusTurnPriorityCard } from "../../../../components/cards/StatusCard";
 import { branchOptions } from "../../../../lib/branchList";
+import ReusableTable from "../../../../utilities/ReusableTable";
 
 const ManageSubscriptions = () => {
   const token = localStorage.getItem("token");
@@ -125,12 +124,6 @@ const ManageSubscriptions = () => {
 
   return (
     <div className="flex flex-col md:flex-row min-h-screen bg-gray-100">
-      <SideNav
-        openMenu={openMenu}
-        setOpenMenu={setOpenMenu}
-        branches={branchOptions}
-      />
-
       <div className="flex-1 flex flex-col overflow-hidden">
         <header className="flex items-center bg-white shadow-sm z-10 w-full px-4 md:px-6 lg:px-8 py-4">
           <button
