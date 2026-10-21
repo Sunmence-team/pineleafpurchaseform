@@ -23,6 +23,7 @@
     "jspdf": "^3.0.3",
     "jspdf-autotable": "^5.0.2",
     "libphonenumber-js": "^1.12.17",
+    "lightningcss": "^1.33.0",
     "pdfmake": "^0.2.20",
     "react": "^19.1.1",
     "react-datepicker": "^8.7.0",

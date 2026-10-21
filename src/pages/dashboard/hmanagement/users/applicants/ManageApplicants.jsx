@@ -89,7 +89,7 @@ const ManageApplicants = () => {
       if (appliedFrom) params.applied_from = appliedFrom;
       if (appliedTo) params.applied_to = appliedTo;
 
-      const response = await hmApi.get("/api/interest", {
+      const response = await api.get("/api/interest", {
         headers: {
           Authorization: `Bearer ${token}`,
         },

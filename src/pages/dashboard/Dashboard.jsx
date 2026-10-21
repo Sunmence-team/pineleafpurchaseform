@@ -419,7 +419,7 @@ const Dashboard = () => {
     filterDateTo,
     fetchApplications,
   ]);
-
+ 
   useEffect(() => {
     let filtered = [...allClients];
 

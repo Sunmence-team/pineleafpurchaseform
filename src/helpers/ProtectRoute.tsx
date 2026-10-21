@@ -1,6 +1,7 @@
+
 import React from "react";
 import { useUser } from "../hooks/useUser";
-import { Navigate, Outlet } from "react-router-dom";
+import { Navigate, Outlet, useLocation } from "react-router-dom";
 
 interface ProtectedRouteProps {
   children?: React.ReactNode;
@@ -12,6 +13,7 @@ const ProtectedRoute = ({
   redirectPath = "/login",
 }: ProtectedRouteProps) => {
   const { isLoggedIn, loading } = useUser();
+  const location = useLocation();
 
   if (loading) {
     return (
@@ -22,7 +24,13 @@ const ProtectedRoute = ({
   }
 
   if (!isLoggedIn) {
-    return <Navigate to={redirectPath} state={{ from: location }} replace />;
+    return (
+      <Navigate
+        to={redirectPath}
+        state={{ from: location.pathname }}
+        replace
+      />
+    );
   }
 
   return children ? <>{children}</> : <Outlet />;
