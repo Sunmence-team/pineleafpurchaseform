@@ -7,7 +7,6 @@ import { FaBars } from "react-icons/fa";
 import axios from "axios";
 import { toast } from "sonner";
 import assets from "../assets/assets";
-import SideNav from "../components/SideNav";
 import { branchOptions } from "../lib/branchList";
 
 const API_URL = import.meta.env.VITE_API_BASE_URL;
@@ -90,12 +89,6 @@ const ChangePassword = () => {
 
   return (
     <div className="flex flex-col md:flex-row min-h-screen bg-gray-100">
-      <SideNav
-        openMenu={openMenu}
-        setOpenMenu={setOpenMenu}
-        branches={branchOptions}
-      />
-
       <div className="flex-1 flex flex-col overflow-hidden">
         <header className="flex items-center bg-white shadow-sm z-10 w-full px-4 md:px-6 lg:px-8 py-4">
           <button

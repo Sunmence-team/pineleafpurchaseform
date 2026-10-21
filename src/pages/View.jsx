@@ -6,7 +6,7 @@ import { toast } from "sonner";
 import { format } from "date-fns";
 import { useReactToPrint } from "react-to-print";
 import assets from "../assets/assets";
-import { formatterUtility } from "../utilities/formatterUtility";
+import { formatterUtility } from "../helpers/formatterUtility";
 
 const API_URL = import.meta.env.VITE_API_BASE_URL;
 const STORAGE_URL = "https://forms.pineleafestates.com/back/storage/app/public";

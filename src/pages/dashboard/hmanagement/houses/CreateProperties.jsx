@@ -158,13 +158,13 @@ const CreateProperties = () => {
   if (isLoading) {
     return (
       <div className="flex justify-center items-center min-h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-4 border-t-transparent border-primary2"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-4 border-t-transparent border-secondary"></div>
       </div>
     );
   }
 
   const inputClasses =
-    "mt-1 block w-full rounded-md border border-gray-300 focus:border-primary2 focus:ring-primary2 h-[50px] px-3 text-sm outline-none";
+    "mt-1 block w-full rounded-md border border-gray-300 focus:border-secondary focus:ring-secondary h-[50px] px-3 text-sm outline-none";
   const labelClasses = "block text-sm font-medium text-gray-700";
 
   return (
@@ -333,7 +333,7 @@ const CreateProperties = () => {
                   name="description"
                   as="textarea"
                   rows="4"
-                  className="mt-1 block w-full rounded-md border border-gray-300 focus:border-primary2 focus:ring-primary2 p-3 text-sm outline-none"
+                  className="mt-1 block w-full rounded-md border border-gray-300 focus:border-secondary focus:ring-secondary p-3 text-sm outline-none"
                   placeholder="Describe the property details..."
                 />
                 <ErrorMessage
@@ -349,12 +349,12 @@ const CreateProperties = () => {
                   htmlFor="propertyImages"
                   onDragOver={handleDragOver}
                   onDrop={handleDrop}
-                  className="mt-2 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-md hover:border-primary2 transition cursor-pointer relative"
+                  className="mt-2 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-md hover:border-secondary transition cursor-pointer relative"
                 >
                   <div className="space-y-1 text-center">
                     <FaCloudUploadAlt className="mx-auto h-12 w-12 text-gray-400" />
                     <div className="flex text-sm text-gray-600">
-                      <p className="relative cursor-pointer bg-white rounded-md font-medium text-primary2 hover:text-secondary2">
+                      <p className="relative cursor-pointer bg-white rounded-md font-medium text-secondary hover:text-primary">
                         <span>Upload files</span>
                         <input
                           type="file"
@@ -406,7 +406,7 @@ const CreateProperties = () => {
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className="px-6 py-2 bg-secondary2 text-white rounded-lg hover:bg-secondary2/90 transition disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                  className="px-6 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
                 >
                   {isSubmitting
                     ? "Saving..."

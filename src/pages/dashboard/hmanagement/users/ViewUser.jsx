@@ -11,7 +11,7 @@ import * as Yup from "yup";
 import {
   formatISODateToCustom,
   formatterUtility,
-} from "../../../../utilities/formatterUtility";
+} from "../../../../helpers/formatterUtility";
 import FormattedNumberInput from "../../../../components/FormattedNumberInput";
 
 const HM_STORAGE_API_URL = import.meta.env.VITE_HM_STORAGE_BASE_URL;
@@ -96,7 +96,7 @@ const ViewUser = () => {
   if (isLoading) {
     return (
       <div className="flex justify-center items-center min-h-screen bg-gray-50">
-        <div className="animate-spin rounded-full h-12 w-12 border-4 border-t-transparent border-primary2"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-4 border-t-transparent border-secondary"></div>
       </div>
     );
   }
@@ -115,7 +115,7 @@ const ViewUser = () => {
                 : undefined,
             })
           }
-          className="px-6 py-2 bg-primary2 text-white rounded-lg hover:bg-primary2/90"
+          className="px-6 py-2 bg-secondary text-white rounded-lg hover:bg-secondary/90"
         >
           Back to Users
         </button>
@@ -176,7 +176,7 @@ const ViewUser = () => {
               <a
                 href={`${HM_STORAGE_API_URL}${user?.statement_of_account}`}
                 target="_blank"
-                className="flex items-center justify-center px-4 py-2 sm:px-5 sm:py-3 bg-secondary2 text-white font-semibold rounded-lg hover:bg-secondary2 transition-colors duration-200 w-full sm:w-auto text-sm"
+                className="flex items-center justify-center px-4 py-2 sm:px-5 sm:py-3 bg-primary text-white font-semibold rounded-lg hover:bg-primary transition-colors duration-200 w-full sm:w-auto text-sm"
               >
                 <FaDownload className="mr-2 text-sm" />
                 Download Statement
@@ -188,7 +188,7 @@ const ViewUser = () => {
         <div className="space-y-10">
           {/* Profile Section */}
           <section>
-            <h3 className="text-lg font-bold text-gray-900 border-l-4 border-primary2 pl-3 mb-6">
+            <h3 className="text-lg font-bold text-gray-900 border-l-4 border-secondary pl-3 mb-6">
               Personal Information
             </h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
@@ -208,7 +208,7 @@ const ViewUser = () => {
 
           {/* Address Section */}
           <section>
-            <h3 className="text-lg font-bold text-gray-900 border-l-4 border-primary2 pl-3 mb-6">
+            <h3 className="text-lg font-bold text-gray-900 border-l-4 border-secondary pl-3 mb-6">
               Address Details
             </h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
@@ -223,7 +223,7 @@ const ViewUser = () => {
 
           {/* Next of Kin Section */}
           <section>
-            <h3 className="text-lg font-bold text-gray-900 border-l-4 border-primary2 pl-3 mb-6">
+            <h3 className="text-lg font-bold text-gray-900 border-l-4 border-secondary pl-3 mb-6">
               Next of Kin
             </h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
@@ -240,7 +240,7 @@ const ViewUser = () => {
 
           {/* Professional Section */}
           <section>
-            <h3 className="text-lg font-bold text-gray-900 border-l-4 border-primary2 pl-3 mb-6">
+            <h3 className="text-lg font-bold text-gray-900 border-l-4 border-secondary pl-3 mb-6">
               Professional Information
             </h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
@@ -261,7 +261,7 @@ const ViewUser = () => {
           {awaitingVerification && !isVerified && (
             <button
               onClick={() => setOpenVerificationModal(true)}
-              className="px-6 py-2 bg-secondary2 text-white font-semibold rounded-lg transition-colors disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer"
+              className="px-6 py-2 bg-primary text-white font-semibold rounded-lg transition-colors disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer"
             >
               Verify
             </button>

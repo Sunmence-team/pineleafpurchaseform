@@ -2,15 +2,15 @@
   "compilerOptions": {
     "target": "esnext",
     "lib": ["dom", "dom.iterable", "esnext"],
-    "allowJs": true,           // Critical: Allows JS/JSX files to coexist 
-    "checkJs": false,          // Don't report errors in existing JS/JSX files
-    "jsx": "react-jsx",        // Enables modern React JSX transform
+    "allowJs": true,
+    "checkJs": false,
+    "jsx": "react-jsx",
     "module": "esnext",
-    "moduleResolution": "node",
-    "noEmit": true,            // Type-checks only; lets your bundler (Vite/Webpack) handle builds
-    "strict": false,           // Start loose; turn on later for safety
+    "moduleResolution": "bundler",
+    "noEmit": true,
+    "strict": false,
     "esModuleInterop": true,
-    "skipLibCheck": true       // Speeds up build by skipping node_modules check
+    "skipLibCheck": true
   },
   "include": ["src"]
 }

@@ -15,9 +15,7 @@ export interface TableColumnProps<T = unknown> {
   tableHeadingClassName?: string;
 }
 
-export interface ReusableTableProps<
-  T extends { id?: number | string },
-> extends PaginationControlProps {
+export interface BaseReusableTableProps<T = unknown> {
   columns: TableColumnProps<T>[];
   isLoading: boolean;
   data: T[];
@@ -33,7 +31,24 @@ export interface ReusableTableProps<
   onToggleRowSelection?: (id: number | string) => void;
   onToggleAllRows?: (checked: boolean) => void;
   getRowId?: (item: T, index: number) => number | string | undefined;
+  footerContent?: React.ReactNode;
 }
+
+export type ReusableTableWithPaginationProps<T = unknown> =
+  BaseReusableTableProps<T> &
+    PaginationControlProps & {
+      hasPagination?: true;
+    };
+
+export type ReusableTableWithoutPaginationProps<T = unknown> =
+  BaseReusableTableProps<T> &
+    Partial<PaginationControlProps> & {
+      hasPagination: false;
+    };
+
+export type ReusableTableProps<T = unknown> =
+  | ReusableTableWithPaginationProps<T>
+  | ReusableTableWithoutPaginationProps<T>;
 
 export interface PaginationControlProps {
   currentPage: number;
@@ -44,7 +59,6 @@ export interface PaginationControlProps {
   setItemsPerPage: React.Dispatch<React.SetStateAction<number>>;
   tableType?: string;
 }
-
 export interface StatusCardProps {
   type: "success" | "pending" | "failed";
   statusText: string | number;

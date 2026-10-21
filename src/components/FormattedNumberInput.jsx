@@ -1,5 +1,8 @@
 import React, { useState, useEffect } from "react";
-import { formatNumberWithCommas, unformatNumber } from "../utilities/formatterUtility";
+import {
+  formatNumberWithCommas,
+  unformatNumber,
+} from "../helpers/formatterUtility";
 
 // // Change this line in your FormattedNumberInput.jsx
 // const FormattedNumberInput = ({

@@ -1,7 +1,5 @@
 import React, { useState, useEffect } from "react";
-import SideNav from "../../../../components/SideNav";
 import assets from "../../../../assets/assets";
-import ReusableTable from "../../../../utilities/ReusableTable";
 import { useNavigate } from "react-router-dom";
 import ActionCell from "../../../../components/ActionCell";
 import { api, getErrorMessage } from "../../../../helpers/api";
@@ -10,6 +8,7 @@ import ConfirmDialog from "../../../../components/modals/ConfirmDialog";
 import { FaBars, FaPlus } from "react-icons/fa6";
 import { FaSearch } from "react-icons/fa";
 import { branchOptions } from "../../../../lib/branchList";
+import ReusableTable from "../../../../utilities/ReusableTable";
 
 const ManageProperties = () => {
   const token = localStorage.getItem("token");
@@ -129,12 +128,6 @@ const ManageProperties = () => {
 
   return (
     <div className="flex flex-col md:flex-row min-h-screen bg-gray-100">
-      <SideNav
-        openMenu={openMenu}
-        setOpenMenu={setOpenMenu}
-        branches={branchOptions}
-      />
-
       <div className="flex-1 flex flex-col overflow-hidden">
         {/* Top Header */}
         <header className="flex items-center bg-white shadow-sm z-10 w-full px-4 md:px-6 lg:px-8 py-4">
