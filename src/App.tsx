@@ -5,18 +5,11 @@ import { Toaster } from "sonner";
 import EditClient from "./pages/Edit";
 import Success from "./pages/Success";
 import { useEffect } from "react";
-import ManageUsers from "./pages/dashboard/hmanagement/users/ManageUsers";
 import ViewUser from "./pages/dashboard/hmanagement/users/ViewUser";
-import ManageProperties from "./pages/dashboard/hmanagement/houses/ManageProperties";
 import CreateProperties from "./pages/dashboard/hmanagement/houses/CreateProperties";
 import ViewProperty from "./pages/dashboard/hmanagement/houses/ViewProperty";
-import ManageApplicants from "./pages/dashboard/hmanagement/users/applicants/ManageApplicants";
-import ViewApplicant from "./pages/dashboard/hmanagement/users/applicants/ViewApplicant";
-import ManagePurchases from "./pages/dashboard/hmanagement/purchases/ManagePurchases";
+import ManageProperties from "./pages/dashboard/hmanagement/houses/ManageProperties";
 import ViewPurchase from "./pages/dashboard/hmanagement/purchases/ViewPurchase";
-import ManageSubscriptions from "./pages/dashboard/hmanagement/subscriptions/ManageSubscriptions";
-import ManageFlaggedAccounts from "./pages/dashboard/hmanagement/flaggedAccounts/ManageFlaggedAccounts";
-import ManageRefunds from "./pages/dashboard/hmanagement/refunds/ManageRefunds";
 import ViewRefund from "./pages/dashboard/hmanagement/refunds/ViewRefund";
 import ChangePassword from "./pages/ChangePassword";
 
@@ -28,6 +21,13 @@ import ProtectedRoute from "./helpers/ProtectRoute";
 import Dashboard from "./pages/dashboard/Dashboard";
 import BranchBreakDown from "./pages/dashboard/BranchBreakDown";
 import ViewClient from "./pages/View";
+import ManageUsers from "./pages/dashboard/hmanagement/users/ManageUsers";
+import ManageApplicants from "./pages/dashboard/hmanagement/users/applicants/ManageApplicants";
+import ManagePurchases from "./pages/dashboard/hmanagement/purchases/ManagePurchases";
+import ManageSubscriptions from "./pages/dashboard/hmanagement/subscriptions/ManageSubscriptions";
+import ManageFlaggedAccounts from "./pages/dashboard/hmanagement/flaggedAccounts/ManageFlaggedAccounts";
+import ManageRefunds from "./pages/dashboard/hmanagement/refunds/ManageRefunds";
+import ViewApplicant from "./pages/dashboard/hmanagement/users/applicants/ViewApplicant";
 
 function App() {
   useEffect(() => {

@@ -1,6 +1,6 @@
 import type { IconType } from "react-icons";
 import { RxDashboard } from "react-icons/rx";
-import { BsBuildings, } from "react-icons/bs";
+import { BsBuildings, BsFillHouseGearFill } from "react-icons/bs";
 import { branchOptions } from "./branchList";
 
 export interface NavItem {
@@ -30,7 +30,7 @@ export const navItems: NavItem[] = [
   },
   {
     name: "House Platform Management",
-    icon: BsBuildings,
+    icon: BsFillHouseGearFill,
     role: ["admin"],
     children: [
       {
