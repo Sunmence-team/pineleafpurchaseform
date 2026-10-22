@@ -8,7 +8,8 @@ import { useEffect } from "react";
 import CreateProperties from "./pages/dashboard/hmanagement/houses/CreateProperties";
 import ViewProperty from "./pages/dashboard/hmanagement/houses/ViewProperty";
 import ManageProperties from "./pages/dashboard/hmanagement/houses/ManageProperties";
-import ChangePassword from "./pages/ChangePassword";
+import ChangePassword from "./pages/dashboard/settingstabs/ChangePassword";
+import Settings from "./pages/dashboard/Settings";
 
 import Login from "./pages/auth/Login";
 
@@ -47,79 +48,83 @@ function App() {
     <>
       <Toaster />
       {/* <ClientsProvider> */}
-        <Routes>
-          <Route index path="/" element={<Form />} />
-          <Route path="/login" element={<Login />} />
-          <Route path="/success" element={<Success />} />
-          <Route path="/change-password" element={<ChangePassword />} />
-          
-          <Route element={<ProtectedRoute />}>
-            <Route element={<MainLayout />}>
-              <Route path="/dashboard/overview" element={<Dashboard />} />
-              <Route
-                path="/dashboard/branch/:branch"
-                element={<BranchBreakDown />}
-              />
-              <Route path="/view-client/:id" element={<ViewClient />} />
-              <Route path="/edit-client/:id" element={<EditClient />} />
-              {/* User Management */}
-              <Route path="/dashboard/manage/users" element={<ManageUsers />} />
-              <Route
-                path="/dashboard/manage/users/:id/view"
-                element={<ViewUser />}
-              />
-              <Route
-                path="/dashboard/manage/applicants"
-                element={<ManageApplicants />}
-              />
-              <Route
-                path="/dashboard/manage/applicants/:id/view"
-                element={<ViewApplicant />}
-              />
+      <Routes>
+        <Route index path="/" element={<Form />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/success" element={<Success />} />
+        <Route path="/change-password" element={<ChangePassword />} />
 
-              {/* Property Management */}
-              <Route
-                path="/dashboard/manage/properties"
-                element={<ManageProperties />}
-              />
-              <Route
-                path="/dashboard/manage/properties/create"
-                element={<CreateProperties />}
-              />
-              <Route
-                path="/dashboard/manage/properties/:id/edit"
-                element={<CreateProperties />}
-              />
-              <Route
-                path="/dashboard/manage/properties/:id/view"
-                element={<ViewProperty />}
-              />
+        <Route element={<ProtectedRoute />}>
+          <Route element={<MainLayout />}>
+            <Route path="/dashboard/overview" element={<Dashboard />} />
+            <Route
+              path="/dashboard/branch/:branch"
+              element={<BranchBreakDown />}
+            />
+            <Route path="/view-client/:id" element={<ViewClient />} />
+            <Route path="/edit-client/:id" element={<EditClient />} />
+            {/* User Management */}
+            <Route path="/dashboard/manage/users" element={<ManageUsers />} />
+            <Route
+              path="/dashboard/manage/users/:id/view"
+              element={<ViewUser />}
+            />
+            <Route
+              path="/dashboard/manage/applicants"
+              element={<ManageApplicants />}
+            />
+            <Route
+              path="/dashboard/manage/applicants/:id/view"
+              element={<ViewApplicant />}
+            />
 
-              {/* Purchase/Application Management */}
-              <Route
-                path="/dashboard/manage/purchases"
-                element={<ManagePurchases />}
-              />
-              <Route
-                path="/dashboard/manage/purchases/:id/view"
-                element={<ViewPurchase />}
-              />
-              <Route
-                path="/dashboard/manage/subscriptions"
-                element={<ManageSubscriptions />}
-              />
-              <Route
-                path="/dashboard/manage/flagged-accounts"
-                element={<ManageFlaggedAccounts />}
-              />
-              <Route path="/dashboard/manage/refunds" element={<ManageRefunds />} />
-              <Route
-                path="/dashboard/manage/refunds/:id/view"
-                element={<ViewRefund />}
-              />
-            </Route>
+            {/* Property Management */}
+            <Route
+              path="/dashboard/manage/properties"
+              element={<ManageProperties />}
+            />
+            <Route
+              path="/dashboard/manage/properties/create"
+              element={<CreateProperties />}
+            />
+            <Route
+              path="/dashboard/manage/properties/:id/edit"
+              element={<CreateProperties />}
+            />
+            <Route
+              path="/dashboard/manage/properties/:id/view"
+              element={<ViewProperty />}
+            />
+
+            {/* Purchase/Application Management */}
+            <Route
+              path="/dashboard/manage/purchases"
+              element={<ManagePurchases />}
+            />
+            <Route
+              path="/dashboard/manage/purchases/:id/view"
+              element={<ViewPurchase />}
+            />
+            <Route
+              path="/dashboard/manage/subscriptions"
+              element={<ManageSubscriptions />}
+            />
+            <Route
+              path="/dashboard/manage/flagged-accounts"
+              element={<ManageFlaggedAccounts />}
+            />
+            <Route
+              path="/dashboard/manage/refunds"
+              element={<ManageRefunds />}
+            />
+            <Route
+              path="/dashboard/manage/refunds/:id/view"
+              element={<ViewRefund />}
+            />
+            <Route path="/dashboard/settings" element={<Settings />} />
           </Route>
-        </Routes>
+        </Route>
+      </Routes>
       {/* </ClientsProvider> */}
     </>
   );

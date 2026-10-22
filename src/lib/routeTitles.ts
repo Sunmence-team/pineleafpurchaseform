@@ -10,6 +10,7 @@ export const ROUTE_TITLES: Record<string, string> = {
   "/dashboard/manage/subscriptions": "Subscriptions",
   "/dashboard/manage/flagged-accounts": "Flagged Accounts",
   "/dashboard/manage/refunds": "Refund Management",
+  "/dashboard/settings": "Settings",
 };
 
 /**
@@ -59,6 +60,7 @@ export const getPageTitle = (pathname: string): string => {
   if (!last) return "Dashboard";
 
   return last
-    .replace(/[-_]/g, " ")
-    .replace(/\b\w/g, (char) => char.toUpperCase());
+    .split("-")
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(" ");
 };

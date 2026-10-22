@@ -107,3 +107,26 @@ export interface ActionButtonProps {
   buttonStyle?: string;
   overideBg?: boolean;
 }
+
+export interface BarristerProp {
+  id?: string | number;
+  name?: string;
+  full_name?: string;
+  email?: string;
+  phone?: string;
+  phone_number?: string;
+  address?: string;
+  status?: string;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface BulkSelectionBarProps {
+  count: number;
+  itemLabel?: string;
+  proceedText?: string;
+  cancelText?: string;
+  isLoading?: boolean;
+  onProceed: () => void;
+  onCancel: () => void;
+}
