@@ -2,6 +2,7 @@ import { branchOptions } from "./branchList";
 
 export const ROUTE_TITLES: Record<string, string> = {
   "/dashboard/overview": "Dashboard",
+  "/dashboard/records": "Form Records",
   "/dashboard/properties": "Properties",
   "/dashboard/documents": "Document Library",
   "/dashboard/entries/unassigned": "Unassigned Entries",

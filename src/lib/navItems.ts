@@ -7,6 +7,7 @@ import {
   BsShieldExclamation,
   BsCloudSlash,
   BsFileEarmarkPdf,
+  BsJournalText,
 } from "react-icons/bs";
 import { branchOptions } from "./branchList";
 
@@ -23,6 +24,12 @@ export const navItems: NavItem[] = [
     name: "Dashboard",
     icon: RxDashboard,
     path: "/dashboard/overview",
+    role: ["admin", "user"],
+  },
+  {
+    name: "Form Records",
+    icon: BsJournalText,
+    path: "/dashboard/records",
     role: ["admin", "user"],
   },
   {

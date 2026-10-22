@@ -14,6 +14,7 @@ import Properties from "./pages/properties/Properties";
 import DocumentLibrary from "./pages/documents/DocumentLibrary";
 import UnassignedEntries from "./pages/entries/UnassignedEntries";
 import OfflineEntries from "./pages/entries/OfflineEntries";
+import OldRecords from "./pages/records/OldRecords";
 
 import Login from "./pages/auth/Login";
 
@@ -61,6 +62,7 @@ function App() {
         <Route element={<ProtectedRoute />}>
           <Route element={<MainLayout />}>
             <Route path="/dashboard/overview" element={<Dashboard />} />
+            <Route path="/dashboard/records" element={<OldRecords />} />
             <Route path="/dashboard/properties" element={<Properties />} />
             <Route path="/dashboard/documents" element={<DocumentLibrary />} />
             <Route
