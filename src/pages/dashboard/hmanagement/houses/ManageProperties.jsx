@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from "react";
 import assets from "../../../../assets/assets";
 import { useNavigate } from "react-router-dom";
-import ActionCell from "../../../../components/ActionCell";
+import ActionCell from "../../../../components/ui/ActionCell";
 import { api, getErrorMessage } from "../../../../helpers/api";
 import { toast } from "sonner";
 import ConfirmDialog from "../../../../components/modals/ConfirmDialog";
 import { FaBars, FaPlus } from "react-icons/fa6";
-import { FaSearch } from "react-icons/fa";
+import { IoIosSearch } from "react-icons/io";
 import { branchOptions } from "../../../../lib/branchList";
 import ReusableTable from "../../../../utilities/ReusableTable";
 
@@ -153,7 +153,7 @@ const ManageProperties = () => {
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-secondary/50"
               />
-              <FaSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+              <IoIosSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
             </div>
             <button
               onClick={() => navigate("/dashboard/manage/properties/create")}

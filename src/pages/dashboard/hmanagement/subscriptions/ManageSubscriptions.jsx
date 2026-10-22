@@ -3,7 +3,7 @@ import { FaBars } from "react-icons/fa6";
 import assets from "../../../../assets/assets";
 import { api, getErrorMessage } from "../../../../helpers/api";
 import { toast } from "sonner";
-import { FaSearch } from "react-icons/fa";
+import { IoIosSearch } from "react-icons/io";
 import { formatterUtility } from "../../../../helpers/formatterUtility";
 import { StatusTurnPriorityCard } from "../../../../components/cards/StatusCard";
 import { branchOptions } from "../../../../lib/branchList";
@@ -141,7 +141,7 @@ const ManageSubscriptions = () => {
         <main className="flex-1 overflow-y-auto p-4 md:p-8">
           <div className="grid gap-4 mb-8 grid-cols-12 items-end">
             <div className="relative w-full md:col-span-4 h-12 border border-gray-300 rounded-lg focus-within:ring-2 focus-within:ring-secondary/50 flex gap-2 items-center px-3">
-              <FaSearch className="text-gray-400" />
+              <IoIosSearch className="text-gray-400" />
               <input
                 type="text"
                 placeholder="Search subscription transactions..."

@@ -7,6 +7,7 @@ import { format } from "date-fns";
 import { useReactToPrint } from "react-to-print";
 import assets from "../assets/assets";
 import { formatterUtility } from "../helpers/formatterUtility";
+import { api } from "../helpers/api";
 
 const API_URL = import.meta.env.VITE_API_BASE_URL;
 const STORAGE_URL = "https://forms.pineleafestates.com/back/storage/app/public";
@@ -15,7 +16,7 @@ const ViewClient = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const [client, setClient] = useState(null);
-  const componentRef = useRef();
+  const componentRef = useRef(null);
 
   useEffect(() => {
     const fetchClient = async () => {
@@ -112,7 +113,8 @@ const ViewClient = () => {
   const handlePrint = useReactToPrint({
     contentRef: componentRef,
     documentTitle: client ? `${client.client_name}_details` : "Client_Details",
-    removeAfterPrint: true,
+    // removeAfterPrint: true,
+    preserveAfterPrint: false,
     pageStyle: `
       @page { size: A4; margin: 15mm; }
       @media print {
@@ -155,13 +157,13 @@ const ViewClient = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col p-4 md:p-6 md:p-8">
-      <div className="mx-auto bg-white rounded-2xl shadow-xl p-4 md:p-6 md:p-8 w-full max-w-4xl">
+    <div className="min-h-screen bg-gray-50 flex flex-col p-4 md:p-8">
+      <div className="mx-auto bg-white rounded-2xl shadow-xl p-4 md:p-8 w-full max-w-4xl">
         {/* Header */}
         <div className="flex flex-col md:flex-row md:justify-between md:items-center border-b border-gray-200 pb-4 md:pb-6 mb-6 md:mb-8 no-print gap-4">
           <div className="flex items-center gap-3 md:gap-4">
             <button
-              onClick={() => navigate("/dashboard")}
+              onClick={() => navigate("/dashboard/overview")}
               className="p-2 md:p-3 rounded-full bg-gray-100 hover:bg-gray-200 transition-colors duration-200"
               aria-label="Back to Dashboard"
             >
@@ -515,7 +517,7 @@ const ViewClient = () => {
         {/* Footer */}
         <div className="border-t border-gray-200 pt-4 md:pt-6 mt-6 md:mt-8 flex justify-end no-print">
           <button
-            onClick={() => navigate("/dashboard")}
+            onClick={() => navigate("/dashboard/overview")}
             className="px-4 py-2 md:px-5 md:py-3 bg-gray-200 text-gray-800 font-semibold rounded-lg hover:bg-gray-300 transition-colors duration-200 w-full md:w-auto"
           >
             Back to Dashboard

@@ -35,6 +35,7 @@ export const UserProvider = ({ children }: userProviderProps) => {
         headers: { Authorization: `Bearer ${token}` },
       });
       const { data } = response.data;
+      console.log("response.data", response.data)
       setUser(data);
       setRole(data?.role ?? data?.crm_role);
       localStorage.setItem("user", JSON.stringify(data));
@@ -52,14 +53,16 @@ export const UserProvider = ({ children }: userProviderProps) => {
       setLoading(true);
       const storedToken = localStorage.getItem("token");
       const storedUser = localStorage.getItem("user");
-      if (!storedToken || !storedUser) {
+      if (!storedToken) {
         setLoading(false);
         return;
       }
+      // if (storedUser) {
+      //   const parsedUser = JSON.parse(storedUser);
+      //   setUser(parsedUser)
+      // };
       try {
-        const parsedUser = JSON.parse(storedUser);
         setToken(storedToken);
-        setUser(parsedUser);
         await refreshUser(storedToken);
         setIsAuthenticated(true);
       } catch {

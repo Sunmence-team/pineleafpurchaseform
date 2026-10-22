@@ -3,7 +3,7 @@ import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { FaArrowLeft } from "react-icons/fa";
 import { toast } from "sonner";
 import assets from "../../../../assets/assets";
-import { api, getErrorMessage } from "../../../../helpers/api";
+import { hmApi, getErrorMessage } from "../../../../helpers/api";
 import { FaDownload } from "react-icons/fa6";
 import Modal from "../../../../components/modals/Modal";
 import { useFormik } from "formik";

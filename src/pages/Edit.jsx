@@ -465,7 +465,7 @@ const EditClient = () => {
         <div className="flex flex-col md:flex-row md:items-center gap-3 md:gap-4 mb-6 md:mb-8 border-b border-gray-200 pb-4 md:pb-6">
           <div className="flex items-center gap-3 md:gap-4">
             <button
-              onClick={() => navigate("/dashboard")}
+              onClick={() => navigate("/dashboard/overview")}
               className="p-2 md:p-3 rounded-full bg-gray-100 hover:bg-gray-200 transition-colors duration-200"
               aria-label="Back to Dashboard"
             >
@@ -695,7 +695,7 @@ const EditClient = () => {
                 toast.success("Client details updated successfully!", {
                   id: toastId,
                 });
-                navigate("/dashboard");
+                navigate("/dashboard/overview");
               }
             } catch (err) {
               console.error("Error updating client:", err);

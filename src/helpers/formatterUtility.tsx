@@ -1,6 +1,6 @@
 import { parseISO } from "date-fns";
 
-export const parseSafeDate = (dateVal: string) => {
+export const parseSafeDate = (dateVal: any): Date | null => {
   if (!dateVal) return null;
   if (dateVal instanceof Date) {
     return isNaN(dateVal.getTime()) ? null : dateVal;

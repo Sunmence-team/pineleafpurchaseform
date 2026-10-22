@@ -4,7 +4,9 @@ import type { IconType } from "react-icons/lib";
 export type OverviewCardsProps = {
   title: string;
   value: string | number;
-  icon: IconType;
+  icon?: IconType;
+  subtitle?: string;
+  className?: string;
 };
 
 export interface TableColumnProps<T = unknown> {
@@ -25,7 +27,6 @@ export interface BaseReusableTableProps<T = unknown> {
   onDelete?: (item: T) => void;
   isDeleting?: boolean;
   hasSerialNo?: boolean;
-  tableType?: string;
   selectable?: boolean;
   selectedRowIds?: Array<number | string>;
   onToggleRowSelection?: (id: number | string) => void;
@@ -57,7 +58,6 @@ export interface PaginationControlProps {
   itemsPerPage: number;
   setCurrentPage: React.Dispatch<React.SetStateAction<number>>;
   setItemsPerPage: React.Dispatch<React.SetStateAction<number>>;
-  tableType?: string;
 }
 export interface StatusCardProps {
   type: "success" | "pending" | "failed";
@@ -94,4 +94,16 @@ export interface UserProps {
   enabled: number;
   created_at: string;
   updated_at: string;
+}
+
+export interface ActionButtonProps {
+  text: string;
+  loadingText?: string;
+  icon?: React.ReactNode;
+  loading?: boolean;
+  action?: () => void;
+  onClick?: () => void;
+  disabled?: boolean;
+  buttonStyle?: string;
+  overideBg?: boolean;
 }

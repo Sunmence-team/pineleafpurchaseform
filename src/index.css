@@ -5,6 +5,7 @@
   --color-secondary: #f8faf8;
   --color-tableHeading: #414141;
   --color-tableData: #191717;
+  --color-tableBorder: #e8e8e8;
 }
 
 .react-datepicker-wrapper {
@@ -38,4 +39,8 @@
 
 button:disabled {
   @apply opacity-50 cursor-not-allowed;
+}
+
+.action-btn {
+  background: linear-gradient(100.65deg, #2f5318 7.92%, #69b935 265.65%);
 }

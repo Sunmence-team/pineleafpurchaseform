@@ -16,57 +16,57 @@ export const navItems: NavItem[] = [
     name: "Dashboard",
     icon: RxDashboard,
     path: "/dashboard/overview",
-    role: ["admin", "sub-admin"],
+    role: ["admin", "user"],
   },
   {
     name: "Branches",
     icon: BsBuildings,
-    role: ["admin", "sub-admin"],
+    role: ["admin", "user"],
     children: branchOptions.map((branch) => ({
       name: branch.title,
       path: `/dashboard/branch/${branch.keyWord}`,
-      role: ["admin", "sub-admin"],
+      role: ["admin", "user"],
     })),
   },
   {
     name: "House Platform Management",
     icon: BsBuildings,
-    role: ["admin", "sub-admin"],
+    role: ["admin"],
     children: [
       {
         name: "Manage Applicants",
         path: "dashboard/manage/applicants",
-        role: ["admin", "sub-admin"]
+        role: ["admin"]
       },
       {
         name: "Manage Users",
         path: "dashboard/manage/users",
-        role: ["admin", "sub-admin"]
+        role: ["admin"]
       },
       {
         name: "Manage Properties",
         path: "dashboard/manage/properties",
-        role: ["admin", "sub-admin"]
+        role: ["admin"]
       },
       {
         name: "Manage Purchases",
         path: "dashboard/manage/purchases",
-        role: ["admin", "sub-admin"]
+        role: ["admin"]
       },
       {
         name: "Manage Subscriptions",
         path: "dashboard/manage/subscriptions",
-        role: ["admin", "sub-admin"]
+        role: ["admin"]
       },
       {
         name: "Manage Refunds",
         path: "dashboard/manage/refunds",
-        role: ["admin", "sub-admin"]
+        role: ["admin"]
       },
       {
         name: "Flagged Accounts",
         path: "dashboard/manage/flagged-accounts",
-        role: ["admin", "sub-admin"]
+        role: ["admin"]
       },
     ],
   },

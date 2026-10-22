@@ -152,7 +152,7 @@ const MainLayout = ({ children, pageName }: LayoutProps) => {
                 display: "flex",
                 flexDirection: "column",
               }}
-              className="md:px-6 px-4 h-full overflow-y-scroll no- pb-6"
+              className="md:px-6 px-4 h-full overflow-y-scroll no-scrollbar py-4"
             >
               {children ? children : <Outlet />}
             </motion.div>

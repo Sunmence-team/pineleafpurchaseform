@@ -26,8 +26,12 @@ import DateFilterModal from "../../components/modals/DateFilterModal";
 import DownloadModal from "../../components/modals/DownloadModal";
 import DownloadAllModal from "../../components/modals/DownloadAllModal";
 import SiteDownloadModal from "../../components/modals/SiteDownloadModal";
-import ApplicationsList from "../../components/ApplicationsList";
-import PaginationControls from "../../components/PaginationControls";
+import { useNavigate } from "react-router-dom";
+import ActionButton from "../../components/ui/ActionButton";
+import ReusableTable from "../../utilities/ReusableTable";
+import ActionCell from "../../components/ui/ActionCell";
+import type { TableColumnProps } from "../../lib/interfaces";
+import { formatISODateToCustom } from "../../helpers/formatterUtility";
 import { TfiReload } from "react-icons/tfi";
 import { FaBars, FaX } from "react-icons/fa6";
 import { useClients } from "../../context/ClientsContext";
@@ -38,6 +42,8 @@ import { api } from "../../helpers/api";
 const API_URL = import.meta.env.VITE_API_BASE_URL;
 
 const Dashboard = () => {
+  const navigate = useNavigate();
+  const [itemsPerPage, setItemsPerPage] = useState(10);
   const {
     allClients,
     loadingAllClients,
@@ -340,7 +346,7 @@ const Dashboard = () => {
     setFilteredDownloadData(filtered);
   }, [excludedSites, excludedBranches, initialDownloadData]);
 
-  const recordsPerPage = 10;
+  const recordsPerPage = itemsPerPage;
 
   useEffect(() => {
     const handler = setTimeout(() => {
@@ -457,8 +463,8 @@ const Dashboard = () => {
     }
 
     filtered = filtered.sort((a, b) => {
-      const dateA = parseSafeDate(a.created_at) || new Date(0);
-      const dateB = parseSafeDate(b.created_at) || new Date(0);
+      const dateA = parseSafeDate(a.created_at)?.getTime() || 0;
+      const dateB = parseSafeDate(b.created_at)?.getTime() || 0;
       return dateB - dateA;
     });
 
@@ -608,7 +614,8 @@ const Dashboard = () => {
       const token = localStorage.getItem("token");
       if (!token) return;
 
-      await api.put(`api/applications/download-date`,
+      await api.put(
+        `api/applications/download-date`,
         { downloaded_date: format(downloadTime, "yyyy-MM-dd HH:mm:ss") },
         {
           headers: {
@@ -698,8 +705,8 @@ const Dashboard = () => {
     }
 
     const sortedForDownload = dataToDownload.sort((a, b) => {
-      const dateA = parseSafeDate(a.created_at) || new Date(0);
-      const dateB = parseSafeDate(b.created_at) || new Date(0);
+      const dateA = parseSafeDate(a.created_at)?.getTime() || 0;
+      const dateB = parseSafeDate(b.created_at)?.getTime() || 0;
       return dateB - dateA;
     });
 
@@ -822,8 +829,8 @@ const Dashboard = () => {
     }
 
     const sortedForDownload = dataToDownload.sort((a, b) => {
-      const dateA = parseSafeDate(a.created_at) || new Date(0);
-      const dateB = parseSafeDate(b.created_at) || new Date(0);
+      const dateA = parseSafeDate(a.created_at)?.getTime() || 0;
+      const dateB = parseSafeDate(b.created_at)?.getTime() || 0;
       return dateB - dateA;
     });
 
@@ -931,8 +938,8 @@ const Dashboard = () => {
 
   const handleDownloadAllCSV = () => {
     const sortedForDownload = [...allClients].sort((a, b) => {
-      const dateA = parseSafeDate(a.created_at) || new Date(0);
-      const dateB = parseSafeDate(b.created_at) || new Date(0);
+      const dateA = parseSafeDate(a.created_at)?.getTime() || 0;
+      const dateB = parseSafeDate(b.created_at)?.getTime() || 0;
       return dateB - dateA;
     });
 
@@ -980,8 +987,8 @@ const Dashboard = () => {
 
   const handleDownloadAllPDF = async () => {
     const sortedForDownload = [...allClients].sort((a, b) => {
-      const dateA = parseSafeDate(a.created_at) || new Date(0);
-      const dateB = parseSafeDate(b.created_at) || new Date(0);
+      const dateA = parseSafeDate(a.created_at)?.getTime() || 0;
+      const dateB = parseSafeDate(b.created_at)?.getTime() || 0;
       return dateB - dateA;
     });
 
@@ -1364,8 +1371,92 @@ const Dashboard = () => {
     }
   };
 
+  const columns: TableColumnProps<any>[] = [
+    {
+      label: "Client Name",
+      key: "client_name",
+      className: "px-3 py-2 text-xs font-medium text-tableData max-w-[280px]",
+      render: (item) => (
+        <span
+          className="font-medium text-gray-900 block truncate capitalize"
+          title={item.client_name ?? item.club_name}
+        >
+          {item.client_name ?? item.club_name ?? "-"}
+        </span>
+      ),
+    },
+    {
+      label: "Email",
+      key: "email",
+      className: "px-3 py-2 text-xs text-gray-600 max-w-[200px]",
+      render: (item) => (
+        <span className="truncate block" title={item.email}>
+          {item.email ?? "-"}
+        </span>
+      ),
+    },
+    {
+      label: "Phone Number",
+      key: "mobile_number",
+      className: "px-3 py-2 text-xs text-gray-700 whitespace-nowrap",
+      render: (item) => (
+        <span>{item.mobile_number ?? item.club_contact ?? "-"}</span>
+      ),
+    },
+    {
+      label: "Branch",
+      key: "branches",
+      className: "px-3 py-2 text-xs text-gray-700 whitespace-nowrap",
+      render: (item) => <span>{item.branches ?? "-"}</span>,
+    },
+    {
+      label: "Property name/Location",
+      key: "site_location",
+      className: "px-3 py-2 text-xs text-gray-700 max-w-[250px]",
+      render: (item) => (
+        <span className="truncate block" title={item.site_location}>
+          {item.site_location ?? "-"}
+        </span>
+      ),
+    },
+    {
+      label: "Date Filled",
+      key: "created_at",
+      className: "px-3 py-2 text-xs text-gray-700 whitespace-nowrap",
+      render: (item) => <span>{formatISODateToCustom(item.created_at)}</span>,
+    },
+    {
+      label: "Actions",
+      key: "action",
+      tableHeadingClassName: "text-center",
+      className: "px-3 py-2 text-center whitespace-nowrap",
+      render: (item) => (
+        <ActionCell
+          rowId={item.id}
+          canView
+          onView={(id) => navigate(`/view-client/${id}`)}
+          onEdit={(id) => navigate(`/edit-client/${id}`)}
+          onDelete={handleDelete}
+        />
+      ),
+    },
+  ];
+
   return (
-    <div className="w-full py-8 transition-all duration-300">
+    <div className="flex flex-col gap-6">
+      <div className="flex lg:items-center gap-4 justify-between lg:flex-row flex-col">
+        <div>
+          <h2 className="text-lg font-semibold">Old Records</h2>
+          <p className="text-sm text-tableHeading">
+            Manage and check all system legacy entries here.
+          </p>
+        </div>
+        {/* <ActionButton
+          text="Check new records"
+          icon={<FaPlus />}
+          action={() => navigate("/dashboar/")}
+        /> */}
+      </div>
       {(loading || loadingApplications) && (
         <div className="flex justify-center items-center min-h-[200px]">
           <div className="animate-spin rounded-full h-12 w-12 border-4 border-primary border-t-transparent"></div>
@@ -1373,116 +1464,117 @@ const Dashboard = () => {
       )}
       {!(loading || loadingApplications) && (
         <>
-          <div className="flex flex-col gap-4 lg:flex-row lg:items-center md:justify-between mb-4 md:mb-6 border-b border-gray-200 pb-2 md:pb-4">
-            <div className="flex flex-col justify-between md:flex-row gap-2 md:gap-3 w-full">
-              <div className="md:w-1/2 w-full bg-gray-50 border border-gray-300 rounded-lg relative flex gap-2 items-center h-[50px] px-4">
-                <FaSearch className="text-gray-400 w-4 h-4 md:w-5 md:h-5" />
-                <input
-                  type="text"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Search clients..."
-                  className="w-full h-full focus:outline-none focus:ring-2 focus:ring-primary text-sm md:text-base"
-                />
-              </div>
+          <div className="flex flex-col justify-between md:flex-row gap-2 md:gap-3 w-full">
+            <div className="md:w-1/2 w-full bg-gray-50 border border-gray-300 rounded-lg relative flex gap-2 items-center h-[45px] px-4">
+              <FaSearch className="text-gray-400 w-4 h-4 md:w-5 md:h-5" />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search clients..."
+                className="w-full h-full focus:outline-none focus:ring-2 focus:ring-primary text-sm"
+              />
+            </div>
 
-
-              <div className="flex flex-row items-center gap-2 md:gap-3 w-full md:w-auto">
-                <button
-                  onClick={() => {
-                    fetchAllClients(true);
-                    fetchApplications(
-                      currentPage,
-                      recordsPerPage,
-                      debouncedSearchQuery,
-                    );
-                  }}
-                  disabled={loading || loadingAllClients || loadingApplications}
-                  className="h-[45px] md:w-[45px] cursor-pointer flex gap-2 items-center justify-center text-sm bg-primary text-white font-semibold rounded-lg hover:bg-primary/90 transition duration-300 shadow-sm disabled:opacity-50"
-                >
+            <div className="flex flex-row items-center gap-2 md:gap-3 w-full md:w-auto">
+              <ActionButton
+                text="Reload Data"
+                icon={
                   <TfiReload
-                    className={`${(loading || loadingAllClients || loadingApplications) && "animate-spin"} size-5`}
+                    className={`${(loading || loadingAllClients || loadingApplications) && "animate-spin"} size-4`}
                   />
-                  <span className="md:hidden inline">Reload Data</span>
-                </button>
-                <button
-                  onClick={() => {
+                }
+                action={() => {
+                  fetchAllClients(true);
+                  fetchApplications(
+                    currentPage,
+                    recordsPerPage,
+                    debouncedSearchQuery,
+                  );
+                }}
+                disabled={loading || loadingAllClients || loadingApplications}
+                buttonStyle="text-white font-medium"
+              />
+
+              <ActionButton
+                text="Branch"
+                icon={<FaFilter className="mr-1 w-3.5 h-3.5" />}
+                action={() => {
+                  fetchAllClients();
+                  setBranchFilterModalOpen(true);
+                }}
+                buttonStyle="text-white font-medium"
+              />
+
+              <ActionButton
+                text="Filter"
+                icon={<FaFilter className="mr-1 w-3.5 h-3.5" />}
+                action={() => setDateFilterModalOpen(true)}
+                buttonStyle="text-white font-medium"
+              />
+
+              <div className="relative">
+                <ActionButton
+                  text="Download"
+                  icon={<FaCaretDown className="ml-1 w-4 h-4 order-last" />}
+                  action={() => {
                     fetchAllClients();
-                    setBranchFilterModalOpen(true);
+                    setShowMoreDownloadOptions((prev) => !prev);
                   }}
-                  className="flex items-center justify-center flex-1 px-4 h-[45px] text-sm bg-primary text-white font-semibold rounded-lg hover:bg-primary/90 transition duration-300 shadow-sm"
-                >
-                  <FaFilter className="mr-2 w-4 h-4" /> Branch
-                </button>
-                <button
-                  onClick={() => setDateFilterModalOpen(true)}
-                  className="flex items-center justify-center flex-1 px-4 h-[45px] text-sm bg-primary text-white font-semibold rounded-lg hover:bg-primary/90 transition duration-300 shadow-sm"
-                >
-                  <FaFilter className="mr-2 w-4 h-4" /> Filter
-                </button>
-                <div className="relative">
-                  <button
-                    onClick={() => {
-                      fetchAllClients();
-                      setShowMoreDownloadOptions((prev) => !prev);
-                    }}
-                    className="flex items-center justify-center px-4 h-[45px] text-sm bg-primary text-white font-semibold rounded-lg hover:bg-primary/90 transition duration-300 shadow-sm w-full md:w-auto"
-                  >
-                    Download <FaCaretDown className="ml-2 w-6 h-6" />
-                  </button>
-                  {showMoreDownloadOptions && (
-                    <div className="absolute right-0 mt-2 min-w-[200px] bg-white border border-gray-200 rounded-lg shadow-xl z-50 text-sm font-semibold overflow-hidden">
-                      <button
-                        onClick={() => {
-                          fetchAllClients(true);
-                          setShowMoreDownloadOptions(false);
-                          setDownloadModalOpen(true);
-                        }}
-                        className="w-full text-left p-3 border-b border-gray-100 hover:bg-gray-50 transition"
-                      >
-                        Continue from last download
-                      </button>
-                      <button
-                        onClick={() => {
-                          fetchAllClients(true);
-                          setShowMoreDownloadOptions(false);
-                          setDownloadAllModalOpen(true);
-                        }}
-                        className="w-full text-left p-3 border-b border-gray-100 hover:bg-gray-50 transition"
-                      >
-                        Download from all times
-                      </button>
-                      <button
-                        onClick={() => {
-                          fetchAllClients(true);
-                          setShowMoreDownloadOptions(false);
-                          setSiteDownloadModalOpen(true);
-                        }}
-                        className="w-full text-left p-3 hover:bg-gray-50 transition"
-                      >
-                        Download for a specific site
-                      </button>
-                    </div>
-                  )}
-                </div>
+                  buttonStyle="text-white font-medium w-full md:w-auto"
+                />
+                {showMoreDownloadOptions && (
+                  <div className="absolute right-0 mt-2 min-w-[200px] bg-white border border-gray-200 rounded-lg shadow-xl z-50 text-sm font-semibold overflow-hidden">
+                    <button
+                      onClick={() => {
+                        fetchAllClients(true);
+                        setShowMoreDownloadOptions(false);
+                        setDownloadModalOpen(true);
+                      }}
+                      className="w-full text-left p-3 border-b border-gray-100 hover:bg-gray-50 transition"
+                    >
+                      Continue from last download
+                    </button>
+                    <button
+                      onClick={() => {
+                        fetchAllClients(true);
+                        setShowMoreDownloadOptions(false);
+                        setDownloadAllModalOpen(true);
+                      }}
+                      className="w-full text-left p-3 border-b border-gray-100 hover:bg-gray-50 transition"
+                    >
+                      Download from all times
+                    </button>
+                    <button
+                      onClick={() => {
+                        fetchAllClients(true);
+                        setShowMoreDownloadOptions(false);
+                        setSiteDownloadModalOpen(true);
+                      }}
+                      className="w-full text-left p-3 hover:bg-gray-50 transition"
+                    >
+                      Download for a specific site
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
           </div>
 
-          <ApplicationsList
-            filteredData={filteredData}
-            currentPage={currentPage}
-            recordsPerPage={recordsPerPage}
-            isDeleting={isDeleting}
-            handleDelete={handleDelete}
-          />
-          <PaginationControls
+          <ReusableTable
+            columns={columns}
+            data={filteredData}
+            isLoading={loading || loadingApplications}
+            error={null}
+            hasPagination={true}
+            hasSerialNo={true}
             currentPage={currentPage}
             totalPages={totalPages}
+            totalItems={totalRecords}
+            itemsPerPage={itemsPerPage}
             setCurrentPage={setCurrentPage}
-            getPageNumbers={getPageNumbers}
-            totalRecords={totalRecords}
-            filteredData={filteredData}
+            setItemsPerPage={setItemsPerPage}
+            getRowId={(item) => item.id}
           />
         </>
       )}
@@ -1532,10 +1624,6 @@ const Dashboard = () => {
         onClose={() => setDownloadModalOpen(false)}
         lastDownloadTime={lastDownloadTime}
         branchLastDownload={branchLastDownload}
-        downloadDateFrom={downloadDateFrom}
-        onDownloadDateFromChange={setDownloadDateFrom}
-        downloadTimeFrom={downloadTimeFrom}
-        onDownloadTimeFromChange={setDownloadTimeFrom}
         onDownloadCSV={handleDownloadCSV}
         onDownloadPDF={handleDownloadPDF}
         excludedSites={excludedSites}
@@ -1543,9 +1631,7 @@ const Dashboard = () => {
         excludedBranches={excludedBranches}
         onExcludeBranchChange={handleExcludeBranchChange}
         initialCount={initialDownloadData.length}
-        excludedCount={
-          initialDownloadData.length - filteredDownloadData.length
-        }
+        excludedCount={initialDownloadData.length - filteredDownloadData.length}
         remainingCount={filteredDownloadData.length}
         branchOptions={branchOptions}
         onBranchSelect={handleBranchSelectForDownload}
