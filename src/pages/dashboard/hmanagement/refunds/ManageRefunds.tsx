@@ -1,21 +1,33 @@
 import React, { useState, useEffect, useRef } from "react";
-import { FaBars } from "react-icons/fa6";
-import assets from "../../../../assets/assets";
 import { useNavigate, useLocation } from "react-router-dom";
 import ActionCell from "../../../../components/ui/ActionCell";
-import { api, getErrorMessage } from "../../../../helpers/api";
+import { hmApi, getErrorMessage } from "../../../../helpers/api";
 import { toast } from "sonner";
 import { formatterUtility } from "../../../../helpers/formatterUtility";
 import { IoIosSearch } from "react-icons/io";
-import { branchOptions } from "../../../../lib/branchList";
 import ReusableTable from "../../../../utilities/ReusableTable";
+import type { TableColumnProps } from "../../../../lib/interfaces";
 
-const ManageRefunds = () => {
+export interface RefundItem {
+  id: number;
+  status?: string;
+  created_at?: string;
+  account_name?: string;
+  bank_name?: string;
+  amount?: number | string;
+  user?: {
+    firstname?: string;
+    lastname?: string;
+    [key: string]: any;
+  };
+  [key: string]: any;
+}
+
+const ManageRefunds: React.FC = () => {
   const token = localStorage.getItem("token");
-  const [openMenu, setOpenMenu] = useState(false);
-  const [refunds, setRefunds] = useState([]);
+  const [refunds, setRefunds] = useState<RefundItem[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState(null);
+  const [error, setError] = useState<unknown>(null);
   const navigate = useNavigate();
   const location = useLocation();
   const savedListState = location.state?.listState;
@@ -23,21 +35,21 @@ const ManageRefunds = () => {
   const hasMounted = useRef(false);
 
   const [searchQuery, setSearchQuery] = useState(
-    savedListState?.searchQuery || "",
+    savedListState?.searchQuery || ""
   );
   const [debouncedSearchQuery, setDebouncedSearchQuery] = useState(
-    savedListState?.searchQuery || "",
+    savedListState?.searchQuery || ""
   );
   const [statusFilter, setStatusFilter] = useState(
-    savedListState?.statusFilter || "",
+    savedListState?.statusFilter || ""
   );
 
   // Pagination state
   const [currentPage, setCurrentPage] = useState(
-    savedListState?.currentPage || 1,
+    savedListState?.currentPage || 1
   );
   const [itemsPerPage, setItemsPerPage] = useState(
-    savedListState?.itemsPerPage || 10,
+    savedListState?.itemsPerPage || 10
   );
   const [totalItems, setTotalItems] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
@@ -80,7 +92,6 @@ const ManageRefunds = () => {
         },
       });
       if (response.status === 200) {
-        // Assuming the response structure is similar to applications
         const { data, total, last_page } = response.data.data;
         setRefunds(data || []);
         setTotalItems(total || 0);
@@ -99,12 +110,12 @@ const ManageRefunds = () => {
     fetchRefunds();
   }, [currentPage, itemsPerPage, debouncedSearchQuery, statusFilter]);
 
-  const columns = [
+  const columns: TableColumnProps<RefundItem>[] = [
     {
       label: "User",
       key: "user",
       render: (item) => (
-        <span className="capitalize">
+        <span className="capitalize font-medium text-tableData">
           {item.user?.firstname} {item.user?.lastname}
         </span>
       ),
@@ -112,17 +123,21 @@ const ManageRefunds = () => {
     {
       label: "Account Name",
       key: "account_name",
-      render: (item) => <span className="capitalize">{item.account_name}</span>,
+      render: (item) => <span className="capitalize">{item.account_name ?? "-"}</span>,
     },
     {
       label: "Bank",
       key: "bank_name",
-      render: (item) => <span>{item.bank_name}</span>,
+      render: (item) => <span>{item.bank_name ?? "-"}</span>,
     },
     {
       label: "Amount",
       key: "amount",
-      render: (item) => formatterUtility(Number(item.amount)),
+      render: (item) => (
+        <span className="font-medium text-tableData">
+          {formatterUtility(Number(item.amount))}
+        </span>
+      ),
     },
     {
       label: "Status",
@@ -144,11 +159,13 @@ const ManageRefunds = () => {
     {
       label: "Date",
       key: "created_at",
-      render: (item) => new Date(item.created_at).toLocaleDateString(),
+      render: (item) =>
+        item.created_at ? new Date(item.created_at).toLocaleDateString() : "-",
     },
     {
       label: "Action",
       key: "action",
+      tableHeadingClassName: "text-center",
       render: (item) => (
         <ActionCell
           rowId={item.id}
@@ -172,82 +189,69 @@ const ManageRefunds = () => {
   ];
 
   return (
-    <div className="flex flex-col md:flex-row min-h-screen bg-gray-100">
-      <div className="flex-1 flex flex-col overflow-hidden">
-        {/* Top Header */}
-        <header className="flex items-center bg-white shadow-sm z-10 w-full px-4 md:px-6 lg:px-8 py-4">
-          <button
-            onClick={() => setOpenMenu(true)}
-            className="mr-4 text-gray-500 hover:text-gray-700"
-          >
-            <FaBars className="w-6 h-6" />
-          </button>
-          <img src={assets.logo} alt="Logo" className="w-10 h-10" />
-          <h1 className="text-xl font-bold text-gray-900 ps-6 truncate">
-            Manage Refunds
-          </h1>
-        </header>
-
-        <main className="flex-1 overflow-y-auto p-4 md:p-8">
-          <div className="grid gap-4 mb-8 grid-cols-12 items-end">
-            <div className="relative w-full md:col-span-6 h-12 border border-gray-300 rounded-lg focus-within:ring-2 focus-within:ring-secondary/50 flex gap-2 items-center px-3">
-              <IoIosSearch className="text-gray-400" />
-              <input
-                type="text"
-                placeholder="Search Refunds..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full h-full focus:outline-none"
-              />
-            </div>
-
-            <div className="flex flex-col gap-2 md:col-span-3">
-              <label className="text-xs font-semibold text-gray-700">
-                Status
-              </label>
-              <select
-                value={statusFilter}
-                onChange={(e) => {
-                  setStatusFilter(e.target.value);
-                  setCurrentPage(1);
-                }}
-                className="h-12 rounded-lg outline-0 border border-gray-300 px-3 text-sm"
-              >
-                <option value="">All</option>
-                <option value="settled">Settled</option>
-                <option value="rejected">Rejected</option>
-              </select>
-            </div>
-
-            <div className="flex items-end md:col-span-3">
-              <button
-                type="button"
-                onClick={() => {
-                  setSearchQuery("");
-                  setStatusFilter("");
-                }}
-                className="h-12 w-full rounded-lg bg-gray-200 text-sm font-semibold text-gray-700 hover:bg-gray-300"
-              >
-                Reset filters
-              </button>
-            </div>
-          </div>
-          <ReusableTable
-            columns={columns}
-            data={refunds}
-            isLoading={isLoading}
-            error={error}
-            currentPage={currentPage}
-            totalPages={totalPages}
-            totalItems={totalItems}
-            itemsPerPage={itemsPerPage}
-            setCurrentPage={setCurrentPage}
-            setItemsPerPage={setItemsPerPage}
-            emptyDataHeading="No refunds found"
-            emptyDataMessage="There are currently no refund requests in the system."
-          />
-        </main>
+    <div className="flex flex-col gap-4">
+      <div>
+        <h2 className="text-lg font-semibold">Manage Refunds</h2>
+        <p className="text-sm text-tableHeading">
+          View, search and manage all refund requests in the system.
+        </p>
       </div>
+
+      <div className="grid gap-4 items-end grid-cols-12">
+        <div className="relative w-full col-span-12 md:col-span-6 lg:col-span-5 h-12 bg-secondary border border-primary/10 rounded-lg flex gap-2 items-center px-3">
+          <IoIosSearch className="text-gray-400" />
+          <input
+            type="text"
+            placeholder="Search Refunds..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full h-full focus:outline-none text-sm"
+          />
+        </div>
+
+        <div className="flex flex-col gap-2 col-span-12 md:col-span-6 lg:col-span-4">
+          <label className="text-xs font-semibold text-gray-700">Status</label>
+          <select
+            value={statusFilter}
+            onChange={(e) => {
+              setStatusFilter(e.target.value);
+              setCurrentPage(1);
+            }}
+            className="h-12 rounded-lg bg-secondary border border-primary/10 outline-0 px-3 text-sm"
+          >
+            <option value="">All</option>
+            <option value="settled">Settled</option>
+            <option value="rejected">Rejected</option>
+          </select>
+        </div>
+
+        <div className="flex items-end col-span-12 md:col-span-6 lg:col-span-3">
+          <button
+            type="button"
+            onClick={() => {
+              setSearchQuery("");
+              setStatusFilter("");
+            }}
+            className="px-2 h-12 w-full rounded-lg bg-gray-300 text-sm font-semibold text-gray-700 hover:bg-gray-200 cursor-pointer"
+          >
+            Reset filters
+          </button>
+        </div>
+      </div>
+
+      <ReusableTable<RefundItem>
+        columns={columns}
+        data={refunds}
+        isLoading={isLoading}
+        error={error}
+        currentPage={currentPage}
+        totalPages={totalPages}
+        totalItems={totalItems}
+        itemsPerPage={itemsPerPage}
+        setCurrentPage={setCurrentPage}
+        setItemsPerPage={setItemsPerPage}
+        getRowId={(item) => item.id}
+      />
     </div>
   );
 };
