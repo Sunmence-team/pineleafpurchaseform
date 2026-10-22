@@ -8,6 +8,7 @@ import { useReactToPrint } from "react-to-print";
 import assets from "../assets/assets";
 import { formatterUtility } from "../helpers/formatterUtility";
 import { api } from "../helpers/api";
+import EntryNotesSection from "../components/EntryNotesSection";
 
 const API_URL = import.meta.env.VITE_API_BASE_URL;
 const STORAGE_URL = "https://forms.pineleafestates.com/back/storage/app/public";
@@ -513,6 +514,11 @@ const ViewClient = () => {
             </div>
           )}
         </div>
+
+                  {/* Entry Notes Section */}
+          <div className="no-print">
+            <EntryNotesSection entryId={id || ""} />
+          </div>
 
         {/* Footer */}
         <div className="border-t border-gray-200 pt-4 md:pt-6 mt-6 md:mt-8 flex justify-end no-print">
