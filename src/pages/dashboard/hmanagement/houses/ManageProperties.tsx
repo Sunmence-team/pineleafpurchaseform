@@ -1,25 +1,33 @@
 import React, { useState, useEffect } from "react";
-import assets from "../../../../assets/assets";
 import { useNavigate } from "react-router-dom";
 import ActionCell from "../../../../components/ui/ActionCell";
-import { api, getErrorMessage } from "../../../../helpers/api";
+import { hmApi, getErrorMessage } from "../../../../helpers/api";
 import { toast } from "sonner";
 import ConfirmDialog from "../../../../components/modals/ConfirmDialog";
-import { FaBars, FaPlus } from "react-icons/fa6";
+import { FaPlus } from "react-icons/fa6";
 import { IoIosSearch } from "react-icons/io";
-import { branchOptions } from "../../../../lib/branchList";
 import ReusableTable from "../../../../utilities/ReusableTable";
+import type { TableColumnProps } from "../../../../lib/interfaces";
+import ActionButton from "../../../../components/ui/ActionButton";
 
-const ManageProperties = () => {
+export interface PropertyItem {
+  id: number;
+  name?: string;
+  estate_name?: string;
+  location?: string;
+  price?: number | string;
+  [key: string]: any;
+}
+
+const ManageProperties: React.FC = () => {
   const token = localStorage.getItem("token");
-  const [openMenu, setOpenMenu] = useState(false);
-  const [properties, setProperties] = useState([]);
+  const [properties, setProperties] = useState<PropertyItem[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
-  const [error, setError] = useState(null);
+  const [error, setError] = useState<unknown>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [debouncedSearchQuery, setDebouncedSearchQuery] = useState("");
-  const [propertyToDelete, setPropertyToDelete] = useState(null);
+  const [propertyToDelete, setPropertyToDelete] = useState<number | null>(null);
   const navigate = useNavigate();
 
   // Pagination state
@@ -88,28 +96,37 @@ const ManageProperties = () => {
     }
   };
 
-  const columns = [
+  const columns: TableColumnProps<PropertyItem>[] = [
     {
       label: "Property Name",
       key: "name",
-      render: (item) => <span className="font-medium">{item.name}</span>,
+      render: (item) => (
+        <span className="font-medium text-tableData">{item.name ?? "-"}</span>
+      ),
     },
     {
       label: "Estate Name",
       key: "estate_name",
+      render: (item) => <span>{item.estate_name ?? "-"}</span>,
     },
     {
       label: "Location",
       key: "location",
+      render: (item) => <span>{item.location ?? "-"}</span>,
     },
     {
       label: "Price",
       key: "price",
-      render: (item) => `₦${Number(item.price).toLocaleString()}`,
+      render: (item) => (
+        <span className="font-medium text-tableData">
+          {item.price ? `₦${Number(item.price).toLocaleString()}` : "-"}
+        </span>
+      ),
     },
     {
       label: "Action",
       key: "action",
+      tableHeadingClassName: "text-center",
       render: (item) => (
         <ActionCell
           rowId={item.id}
@@ -127,58 +144,48 @@ const ManageProperties = () => {
   ];
 
   return (
-    <div className="flex flex-col md:flex-row min-h-screen bg-gray-100">
-      <div className="flex-1 flex flex-col overflow-hidden">
-        {/* Top Header */}
-        <header className="flex items-center bg-white shadow-sm z-10 w-full px-4 md:px-6 lg:px-8 py-4">
-          <button
-            onClick={() => setOpenMenu(true)}
-            className="mr-4 text-gray-500 hover:text-gray-700"
-          >
-            <FaBars className="w-6 h-6" />
-          </button>
-          <img src={assets.logo} alt="Logo" className="w-10 h-10" />
-          <h1 className="text-xl font-bold text-gray-900 ps-6 truncate">
-            Manage properties
-          </h1>
-        </header>
-
-        <main className="flex-1 overflow-y-auto p-4 md:p-8">
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
-            <div className="relative w-full md:w-96">
-              <input
-                type="text"
-                placeholder="Search properties..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-secondary/50"
-              />
-              <IoIosSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-            </div>
-            <button
-              onClick={() => navigate("/dashboard/manage/properties/create")}
-              className="flex items-center gap-2 bg-primary text-white px-4 py-2 rounded-lg transition"
-            >
-              <FaPlus /> Create New property
-            </button>
-          </div>
-
-          <ReusableTable
-            columns={columns}
-            data={properties}
-            isLoading={isLoading}
-            error={error}
-            currentPage={currentPage}
-            totalPages={Math.ceil(totalItems / itemsPerPage) || 1}
-            totalItems={totalItems}
-            itemsPerPage={itemsPerPage}
-            setCurrentPage={setCurrentPage}
-            setItemsPerPage={setItemsPerPage}
-            emptyDataHeading="No properties found"
-            emptyDataMessage="Try adjusting your search or add a new property."
-          />
-        </main>
+    <div className="flex flex-col gap-4">
+      <div className="flex lg:items-center gap-4 justify-between lg:flex-row flex-col">
+        <div>
+          <h2 className="text-lg font-semibold">Manage Properties</h2>
+          <p className="text-sm text-tableHeading">
+            View, search, edit and manage all properties on the housing scheme.
+          </p>
+        </div>
+        <ActionButton
+          text="Create New Property"
+          icon={<FaPlus className="w-3.5 h-3.5 mr-1" />}
+          action={() => navigate("/dashboard/manage/properties/create")}
+          buttonStyle="text-white font-medium"
+        />
       </div>
+
+      <div className="grid gap-4 items-end grid-cols-12">
+        <div className="relative w-full col-span-12 md:col-span-6 lg:col-span-5 h-12 bg-secondary border border-primary/10 rounded-lg flex gap-2 items-center px-3">
+          <IoIosSearch className="text-gray-400" />
+          <input
+            type="text"
+            placeholder="Search properties..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full h-full focus:outline-none text-sm"
+          />
+        </div>
+      </div>
+
+      <ReusableTable<PropertyItem>
+        columns={columns}
+        data={properties}
+        isLoading={isLoading}
+        error={error}
+        currentPage={currentPage}
+        totalPages={Math.ceil(totalItems / itemsPerPage) || 1}
+        totalItems={totalItems}
+        itemsPerPage={itemsPerPage}
+        setCurrentPage={setCurrentPage}
+        setItemsPerPage={setItemsPerPage}
+        getRowId={(item) => item.id}
+      />
 
       <ConfirmDialog
         isOpen={!!propertyToDelete}
