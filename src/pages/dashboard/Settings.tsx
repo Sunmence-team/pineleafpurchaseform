@@ -1,8 +1,9 @@
 import React, { useState } from "react";
 import { LuKeyRound } from "react-icons/lu";
-import { BsFillAwardFill } from "react-icons/bs";
+import { BsFillAwardFill, BsBarChartLine } from "react-icons/bs";
 import ChangePassword from "./settingstabs/ChangePassword";
 import ManageBarristers from "./settingstabs/ManageBarristers";
+import BarristersSummary from "./settingstabs/BarristersSummary";
 import { useUser } from "../../hooks/useUser";
 
 interface TabsCategory {
@@ -18,7 +19,12 @@ const Settings: React.FC = () => {
 
   const tabs: TabsCategory[] = [
     { label: "Password", icon: LuKeyRound },
-    ...(isAdmin ? [{ label: "Barristers", icon: BsFillAwardFill }] : []),
+    ...(isAdmin
+      ? [
+          { label: "Barristers", icon: BsFillAwardFill },
+          { label: "Barristers Summary", icon: BsBarChartLine },
+        ]
+      : []),
   ];
 
   const renderContent = () => {
@@ -27,6 +33,8 @@ const Settings: React.FC = () => {
         return <ChangePassword />;
       case "Barristers":
         return <ManageBarristers />;
+      case "Barristers Summary":
+        return <BarristersSummary />;
       default:
         return null;
     }
@@ -62,7 +70,10 @@ const Settings: React.FC = () => {
                       : "border-transparent text-gray-700 hover:bg-white/60 hover:text-primary"
                   }`}
                 >
-                  <Icon size={14} className={isActive ? "text-primary" : "text-gray-500"} />
+                  <Icon
+                    size={14}
+                    className={isActive ? "text-primary" : "text-gray-500"}
+                  />
                   <span>{tab.label}</span>
                 </button>
               );
