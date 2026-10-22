@@ -78,7 +78,7 @@ const ManageApplicants = () => {
     setIsLoading(true);
     setError(null);
     try {
-      const params = {
+      const params: Record<string, any> = {
         page: currentPage,
         per_page: itemsPerPage,
         search: debouncedSearchQuery,
@@ -139,7 +139,7 @@ const ManageApplicants = () => {
       label: "Payment Method",
       key: "payment_method",
       render: (item) =>
-        formatUnderScores(item.payment_method, { capitalize: true }),
+        formatUnderScores(item.payment_method, true),
     },
     {
       label: "Reference",
@@ -269,8 +269,6 @@ const ManageApplicants = () => {
         itemsPerPage={itemsPerPage}
         setCurrentPage={setCurrentPage}
         setItemsPerPage={setItemsPerPage}
-        emptyDataHeading="No Applicants found"
-        emptyDataMessage="Try adjusting your search or add a new property."
       />
     </div>
   );
