@@ -1,7 +1,11 @@
 import React, { useCallback, useEffect, useState } from "react";
 import { HiPlus } from "react-icons/hi2";
+import { BsHouses } from "react-icons/bs";
 import { toast } from "sonner";
 import AddBarristerModal from "../../../components/modals/AddBarristerModal";
+import AssignPropertiesModal, {
+  getStoredAssignments,
+} from "../../../components/modals/AssignPropertiesModal";
 import ConfirmDialog from "../../../components/modals/ConfirmDialog";
 import ActionButton from "../../../components/ui/ActionButton";
 import ActionCell from "../../../components/ui/ActionCell";
@@ -19,6 +23,7 @@ const ManageBarristers: React.FC = () => {
 
   const [deleteModal, setDeleteModal] = useState(false);
   const [createModal, setCreateModal] = useState(false);
+  const [assignModal, setAssignModal] = useState(false);
   const [loadingBarristers, setLoadingBarristers] = useState(false);
   const [selectedBarrister, setSelectedBarrister] =
     useState<BarristerProp | null>(null);
@@ -29,6 +34,9 @@ const ManageBarristers: React.FC = () => {
   const [deleteTargetIds, setDeleteTargetIds] = useState<
     Array<number | string>
   >([]);
+
+  // Local assignment tracking trigger to force re-render on save
+  const [assignmentVersion, setAssignmentVersion] = useState(0);
 
   const fetchBarristers = useCallback(async () => {
     setLoadingBarristers(true);
@@ -122,12 +130,37 @@ const ManageBarristers: React.FC = () => {
     {
       label: "Barrister Name",
       key: "name",
-      render: (row) => row.full_name || row.name || "-",
+      render: (row) => (
+        <span className="font-semibold text-gray-900">
+          {row.full_name || row.name || "-"}
+        </span>
+      ),
     },
     {
       label: "Phone Number",
       key: "phone_number",
-      render: (row) => row.phone_number || row.phone || "-",
+      render: (row) => <span>{row.phone_number || row.phone || "-"}</span>,
+    },
+    {
+      label: "Assigned Properties",
+      key: "assigned_properties",
+      render: (row) => {
+        const stored = getStoredAssignments()[String(row.id ?? "")];
+        const count = stored?.properties?.length || 0;
+        return (
+          <div className="flex items-center gap-2">
+            <span
+              className={`px-2.5 py-1 text-xs font-semibold rounded-md border ${
+                count > 0
+                  ? "bg-secondary text-primary border-primary/20"
+                  : "bg-gray-50 text-gray-400 border-gray-200"
+              }`}
+            >
+              {count} {count === 1 ? "Property" : "Properties"}
+            </span>
+          </div>
+        );
+      },
     },
     {
       label: "Action",
@@ -135,6 +168,16 @@ const ManageBarristers: React.FC = () => {
       render: (item) => (
         <ActionCell
           rowId={Number(item.id)}
+          otherActions={[
+            {
+              name: "Assign Properties",
+              icon: <BsHouses className="text-primary size-4" />,
+              action: () => {
+                setSelectedBarrister(item);
+                setAssignModal(true);
+              },
+            },
+          ]}
           onDelete={() => {
             setDeleteModal(true);
             setSelectedBarrister(item);
@@ -147,12 +190,12 @@ const ManageBarristers: React.FC = () => {
 
   return (
     <>
-      <div className="space-y-6">
+      <div className="space-y-6" key={assignmentVersion}>
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-0">
           <div>
             <h2 className="text-lg font-semibold text-gray-900">Barristers</h2>
             <p className="text-sm text-gray-500">
-              Manage, track, and update barrister records
+              Manage, track, assign properties, and update barrister records
             </p>
           </div>
 
@@ -214,6 +257,19 @@ const ManageBarristers: React.FC = () => {
         <AddBarristerModal
           onClose={() => setCreateModal(false)}
           onCreated={fetchBarristers}
+        />
+      )}
+
+      {assignModal && selectedBarrister && (
+        <AssignPropertiesModal
+          barrister={selectedBarrister}
+          onClose={() => {
+            setAssignModal(false);
+            setSelectedBarrister(null);
+          }}
+          onSuccess={() => {
+            setAssignmentVersion((v) => v + 1);
+          }}
         />
       )}
 
