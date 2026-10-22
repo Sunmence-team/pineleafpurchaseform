@@ -1,20 +1,40 @@
 import React, { useState, useEffect } from "react";
-import assets from "../../../../assets/assets";
-import { api, getErrorMessage } from "../../../../helpers/api";
+import { hmApi, getErrorMessage } from "../../../../helpers/api";
 import { toast } from "sonner";
-import { FaBars } from "react-icons/fa6";
 import Modal from "../../../../components/modals/Modal";
 import { StatusTurnPriorityCard } from "../../../../components/cards/StatusCard";
 import { IoIosSearch } from "react-icons/io";
-import { branchOptions } from "../../../../lib/branchList";
 import ReusableTable from "../../../../utilities/ReusableTable";
+import type { TableColumnProps } from "../../../../lib/interfaces";
 
-const ManageFlaggedAccounts = () => {
+export interface FlaggedAccountItem {
+  id: number;
+  reason?: string;
+  flag_type?: string;
+  type?: string;
+  attempts_count?: number;
+  attempts?: number;
+  status?: string;
+  resolution_status?: string;
+  last_attempt_at?: string;
+  updated_at?: string;
+  created_at?: string;
+  name?: string;
+  user?: {
+    id?: number;
+    firstname?: string;
+    lastname?: string;
+    email?: string;
+    [key: string]: any;
+  };
+  [key: string]: any;
+}
+
+const ManageFlaggedAccounts: React.FC = () => {
   const token = localStorage.getItem("token");
-  const [openMenu, setOpenMenu] = useState(false);
-  const [flags, setFlags] = useState([]);
+  const [flags, setFlags] = useState<FlaggedAccountItem[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState(null);
+  const [error, setError] = useState<unknown>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [debouncedSearchQuery, setDebouncedSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
@@ -22,7 +42,7 @@ const ManageFlaggedAccounts = () => {
   const [itemsPerPage, setItemsPerPage] = useState(10);
   const [totalItems, setTotalItems] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
-  const [selectedFlag, setSelectedFlag] = useState(null);
+  const [selectedFlag, setSelectedFlag] = useState<FlaggedAccountItem | null>(null);
   const [resolveNote, setResolveNote] = useState("");
   const [reEnableUser, setReEnableUser] = useState(false);
   const [isResolving, setIsResolving] = useState(false);
@@ -70,7 +90,7 @@ const ManageFlaggedAccounts = () => {
     fetchFlags();
   }, [currentPage, itemsPerPage, debouncedSearchQuery, statusFilter]);
 
-  const openResolveModal = (flag) => {
+  const openResolveModal = (flag: FlaggedAccountItem) => {
     setSelectedFlag(flag);
     setResolveNote("");
     setReEnableUser(false);
@@ -78,48 +98,54 @@ const ManageFlaggedAccounts = () => {
 
   const handleResolve = async () => {
     if (!selectedFlag) return;
-
     setIsResolving(true);
     try {
       await hmApi.post(
         `/api/admin/flagged-accounts/${selectedFlag.id}/resolve`,
         {
-          admin_note: resolveNote,
+          note: resolveNote,
           re_enable_user: reEnableUser,
         },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
       );
-
-      toast.success("Flag resolved successfully.");
-      fetchFlags();
+      toast.success("Flagged account resolved successfully");
       setSelectedFlag(null);
-      setResolveNote("");
-      setReEnableUser(false);
+      fetchFlags();
     } catch (err) {
-      const msg = getErrorMessage(err);
-      toast.error(msg);
+      toast.error(getErrorMessage(err));
     } finally {
       setIsResolving(false);
     }
   };
 
-  const columns = [
+  const columns: TableColumnProps<FlaggedAccountItem>[] = [
     {
-      label: "Name",
-      key: "name",
-      render: (item) =>
-        item.user
-          ? `${item.user.firstname || ""} ${item.user.lastname || ""}`.trim()
-          : item.name || "-",
+      label: "User",
+      key: "user",
+      render: (item) => (
+        <span className="capitalize font-medium text-tableData">
+          {item.user?.firstname} {item.user?.lastname}
+        </span>
+      ),
     },
     {
       label: "Email",
       key: "email",
-      render: (item) => item.user?.email || item.email || "-",
+      render: (item) => <span>{item.user?.email ?? "-"}</span>,
+    },
+    {
+      label: "Reason",
+      key: "reason",
+      render: (item) => <span>{item.reason || item.flag_type || item.type || "-"}</span>,
     },
     {
       label: "Attempts",
       key: "attempts_count",
-      render: (item) => item.attempts_count ?? item.attempts ?? "-",
+      render: (item) => <span>{item.attempts_count ?? item.attempts ?? "-"}</span>,
     },
     {
       label: "Status",
@@ -141,6 +167,7 @@ const ManageFlaggedAccounts = () => {
     {
       label: "Action",
       key: "action",
+      tableHeadingClassName: "text-center",
       render: (item) => (
         <button
           type="button"
@@ -148,7 +175,7 @@ const ManageFlaggedAccounts = () => {
             item.status === "resolved" || item.resolution_status === "resolved"
           }
           onClick={() => openResolveModal(item)}
-          className="rounded-lg border border-secondary bg-secondary/10 px-3 py-2 text-xs font-semibold text-secondary hover:bg-secondary/20 disabled:cursor-not-allowed disabled:opacity-50"
+          className="rounded-lg border border-primary/20 bg-primary/10 px-3 py-1.5 text-xs font-semibold text-primary hover:bg-primary/20 disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer"
         >
           Resolve
         </button>
@@ -157,79 +184,68 @@ const ManageFlaggedAccounts = () => {
   ];
 
   return (
-    <div className="flex flex-col md:flex-row min-h-screen bg-gray-100">
-      <div className="flex-1 flex flex-col overflow-hidden">
-        <header className="flex items-center bg-white shadow-sm z-10 w-full px-4 md:px-6 lg:px-8 py-4">
-          <button
-            onClick={() => setOpenMenu(true)}
-            className="mr-4 text-gray-500 hover:text-gray-700"
-          >
-            <FaBars className="w-6 h-6" />
-          </button>
-          <img src={assets.logo} alt="Logo" className="w-10 h-10" />
-          <h1 className="text-xl font-bold text-gray-900 ps-6 truncate">
-            Flagged Accounts
-          </h1>
-        </header>
-
-        <main className="flex-1 overflow-y-auto p-4 md:p-8">
-          <div className="grid gap-4 mb-8 grid-cols-12 items-end">
-            <div className="relative w-full md:col-span-6 h-12 border border-gray-300 rounded-lg focus-within:ring-2 focus-within:ring-secondary/50 flex gap-2 items-center px-3">
-              <IoIosSearch className="text-gray-400" />
-              <input
-                type="text"
-                placeholder="Search flagged accounts..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full h-full bg-transparent focus:outline-none text-sm"
-              />
-            </div>
-
-            <div className="flex flex-col gap-2 md:col-span-4">
-              <label className="text-xs font-semibold text-gray-700">
-                Resolution Status
-              </label>
-              <select
-                value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value)}
-                className="h-12 rounded-lg outline-0 border border-gray-300 px-3 text-sm"
-              >
-                <option value="">All</option>
-                <option value="open">Open</option>
-                <option value="resolved">Resolved</option>
-              </select>
-            </div>
-
-            <div className="flex items-end md:col-span-2">
-              <button
-                type="button"
-                onClick={() => {
-                  setSearchQuery("");
-                  setStatusFilter("");
-                }}
-                className="h-12 w-full rounded-lg bg-gray-200 text-sm font-semibold text-gray-700 hover:bg-gray-200"
-              >
-                Reset filters
-              </button>
-            </div>
-          </div>
-
-          <ReusableTable
-            columns={columns}
-            data={flags}
-            isLoading={isLoading}
-            error={error}
-            currentPage={currentPage}
-            totalPages={totalPages}
-            totalItems={totalItems}
-            itemsPerPage={itemsPerPage}
-            setCurrentPage={setCurrentPage}
-            setItemsPerPage={setItemsPerPage}
-            emptyDataHeading="No flagged accounts found"
-            emptyDataMessage="There are currently no flagged accounts matching your criteria."
-          />
-        </main>
+    <div className="flex flex-col gap-4">
+      <div>
+        <h2 className="text-lg font-semibold">Flagged Accounts</h2>
+        <p className="text-sm text-tableHeading">
+          Review, analyze and resolve flagged user accounts and security alerts.
+        </p>
       </div>
+
+      <div className="grid gap-4 items-end grid-cols-12">
+        <div className="relative w-full col-span-12 md:col-span-6 lg:col-span-5 h-12 bg-secondary border border-primary/10 rounded-lg flex gap-2 items-center px-3">
+          <IoIosSearch className="text-gray-400" />
+          <input
+            type="text"
+            placeholder="Search flagged accounts..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full h-full bg-transparent focus:outline-none text-sm"
+          />
+        </div>
+
+        <div className="flex flex-col gap-2 col-span-12 md:col-span-6 lg:col-span-4">
+          <label className="text-xs font-semibold text-gray-700">
+            Resolution Status
+          </label>
+          <select
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
+            className="h-12 rounded-lg bg-secondary border border-primary/10 outline-0 px-3 text-sm"
+          >
+            <option value="">All</option>
+            <option value="open">Open</option>
+            <option value="resolved">Resolved</option>
+          </select>
+        </div>
+
+        <div className="flex items-end col-span-12 md:col-span-6 lg:col-span-3">
+          <button
+            type="button"
+            onClick={() => {
+              setSearchQuery("");
+              setStatusFilter("");
+            }}
+            className="px-2 h-12 w-full rounded-lg bg-gray-300 text-sm font-semibold text-gray-700 hover:bg-gray-200 cursor-pointer"
+          >
+            Reset filters
+          </button>
+        </div>
+      </div>
+
+      <ReusableTable<FlaggedAccountItem>
+        columns={columns}
+        data={flags}
+        isLoading={isLoading}
+        error={error}
+        currentPage={currentPage}
+        totalPages={totalPages}
+        totalItems={totalItems}
+        itemsPerPage={itemsPerPage}
+        setCurrentPage={setCurrentPage}
+        setItemsPerPage={setItemsPerPage}
+        getRowId={(item) => item.id}
+      />
 
       {selectedFlag && (
         <Modal onClose={() => setSelectedFlag(null)}>
@@ -271,7 +287,7 @@ const ManageFlaggedAccounts = () => {
               <button
                 type="button"
                 onClick={() => setSelectedFlag(null)}
-                className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50"
+                className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50 cursor-pointer"
               >
                 Cancel
               </button>
@@ -279,7 +295,7 @@ const ManageFlaggedAccounts = () => {
                 type="button"
                 onClick={handleResolve}
                 disabled={isResolving}
-                className="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-60"
+                className="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-60 cursor-pointer"
               >
                 {isResolving ? "Resolving..." : "Resolve Account"}
               </button>
