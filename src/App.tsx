@@ -10,11 +10,6 @@ import ViewProperty from "./pages/dashboard/hmanagement/houses/ViewProperty";
 import ManageProperties from "./pages/dashboard/hmanagement/houses/ManageProperties";
 import ChangePassword from "./pages/dashboard/settingstabs/ChangePassword";
 import Settings from "./pages/dashboard/Settings";
-import Properties from "./pages/properties/Properties";
-import DocumentLibrary from "./pages/documents/DocumentLibrary";
-import UnassignedEntries from "./pages/entries/UnassignedEntries";
-import OfflineEntries from "./pages/entries/OfflineEntries";
-import OldRecords from "./pages/records/OldRecords";
 
 import Login from "./pages/auth/Login";
 
@@ -34,6 +29,12 @@ import ViewApplicant from "./pages/dashboard/hmanagement/users/applicants/ViewAp
 import ViewRefund from "./pages/dashboard/hmanagement/refunds/ViewRefund";
 import ViewPurchase from "./pages/dashboard/hmanagement/purchases/ViewPurchase";
 import ViewUser from "./pages/dashboard/hmanagement/users/ViewUser";
+import Properties from "./pages/dashboard/properties/Properties";
+import DocumentLibrary from "./pages/dashboard/documents/DocumentLibrary";
+import UnassignedEntries from "./pages/dashboard/entries/UnassignedEntries";
+import OfflineEntries from "./pages/dashboard/entries/OfflineEntries";
+import OldRecords from "./pages/dashboard/entries/OldRecords";
+import ManageEntries from "./pages/dashboard/entries/ManageEntries";
 
 function App() {
   useEffect(() => {
@@ -62,7 +63,8 @@ function App() {
         <Route element={<ProtectedRoute />}>
           <Route element={<MainLayout />}>
             <Route path="/dashboard/overview" element={<Dashboard />} />
-            <Route path="/dashboard/records" element={<OldRecords />} />
+            <Route path="/dashboard/records" element={<ManageEntries />} />
+            <Route path="/dashboard/old-records" element={<OldRecords />} />
             <Route path="/dashboard/properties" element={<Properties />} />
             <Route path="/dashboard/documents" element={<DocumentLibrary />} />
             <Route

@@ -18,26 +18,25 @@ import {
   subMonths,
 } from "date-fns";
 import jsPDF from "jspdf";
-import assets from "../../assets/assets";
-import logo from "../../assets/logo.png";
+import assets from "../../../assets/assets";
 import autoTable from "jspdf-autotable";
-import BranchFilterModal from "../../components/modals/BranchFilterModal";
-import DateFilterModal from "../../components/modals/DateFilterModal";
-import DownloadModal from "../../components/modals/DownloadModal";
-import DownloadAllModal from "../../components/modals/DownloadAllModal";
-import SiteDownloadModal from "../../components/modals/SiteDownloadModal";
+import BranchFilterModal from "../../../components/modals/BranchFilterModal";
+import DateFilterModal from "../../../components/modals/DateFilterModal";
+import DownloadModal from "../../../components/modals/DownloadModal";
+import DownloadAllModal from "../../../components/modals/DownloadAllModal";
+import SiteDownloadModal from "../../../components/modals/SiteDownloadModal";
 import { useNavigate } from "react-router-dom";
-import ActionButton from "../../components/ui/ActionButton";
-import ReusableTable from "../../utilities/ReusableTable";
-import ActionCell from "../../components/ui/ActionCell";
-import type { TableColumnProps } from "../../lib/interfaces";
-import { formatISODateToCustom } from "../../helpers/formatterUtility";
+import ActionButton from "../../../components/ui/ActionButton";
+import ReusableTable from "../../../utilities/ReusableTable";
+import ActionCell from "../../../components/ui/ActionCell";
+import type { TableColumnProps } from "../../../lib/interfaces";
+import { formatISODateToCustom } from "../../../helpers/formatterUtility";
 import { TfiReload } from "react-icons/tfi";
 import { FaBars, FaX } from "react-icons/fa6";
-import { useClients } from "../../context/ClientsContext";
-import { parseSafeDate } from "../../helpers/formatterUtility";
-import { branchOptions } from "../../lib/branchList";
-import { api } from "../../helpers/api";
+import { useClients } from "../../../context/ClientsContext";
+import { parseSafeDate } from "../../../helpers/formatterUtility";
+import { branchOptions } from "../../../lib/branchList";
+import { api } from "../../../helpers/api";
 
 const API_URL = import.meta.env.VITE_API_BASE_URL;
 
@@ -844,7 +843,7 @@ const OldRecords: React.FC = () => {
       const margin = 15;
       let yPosition = margin;
 
-      pdf.addImage(logo, "PNG", margin, yPosition, 30, 30);
+      pdf.addImage(assets.logo, "PNG", margin, yPosition, 30, 30);
       yPosition += 35;
 
       pdf.setFontSize(18);
@@ -1002,7 +1001,7 @@ const OldRecords: React.FC = () => {
       const margin = 15;
       let yPosition = margin;
 
-      pdf.addImage(logo, "PNG", margin, yPosition, 30, 30);
+      pdf.addImage(assets.logo, "PNG", margin, yPosition, 30, 30);
       yPosition += 35;
 
       pdf.setFontSize(18);
@@ -1209,7 +1208,7 @@ const OldRecords: React.FC = () => {
       const margin = 15;
       let yPosition = margin;
 
-      pdf.addImage(logo, "PNG", margin, yPosition, 30, 30);
+      pdf.addImage(assets.logo, "PNG", margin, yPosition, 30, 30);
       yPosition += 35;
 
       pdf.setFontSize(18);
@@ -1446,9 +1445,9 @@ const OldRecords: React.FC = () => {
     <div className="flex flex-col gap-6">
       <div className="flex lg:items-center gap-4 justify-between lg:flex-row flex-col">
         <div>
-          <h2 className="text-lg font-semibold">Old Records</h2>
+          <h2 className="text-lg font-semibold">New Form Entries</h2>
           <p className="text-sm text-tableHeading">
-            Manage and check all system legacy entries here.
+            Manage and view all latest and not-yet downloaded form entries here.
           </p>
         </div>
         {/* <ActionButton
@@ -1465,14 +1464,14 @@ const OldRecords: React.FC = () => {
       {!(loading || loadingApplications) && (
         <>
           <div className="flex flex-col justify-between md:flex-row gap-2 md:gap-3 w-full">
-            <div className="md:w-1/2 w-full bg-gray-50 border border-gray-300 rounded-lg relative flex gap-2 items-center h-[45px] px-4">
-              <FaSearch className="text-gray-400 w-4 h-4 md:w-5 md:h-5" />
+            <div className="max-w-md w-full bg-secondary border border-primary/10 rounded-lg relative flex gap-2 items-center h-[45px] px-4">
+              <FaSearch className="w-4 h-4 md:w-5 md:h-5 opacity-50" />
               <input
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search clients..."
-                className="w-full h-full focus:outline-none focus:ring-2 focus:ring-primary text-sm"
+                placeholder="Search clients by name..."
+                className="w-full h-full focus:outline-none text-sm"
               />
             </div>
 

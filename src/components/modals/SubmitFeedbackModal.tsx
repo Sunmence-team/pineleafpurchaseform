@@ -4,8 +4,11 @@ import * as Yup from "yup";
 import { toast } from "sonner";
 import Modal from "./Modal";
 import ActionButton from "../ui/ActionButton";
-import type { DownloadBatchDocument, BatchFeedbackRecord } from "../../pages/documents/DocumentLibrary";
-import { saveStoredBatchFeedback } from "../../pages/documents/DocumentLibrary";
+import type {
+  DownloadBatchDocument,
+  BatchFeedbackRecord,
+} from "../../pages/dashboard/documents/DocumentLibrary";
+import { saveStoredBatchFeedback } from "../../pages/dashboard/documents/DocumentLibrary";
 import { api, getErrorMessage } from "../../helpers/api";
 
 const inputClass =
@@ -174,9 +177,10 @@ const SubmitFeedbackModal: React.FC<SubmitFeedbackModalProps> = ({
                 onBlur={formik.handleBlur}
                 className={inputClass}
               />
-              {formik.touched.unsigned_count && formik.errors.unsigned_count && (
-                <p className={errorStyle}>{formik.errors.unsigned_count}</p>
-              )}
+              {formik.touched.unsigned_count &&
+                formik.errors.unsigned_count && (
+                  <p className={errorStyle}>{formik.errors.unsigned_count}</p>
+                )}
             </div>
           </div>
 

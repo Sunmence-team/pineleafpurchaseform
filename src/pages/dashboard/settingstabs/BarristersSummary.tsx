@@ -11,7 +11,7 @@ import { toast } from "sonner";
 import OverviewCards from "../../../components/cards/OverviewCards";
 import { useClients } from "../../../context/ClientsContext";
 import { getStoredAssignments } from "../../../components/modals/AssignPropertiesModal";
-import { getStoredDocuments } from "../../documents/DocumentLibrary";
+import { getStoredDocuments } from "../documents/DocumentLibrary";
 import { api, getErrorMessage } from "../../../helpers/api";
 import type { BarristerProp, TableColumnProps } from "../../../lib/interfaces";
 import ReusableTable from "../../../utilities/ReusableTable";
@@ -74,7 +74,7 @@ const BarristersSummary: React.FC = () => {
       const assignedProps = assignmentRecord?.properties || [];
       const propNames = assignedProps.map((p) => p.name);
       const propNamesLower = new Set(
-        propNames.map((n) => n.trim().toLowerCase())
+        propNames.map((n) => n.trim().toLowerCase()),
       );
 
       // Match purchase form entries by site_location
@@ -134,7 +134,7 @@ const BarristersSummary: React.FC = () => {
       (row) =>
         row.name.toLowerCase().includes(lower) ||
         row.phone.toLowerCase().includes(lower) ||
-        row.assignedPropertyNames.some((p) => p.toLowerCase().includes(lower))
+        row.assignedPropertyNames.some((p) => p.toLowerCase().includes(lower)),
     );
   }, [summaryRows, searchTerm]);
 
@@ -149,15 +149,15 @@ const BarristersSummary: React.FC = () => {
   // Overview metrics
   const totalAssignedProperties = useMemo(
     () => summaryRows.reduce((sum, r) => sum + r.assignedPropertiesCount, 0),
-    [summaryRows]
+    [summaryRows],
   );
   const totalCoveredEntries = useMemo(
     () => summaryRows.reduce((sum, r) => sum + r.entriesCount, 0),
-    [summaryRows]
+    [summaryRows],
   );
   const totalSignedFeedback = useMemo(
     () => summaryRows.reduce((sum, r) => sum + r.signedCount, 0),
-    [summaryRows]
+    [summaryRows],
   );
 
   const columns: TableColumnProps<BarristerSummaryRow>[] = [
@@ -181,7 +181,10 @@ const BarristersSummary: React.FC = () => {
             {row.assignedPropertiesCount === 1 ? "Property" : "Properties"}
           </span>
           {row.assignedPropertyNames.length > 0 && (
-            <span className="text-xs text-gray-500 truncate max-w-xs" title={row.assignedPropertyNames.join(", ")}>
+            <span
+              className="text-xs text-gray-500 truncate max-w-xs"
+              title={row.assignedPropertyNames.join(", ")}
+            >
               {row.assignedPropertyNames.slice(0, 2).join(", ")}
               {row.assignedPropertyNames.length > 2 &&
                 ` +${row.assignedPropertyNames.length - 2} more`}
@@ -265,7 +268,8 @@ const BarristersSummary: React.FC = () => {
             Barristers Summary
           </h2>
           <p className="text-sm text-gray-500">
-            Cross-functional overview of assigned properties, client entries, and legal feedback
+            Cross-functional overview of assigned properties, client entries,
+            and legal feedback
           </p>
         </div>
 

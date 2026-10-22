@@ -10,11 +10,11 @@ import {
 } from "react-icons/bs";
 import { FaFilePdf } from "react-icons/fa6";
 import { toast } from "sonner";
-import OverviewCards from "../../components/cards/OverviewCards";
-import ActionButton from "../../components/ui/ActionButton";
-import SubmitFeedbackModal from "../../components/modals/SubmitFeedbackModal";
-import { formatISODateToCustom } from "../../helpers/formatterUtility";
-import { api } from "../../helpers/api";
+import OverviewCards from "../../../components/cards/OverviewCards";
+import ActionButton from "../../../components/ui/ActionButton";
+import SubmitFeedbackModal from "../../../components/modals/SubmitFeedbackModal";
+import { formatISODateToCustom } from "../../../helpers/formatterUtility";
+import { api } from "../../../helpers/api";
 
 export interface BatchFeedbackRecord {
   document_id: string | number;
@@ -61,7 +61,7 @@ export const saveStoredDocuments = (docs: DownloadBatchDocument[]) => {
 };
 
 export const getStoredBatchFeedback = (
-  docId: string | number
+  docId: string | number,
 ): BatchFeedbackRecord | undefined => {
   try {
     const raw = localStorage.getItem(STORAGE_FEEDBACK_KEY);
@@ -74,7 +74,7 @@ export const getStoredBatchFeedback = (
 
 export const saveStoredBatchFeedback = (
   docId: string | number,
-  record: BatchFeedbackRecord
+  record: BatchFeedbackRecord,
 ) => {
   try {
     const raw = localStorage.getItem(STORAGE_FEEDBACK_KEY);
@@ -104,7 +104,8 @@ const SEED_DOCUMENTS: DownloadBatchDocument[] = [
       signed_count: 12,
       unsigned_count: 2,
       date_returned: "2026-10-19",
-      remarks: "2 entries unsigned due to missing signature specimen on Section 4",
+      remarks:
+        "2 entries unsigned due to missing signature specimen on Section 4",
       updated_at: "2026-10-19T14:30:00Z",
     },
   },
@@ -149,7 +150,7 @@ const DocumentLibrary: React.FC = () => {
       prev.map((doc) => {
         const fb = getStoredBatchFeedback(doc.id);
         return fb ? { ...doc, feedback: fb } : doc;
-      })
+      }),
     );
   }, []);
 
@@ -165,9 +166,10 @@ const DocumentLibrary: React.FC = () => {
       (doc) =>
         doc.title.toLowerCase().includes(lower) ||
         doc.filename.toLowerCase().includes(lower) ||
-        (doc.site_location && doc.site_location.toLowerCase().includes(lower)) ||
+        (doc.site_location &&
+          doc.site_location.toLowerCase().includes(lower)) ||
         (doc.feedback?.barrister_name &&
-          doc.feedback.barrister_name.toLowerCase().includes(lower))
+          doc.feedback.barrister_name.toLowerCase().includes(lower)),
     );
   }, [documents, searchTerm]);
 
@@ -175,26 +177,27 @@ const DocumentLibrary: React.FC = () => {
   const totalSent = useMemo(
     () =>
       documents.reduce(
-        (sum, doc) => sum + (doc.feedback?.total_sent || doc.total_entries || 0),
-        0
+        (sum, doc) =>
+          sum + (doc.feedback?.total_sent || doc.total_entries || 0),
+        0,
       ),
-    [documents]
+    [documents],
   );
   const totalSigned = useMemo(
     () =>
       documents.reduce(
         (sum, doc) => sum + (doc.feedback?.signed_count || 0),
-        0
+        0,
       ),
-    [documents]
+    [documents],
   );
   const totalUnsigned = useMemo(
     () =>
       documents.reduce(
         (sum, doc) => sum + (doc.feedback?.unsigned_count || 0),
-        0
+        0,
       ),
-    [documents]
+    [documents],
   );
 
   const handleFeedbackSaved = (savedFeedback: BatchFeedbackRecord) => {
@@ -202,7 +205,7 @@ const DocumentLibrary: React.FC = () => {
       const updated = prev.map((doc) =>
         String(doc.id) === String(savedFeedback.document_id)
           ? { ...doc, feedback: savedFeedback }
-          : doc
+          : doc,
       );
       saveStoredDocuments(updated);
       return updated;
@@ -211,6 +214,15 @@ const DocumentLibrary: React.FC = () => {
 
   return (
     <div className="space-y-6">
+      <div>
+        <h1 className="text-xl font-bold text-gray-900">
+          Downloaded Documents Library
+        </h1>
+        <p className="text-sm text-gray-500">
+          Manage exported PDF batches and track barrister return feedback
+        </p>
+      </div>
+
       {/* Overview Metrics */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <OverviewCards
@@ -239,28 +251,16 @@ const DocumentLibrary: React.FC = () => {
         />
       </div>
 
-      {/* Header & Search */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-xl font-bold text-gray-900">
-            Downloaded Documents Library
-          </h1>
-          <p className="text-sm text-gray-500">
-            Manage exported PDF batches and track barrister return feedback
-          </p>
-        </div>
-
-        {/* Search */}
-        <div className="relative max-w-sm w-full">
-          <BiSearch className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 size-4" />
-          <input
-            type="text"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            placeholder="Search batches by title, barrister, or site..."
-            className="w-full pl-10 pr-4 py-2 rounded-lg border border-gray-300 bg-white text-sm outline-none focus:border-primary focus:ring-1 focus:ring-primary transition"
-          />
-        </div>
+      {/* Search */}
+      <div className="max-w-md w-full bg-secondary border border-primary/10 rounded-lg relative flex gap-2 items-center h-[45px] px-4">
+        <BiSearch className="w-4 h-4 md:w-5 md:h-5 opacity-50" />
+        <input
+          type="text"
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          placeholder="Search batches by title, barrister, or site..."
+          className="w-full h-full focus:outline-none text-sm"
+        />
       </div>
 
       {/* Grid of PDF Documents */}
@@ -271,7 +271,8 @@ const DocumentLibrary: React.FC = () => {
             No downloaded batch documents found
           </h4>
           <p className="text-xs text-gray-400 mt-1">
-            Documents exported from the dashboard will be automatically tracked in this library.
+            Documents exported from the dashboard will be automatically tracked
+            in this library.
           </p>
         </div>
       ) : (
@@ -314,27 +315,36 @@ const DocumentLibrary: React.FC = () => {
                   {/* Batch Details */}
                   <div className="bg-secondary p-3 rounded-lg border border-primary/10 text-xs space-y-1.5 mb-4">
                     <div className="flex justify-between">
-                      <span className="text-gray-500 font-medium">Export Type:</span>
+                      <span className="text-gray-500 font-medium">
+                        Export Type:
+                      </span>
                       <span className="font-semibold text-gray-800 capitalize">
                         {doc.download_type.replace(/_/g, " ")}
                       </span>
                     </div>
                     {doc.site_location && (
                       <div className="flex justify-between">
-                        <span className="text-gray-500 font-medium">Site / Estate:</span>
+                        <span className="text-gray-500 font-medium">
+                          Site / Estate:
+                        </span>
                         <span className="font-semibold text-gray-800 truncate max-w-[150px]">
                           {doc.site_location}
                         </span>
                       </div>
                     )}
                     <div className="flex justify-between">
-                      <span className="text-gray-500 font-medium">Total Entries:</span>
+                      <span className="text-gray-500 font-medium">
+                        Total Entries:
+                      </span>
                       <span className="font-semibold text-primary">
-                        {doc.total_entries} {doc.total_entries === 1 ? "entry" : "entries"}
+                        {doc.total_entries}{" "}
+                        {doc.total_entries === 1 ? "entry" : "entries"}
                       </span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-gray-500 font-medium">Export Date:</span>
+                      <span className="text-gray-500 font-medium">
+                        Export Date:
+                      </span>
                       <span className="text-gray-700">
                         {formatISODateToCustom(doc.created_at)}
                       </span>
@@ -356,19 +366,25 @@ const DocumentLibrary: React.FC = () => {
                       </div>
                       <div className="grid grid-cols-3 gap-1 pt-1 text-center">
                         <div className="bg-white p-1.5 rounded border border-gray-200">
-                          <p className="text-[10px] text-gray-400 uppercase">Sent</p>
+                          <p className="text-[10px] text-gray-400 uppercase">
+                            Sent
+                          </p>
                           <p className="font-bold text-gray-800">
                             {doc.feedback.total_sent}
                           </p>
                         </div>
                         <div className="bg-emerald-50/60 p-1.5 rounded border border-emerald-200">
-                          <p className="text-[10px] text-emerald-600 uppercase">Signed</p>
+                          <p className="text-[10px] text-emerald-600 uppercase">
+                            Signed
+                          </p>
                           <p className="font-bold text-emerald-700">
                             {doc.feedback.signed_count}
                           </p>
                         </div>
                         <div className="bg-red-50/60 p-1.5 rounded border border-red-200">
-                          <p className="text-[10px] text-red-600 uppercase">Unsigned</p>
+                          <p className="text-[10px] text-red-600 uppercase">
+                            Unsigned
+                          </p>
                           <p className="font-bold text-red-700">
                             {doc.feedback.unsigned_count}
                           </p>
@@ -376,7 +392,9 @@ const DocumentLibrary: React.FC = () => {
                       </div>
                       <div className="flex justify-between pt-1">
                         <span className="text-gray-400">Date Returned:</span>
-                        <span className="text-gray-700">{doc.feedback.date_returned}</span>
+                        <span className="text-gray-700">
+                          {doc.feedback.date_returned}
+                        </span>
                       </div>
                       {doc.feedback.remarks && (
                         <p className="text-gray-600 italic pt-1 border-t border-gray-200">

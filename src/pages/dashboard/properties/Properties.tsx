@@ -2,13 +2,13 @@ import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { BiSearch } from "react-icons/bi";
 import { BsBuildings, BsCloudCheck, BsCloudSlash } from "react-icons/bs";
 import { toast } from "sonner";
-import OverviewCards from "../../components/cards/OverviewCards";
-import ConfirmDialog from "../../components/modals/ConfirmDialog";
-import ActionCell from "../../components/ui/ActionCell";
-import { propertyApi, getErrorMessage } from "../../helpers/api";
-import { formatterUtility } from "../../helpers/formatterUtility";
-import type { PropertyProp, TableColumnProps } from "../../lib/interfaces";
-import ReusableTable from "../../utilities/ReusableTable";
+import OverviewCards from "../../../components/cards/OverviewCards";
+import ConfirmDialog from "../../../components/modals/ConfirmDialog";
+import ActionCell from "../../../components/ui/ActionCell";
+import { propertyApi, getErrorMessage } from "../../../helpers/api";
+import { formatterUtility } from "../../../helpers/formatterUtility";
+import type { PropertyProp, TableColumnProps } from "../../../lib/interfaces";
+import ReusableTable from "../../../utilities/ReusableTable";
 
 const OFFLINE_STORAGE_KEY = "pineleaf_properties_offline_overrides";
 
@@ -41,15 +41,19 @@ const Properties: React.FC = () => {
 
   // Status toggle confirmation
   const [statusModalOpen, setStatusModalOpen] = useState(false);
-  const [targetProperty, setTargetProperty] = useState<PropertyProp | null>(null);
+  const [targetProperty, setTargetProperty] = useState<PropertyProp | null>(
+    null,
+  );
   const [isTogglingStatus, setIsTogglingStatus] = useState(false);
 
   // Filter tab: "all" | "online" | "offline"
-  const [statusFilter, setStatusFilter] = useState<"all" | "online" | "offline">("all");
+  const [statusFilter, setStatusFilter] = useState<
+    "all" | "online" | "offline"
+  >("all");
 
   // Track offline IDs in state
   const [offlineIds, setOfflineIdsState] = useState<(string | number)[]>(() =>
-    getOfflinePropertyIds()
+    getOfflinePropertyIds(),
   );
 
   // Debounce search input
@@ -97,7 +101,10 @@ const Properties: React.FC = () => {
   const isPropertyOffline = useCallback(
     (property: PropertyProp) => {
       const propId = property.id;
-      if (propId !== undefined && offlineIds.some((id) => String(id) === String(propId))) {
+      if (
+        propId !== undefined &&
+        offlineIds.some((id) => String(id) === String(propId))
+      ) {
         return true;
       }
       return (
@@ -106,7 +113,7 @@ const Properties: React.FC = () => {
         property.status === "offline"
       );
     },
-    [offlineIds]
+    [offlineIds],
   );
 
   // Filtered properties based on statusFilter
@@ -122,11 +129,11 @@ const Properties: React.FC = () => {
   // Compute metrics for overview cards
   const onlineCount = useMemo(
     () => properties.filter((p) => !isPropertyOffline(p)).length,
-    [properties, isPropertyOffline]
+    [properties, isPropertyOffline],
   );
   const offlineCount = useMemo(
     () => properties.filter((p) => isPropertyOffline(p)).length,
-    [properties, isPropertyOffline]
+    [properties, isPropertyOffline],
   );
 
   const handleToggleStatusClick = (property: PropertyProp) => {
@@ -173,14 +180,14 @@ const Properties: React.FC = () => {
                 is_offline: newStatusIsOffline,
                 status: newStatusIsOffline ? "offline" : "online",
               }
-            : p
-        )
+            : p,
+        ),
       );
 
       toast.success(
         `Property "${targetProperty.name}" marked as ${
           newStatusIsOffline ? "Offline" : "Online"
-        }`
+        }`,
       );
       setStatusModalOpen(false);
       setTargetProperty(null);
@@ -212,9 +219,7 @@ const Properties: React.FC = () => {
     {
       label: "Type",
       key: "type",
-      render: (row) => (
-        <span className="capitalize">{row.type || "N/A"}</span>
-      ),
+      render: (row) => <span className="capitalize">{row.type || "N/A"}</span>,
     },
     {
       label: "Price",
@@ -275,28 +280,6 @@ const Properties: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      {/* Overview Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        <OverviewCards
-          title="Total Properties"
-          value={totalItems || properties.length}
-          icon={BsBuildings}
-          subtitle="All estate properties"
-        />
-        <OverviewCards
-          title="Online Properties"
-          value={onlineCount}
-          icon={BsCloudCheck}
-          subtitle="Currently active online"
-        />
-        <OverviewCards
-          title="Offline Properties"
-          value={offlineCount}
-          icon={BsCloudSlash}
-          subtitle="Worked on / marked offline"
-        />
-      </div>
-
       {/* Header & Controls */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
@@ -331,15 +314,37 @@ const Properties: React.FC = () => {
         </div>
       </div>
 
+      {/* Overview Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <OverviewCards
+          title="Total Properties"
+          value={totalItems || properties.length}
+          icon={BsBuildings}
+          subtitle="All estate properties"
+        />
+        <OverviewCards
+          title="Online Properties"
+          value={onlineCount}
+          icon={BsCloudCheck}
+          subtitle="Currently active online"
+        />
+        <OverviewCards
+          title="Offline Properties"
+          value={offlineCount}
+          icon={BsCloudSlash}
+          subtitle="Worked on / marked offline"
+        />
+      </div>
+
       {/* Search Bar */}
-      <div className="relative max-w-md">
-        <BiSearch className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 size-5" />
+      <div className="max-w-md w-full bg-secondary border border-primary/10 rounded-lg relative flex gap-2 items-center h-[45px] px-4">
+        <BiSearch className="w-4 h-4 md:w-5 md:h-5 opacity-50" />
         <input
           type="text"
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
           placeholder="Search properties by name..."
-          className="w-full pl-10 pr-4 py-2.5 rounded-lg border border-gray-300 bg-white text-sm outline-none focus:border-primary focus:ring-1 focus:ring-primary transition"
+          className="w-full h-full focus:outline-none text-sm"
         />
       </div>
 

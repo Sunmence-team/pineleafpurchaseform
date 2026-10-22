@@ -14,9 +14,9 @@ import {
 import { useClients } from "../../context/ClientsContext";
 import { useUser } from "../../hooks/useUser";
 import { propertyApi, api } from "../../helpers/api";
-import { getOfflinePropertyIds } from "../properties/Properties";
+import { getOfflinePropertyIds } from "./properties/Properties";
 import { getStoredAssignments } from "../../components/modals/AssignPropertiesModal";
-import { getStoredDocuments } from "../documents/DocumentLibrary";
+import { getStoredDocuments } from "./documents/DocumentLibrary";
 import type { PropertyProp } from "../../lib/interfaces";
 
 const Dashboard: React.FC = () => {
@@ -38,7 +38,9 @@ const Dashboard: React.FC = () => {
       setLoadingStats(true);
       try {
         const [propsRes, barrRes] = await Promise.allSettled([
-          propertyApi.get("/api/properties/search", { params: { per_page: 200 } }),
+          propertyApi.get("/api/properties/search", {
+            params: { per_page: 200 },
+          }),
           api.get("/barristers"),
         ]);
 
@@ -64,14 +66,17 @@ const Dashboard: React.FC = () => {
   }, []);
 
   // Offline vs Online calculations
-  const offlineIds = useMemo(() => new Set(getOfflinePropertyIds().map(String)), []);
+  const offlineIds = useMemo(
+    () => new Set(getOfflinePropertyIds().map(String)),
+    [],
+  );
   const offlinePropertiesCount = useMemo(() => {
     return properties.filter(
       (p) =>
         offlineIds.has(String(p.id)) ||
         p.is_offline === true ||
         p.is_offline === 1 ||
-        p.status === "offline"
+        p.status === "offline",
     ).length;
   }, [properties, offlineIds]);
 
@@ -100,7 +105,10 @@ const Dashboard: React.FC = () => {
   // Documents Library metrics
   const storedDocs = useMemo(() => getStoredDocuments(), []);
   const signedFeedbackCount = useMemo(() => {
-    return storedDocs.reduce((sum, d) => sum + (d.feedback?.signed_count || 0), 0);
+    return storedDocs.reduce(
+      (sum, d) => sum + (d.feedback?.signed_count || 0),
+      0,
+    );
   }, [storedDocs]);
 
   return (
@@ -112,7 +120,8 @@ const Dashboard: React.FC = () => {
             Welcome back, {user?.first_name || user?.username || "Admin"}
           </h1>
           <p className="text-sm text-gray-500">
-            Here is your operational snapshot across properties, entries, and legal workflows
+            Here is your operational snapshot across properties, entries, and
+            legal workflows
           </p>
         </div>
 
@@ -165,7 +174,8 @@ const Dashboard: React.FC = () => {
               <BsHouses className="text-primary size-5" />
             </div>
             <p className="text-xs text-gray-500 mb-4">
-              Properties currently flagged as online or marked for offline processing.
+              Properties currently flagged as online or marked for offline
+              processing.
             </p>
 
             <div className="space-y-3">
@@ -232,7 +242,7 @@ const Dashboard: React.FC = () => {
                     ? `${Math.round(
                         ((allClients.length - unassignedEntriesCount) /
                           allClients.length) *
-                          100
+                          100,
                       )}%`
                     : "100%"}
                 </span>

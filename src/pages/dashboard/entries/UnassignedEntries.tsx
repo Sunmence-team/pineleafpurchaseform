@@ -1,22 +1,28 @@
-import React, { useState, useEffect, useMemo, useCallback } from "react";
+import React, { useState, useEffect, useMemo } from "react";
+import { Link } from "react-router-dom";
 import { BiSearch } from "react-icons/bi";
-import { BsCloudSlash, BsBuildings, BsCalendarCheck } from "react-icons/bs";
+import {
+  BsShieldExclamation,
+  BsHouseExclamation,
+  BsCheckCircle,
+} from "react-icons/bs";
+import { FaEye, FaEdit, FaTrashAlt } from "react-icons/fa";
 import { toast } from "sonner";
-import OverviewCards from "../../components/cards/OverviewCards";
-import ConfirmDialog from "../../components/modals/ConfirmDialog";
-import ActionCell from "../../components/ui/ActionCell";
-import { useClients } from "../../context/ClientsContext";
+import OverviewCards from "../../../components/cards/OverviewCards";
+import ConfirmDialog from "../../../components/modals/ConfirmDialog";
+import ActionCell from "../../../components/ui/ActionCell";
+import { useClients } from "../../../context/ClientsContext";
+import { getStoredAssignments } from "../../../components/modals/AssignPropertiesModal";
 import { getOfflinePropertyIds } from "../properties/Properties";
-import { propertyApi, api, getErrorMessage } from "../../helpers/api";
-import { formatISODateToCustom, formatterUtility } from "../../helpers/formatterUtility";
-import type { TableColumnProps, PropertyProp } from "../../lib/interfaces";
-import ReusableTable from "../../utilities/ReusableTable";
+import { formatISODateToCustom } from "../../../helpers/formatterUtility";
+import type { TableColumnProps } from "../../../lib/interfaces";
+import ReusableTable from "../../../utilities/ReusableTable";
+import { api, getErrorMessage } from "../../../helpers/api";
 
-const OfflineEntries: React.FC = () => {
+const UnassignedEntries: React.FC = () => {
   const { allClients, loadingAllClients, fetchAllClients, removeClient } =
     useClients();
 
-  const [properties, setProperties] = useState<PropertyProp[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
@@ -31,72 +37,39 @@ const OfflineEntries: React.FC = () => {
     }
   }, [allClients.length, loadingAllClients, fetchAllClients]);
 
-  // Fetch properties from property service
-  useEffect(() => {
-    const fetchProps = async () => {
-      try {
-        const res = await propertyApi.get("/api/properties/search", {
-          params: { per_page: 200 },
-        });
-        const list = res.data?.data?.data || res.data?.data || [];
-        setProperties(Array.isArray(list) ? list : []);
-      } catch (err) {
-        console.error("Failed to load properties for offline mapping:", err);
-      }
-    };
-    fetchProps();
-  }, []);
-
-  // Set of names for properties marked offline
-  const offlinePropertyNames = useMemo(() => {
-    const offlineIds = new Set(getOfflinePropertyIds().map(String));
+  // Read assigned property identifiers from stored assignments
+  const assignedPropertyNames = useMemo(() => {
+    const assignments = getStoredAssignments();
     const names = new Set<string>();
-
-    for (const p of properties) {
-      const isOffline =
-        offlineIds.has(String(p.id)) ||
-        p.is_offline === true ||
-        p.is_offline === 1 ||
-        p.status === "offline";
-
-      if (isOffline && p.name) {
-        names.add(p.name.trim().toLowerCase());
-        if (p.estate_name) {
-          names.add(p.estate_name.trim().toLowerCase());
+    for (const record of Object.values(assignments)) {
+      if (Array.isArray(record.properties)) {
+        for (const prop of record.properties) {
+          if (prop?.name) {
+            names.add(prop.name.trim().toLowerCase());
+          }
         }
       }
     }
     return names;
-  }, [properties]);
+  }, []);
 
-  // Filter entries that match offline properties or have offline purchase flag
-  const offlineEntries = useMemo(() => {
+  // Filter entries that do NOT have a barrister assigned to their property / site location
+  const unassignedEntries = useMemo(() => {
     return allClients.filter((client: any) => {
-      // Check if entry itself is marked offline
-      if (
-        client.is_offline === true ||
-        client.is_offline === 1 ||
-        client.purchase_mode === "offline" ||
-        client.status === "offline"
-      ) {
-        return true;
-      }
-
-      // Check if the property/site location is on the offline list
       const site = (client.site_location || "").trim().toLowerCase();
-      if (site && offlinePropertyNames.has(site)) {
-        return true;
+      if (!site || site === "n/a") {
+        return true; // No site specified -> unassigned
       }
-
-      return false;
+      // Check if site name matches any assigned property
+      return !assignedPropertyNames.has(site);
     });
-  }, [allClients, offlinePropertyNames]);
+  }, [allClients, assignedPropertyNames]);
 
   // Search filter
   const filteredData = useMemo(() => {
-    if (!searchTerm.trim()) return offlineEntries;
+    if (!searchTerm.trim()) return unassignedEntries;
     const lower = searchTerm.toLowerCase();
-    return offlineEntries.filter((item: any) => {
+    return unassignedEntries.filter((item: any) => {
       const name = (item.client_name || "").toLowerCase();
       const site = (item.site_location || "").toLowerCase();
       const branch = (item.branches || "").toLowerCase();
@@ -108,7 +81,7 @@ const OfflineEntries: React.FC = () => {
         email.includes(lower)
       );
     });
-  }, [offlineEntries, searchTerm]);
+  }, [unassignedEntries, searchTerm]);
 
   // Paginated slice
   const paginatedData = useMemo(() => {
@@ -146,7 +119,7 @@ const OfflineEntries: React.FC = () => {
       ),
     },
     {
-      label: "Property Purchased",
+      label: "Site / Property",
       key: "site_location",
       render: (row) => (
         <span className="font-medium text-gray-800">
@@ -165,26 +138,17 @@ const OfflineEntries: React.FC = () => {
       render: (row) => <span>{row.number_of_plot || "1"}</span>,
     },
     {
-      label: "Land Price",
-      key: "land_price",
-      render: (row) => (
-        <span className="font-medium text-gray-900">
-          {row.land_price ? formatterUtility(Number(row.land_price)) : "-"}
-        </span>
-      ),
-    },
-    {
       label: "Submission Date",
       key: "created_at",
       render: (row) => <span>{formatISODateToCustom(row.created_at)}</span>,
     },
     {
-      label: "Property Mode",
-      key: "mode",
+      label: "Barrister Status",
+      key: "status",
       render: () => (
-        <span className="px-3 py-1 text-xs font-semibold rounded-full bg-amber-50 text-amber-700 border border-amber-200 flex items-center gap-1.5 w-max">
-          <span className="w-2 h-2 rounded-full bg-amber-500" />
-          Offline Property
+        <span className="px-3 py-1 text-xs font-semibold rounded-full bg-red-50 text-red-700 border border-red-200 flex items-center gap-1.5 w-max">
+          <span className="w-2 h-2 rounded-full bg-red-500" />
+          No Barrister Assigned
         </span>
       ),
     },
@@ -208,42 +172,51 @@ const OfflineEntries: React.FC = () => {
 
   return (
     <div className="space-y-6">
+      {/* Header */}
+      <div>
+        <h1 className="text-xl font-bold text-gray-900">
+          Unassigned Property Entries
+        </h1>
+        <p className="text-sm text-gray-500">
+          Purchase entries containing properties that currently do not have an
+          assigned barrister
+        </p>
+      </div>
+
       {/* Overview Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         <OverviewCards
-          title="Offline Property Entries"
-          value={offlineEntries.length}
-          icon={BsCloudSlash}
-          subtitle="Entries on properties marked offline"
-        />
-        <OverviewCards
-          title="Offline Properties Total"
-          value={offlinePropertyNames.size}
-          icon={BsBuildings}
-          subtitle="Distinct offline estates/properties"
+          title="Unassigned Entries"
+          value={unassignedEntries.length}
+          icon={BsShieldExclamation}
+          subtitle="Entries without barrister property assignment"
         />
         <OverviewCards
           title="Total Form Entries"
           value={allClients.length}
-          icon={BsCalendarCheck}
+          icon={BsHouseExclamation}
           subtitle="All submitted purchase forms"
+        />
+        <OverviewCards
+          title="Assignment Coverage"
+          value={
+            allClients.length > 0
+              ? `${Math.round(
+                  ((allClients.length - unassignedEntries.length) /
+                    allClients.length) *
+                    100,
+                )}%`
+              : "0%"
+          }
+          icon={BsCheckCircle}
+          subtitle="Entries assigned to barristers"
         />
       </div>
 
-      {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-xl font-bold text-gray-900">
-            Offline Property Entries
-          </h1>
-          <p className="text-sm text-gray-500">
-            Purchase entries containing properties that were bought while marked offline
-          </p>
-        </div>
-
         {/* Search */}
-        <div className="relative max-w-xs w-full">
-          <BiSearch className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 size-4" />
+        <div className="max-w-md w-full bg-secondary border border-primary/10 rounded-lg relative flex gap-2 items-center h-[45px] px-4">
+          <BiSearch className="w-4 h-4 md:w-5 md:h-5 opacity-50" />
           <input
             type="text"
             value={searchTerm}
@@ -251,8 +224,8 @@ const OfflineEntries: React.FC = () => {
               setSearchTerm(e.target.value);
               setCurrentPage(1);
             }}
-            placeholder="Search offline entries..."
-            className="w-full pl-10 pr-4 py-2 rounded-lg border border-gray-300 bg-white text-sm outline-none focus:border-primary focus:ring-1 focus:ring-primary transition"
+            placeholder="Search entries..."
+            className="w-full h-full focus:outline-none text-sm"
           />
         </div>
       </div>
@@ -276,7 +249,7 @@ const OfflineEntries: React.FC = () => {
       <ConfirmDialog
         isOpen={deleteModalOpen}
         isLoading={isDeleting}
-        title="Delete Offline Entry?"
+        title="Delete Purchase Entry?"
         message="Are you sure you want to delete this purchase entry? This action cannot be undone."
         confirmText="Yes, Delete"
         onCancel={() => {
@@ -289,4 +262,4 @@ const OfflineEntries: React.FC = () => {
   );
 };
 
-export default OfflineEntries;
+export default UnassignedEntries;

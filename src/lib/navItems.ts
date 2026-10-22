@@ -8,6 +8,7 @@ import {
   BsCloudSlash,
   BsFileEarmarkPdf,
   BsJournalText,
+  BsJournalMedical,
 } from "react-icons/bs";
 import { branchOptions } from "./branchList";
 
@@ -54,6 +55,12 @@ export const navItems: NavItem[] = [
     name: "Offline Entries",
     icon: BsCloudSlash,
     path: "/dashboard/entries/offline",
+    role: ["admin", "user"],
+  },
+  {
+    name: "Old Records",
+    icon: BsJournalMedical,
+    path: "/dashboard/old-records",
     role: ["admin", "user"],
   },
   {
