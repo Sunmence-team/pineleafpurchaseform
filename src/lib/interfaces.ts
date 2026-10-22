@@ -59,6 +59,7 @@ export interface PaginationControlProps {
   setCurrentPage: React.Dispatch<React.SetStateAction<number>>;
   setItemsPerPage: React.Dispatch<React.SetStateAction<number>>;
 }
+
 export interface StatusCardProps {
   type: "success" | "pending" | "failed";
   statusText: string | number;
@@ -129,4 +130,25 @@ export interface BulkSelectionBarProps {
   isLoading?: boolean;
   onProceed: () => void;
   onCancel: () => void;
+}
+
+export interface PropertyProp {
+  id?: string | number;
+  name: string;
+  estate_name?: string;
+  location: string;
+  price: number | string;
+  type?: string;
+  total_units?: number | string;
+  unit_sold?: number | string;
+  is_promo?: boolean;
+  discount_price?: number | string;
+  landmark?: string | string[];
+  description?: string;
+  size?: string;
+  created_at?: string;
+  is_offline?: boolean | number;
+  status?: "online" | "offline" | string;
+  barrister_id?: number | string;
+  barrister?: BarristerProp;
 }

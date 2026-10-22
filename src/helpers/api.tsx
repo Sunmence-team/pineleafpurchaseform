@@ -6,8 +6,19 @@ const API_URL = import.meta.env.VITE_API_BASE_URL;
 export const api = axios.create({
   baseURL: API_URL,
   headers: {
-    Accept: "application/json"
-  }
+    Accept: "application/json",
+  },
+});
+
+const PROPERTY_API_URL =
+  import.meta.env.VITE_PROPERTY_BASE_URL ||
+  "https://laravel.pineleafesates.com.ng";
+
+export const propertyApi = axios.create({
+  baseURL: PROPERTY_API_URL,
+  headers: {
+    Accept: "application/json",
+  },
 });
 
 const HM_API_URL = import.meta.env.VITE_HM_BASE_URL;
@@ -16,7 +27,7 @@ export const hmApi = axios.create({
   baseURL: HM_API_URL,
   headers: {
     "Content-Type": "application/json",
-    "Accept": "application/json",
+    Accept: "application/json",
   },
 });
 
@@ -39,14 +50,21 @@ export const setupInterceptors = (logout: () => void) => {
         logout();
       }
       return Promise.reject(error);
-    }
+    },
   );
-};
 
+  propertyApi.interceptors.request.use((config) => {
+    const token = localStorage.getItem("token");
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+  });
+};
 
 export function getErrorMessage(
   error: unknown,
-  fallback = "Something went wrong"
+  fallback = "Something went wrong",
 ): string {
   if (axios.isAxiosError(error)) {
     return error.response?.data?.message || error.message || fallback;
@@ -57,4 +75,4 @@ export function getErrorMessage(
   }
 
   return fallback;
-};
+}

@@ -10,6 +10,7 @@ import ViewProperty from "./pages/dashboard/hmanagement/houses/ViewProperty";
 import ManageProperties from "./pages/dashboard/hmanagement/houses/ManageProperties";
 import ChangePassword from "./pages/dashboard/settingstabs/ChangePassword";
 import Settings from "./pages/dashboard/Settings";
+import Properties from "./pages/properties/Properties";
 
 import Login from "./pages/auth/Login";
 
@@ -57,6 +58,7 @@ function App() {
         <Route element={<ProtectedRoute />}>
           <Route element={<MainLayout />}>
             <Route path="/dashboard/overview" element={<Dashboard />} />
+            <Route path="/dashboard/properties" element={<Properties />} />
             <Route
               path="/dashboard/branch/:branch"
               element={<BranchBreakDown />}
