@@ -2,11 +2,11 @@ import React, { useState, useEffect, useRef } from "react";
 import { FaBars } from "react-icons/fa6";
 import assets from "../../../../assets/assets";
 import { useNavigate, useLocation } from "react-router-dom";
-import ActionCell from "../../../../components/ActionCell";
+import ActionCell from "../../../../components/ui/ActionCell";
 import { api, getErrorMessage } from "../../../../helpers/api";
 import { toast } from "sonner";
 import { formatterUtility } from "../../../../helpers/formatterUtility";
-import { FaSearch } from "react-icons/fa";
+import { IoIosSearch } from "react-icons/io";
 import { branchOptions } from "../../../../lib/branchList";
 import ReusableTable from "../../../../utilities/ReusableTable";
 
@@ -191,7 +191,7 @@ const ManageRefunds = () => {
         <main className="flex-1 overflow-y-auto p-4 md:p-8">
           <div className="grid gap-4 mb-8 grid-cols-12 items-end">
             <div className="relative w-full md:col-span-6 h-12 border border-gray-300 rounded-lg focus-within:ring-2 focus-within:ring-secondary/50 flex gap-2 items-center px-3">
-              <FaSearch className="text-gray-400" />
+              <IoIosSearch className="text-gray-400" />
               <input
                 type="text"
                 placeholder="Search Refunds..."

@@ -1,10 +1,11 @@
-import React, { useState, useEffect, useRef } from "react";
-import { IoSearchOutline } from "react-icons/io5";
+import React from "react";
 import { Link } from "react-router-dom";
 import { PiBellSimple } from "react-icons/pi";
 import assets from "../../assets/assets";
+import { useUser } from "../../hooks/useUser";
 
 const TopNav: React.FC = () => {
+  const { role } = useUser();
   return (
     <div className="w-full pb-4 flex gap-3 items-center justify-between">
       <div className=""></div>
@@ -22,7 +23,7 @@ const TopNav: React.FC = () => {
           </div>
           <div className="leading-2">
             <h3 className="truncate m-0 font-medium text-sm">User</h3>
-            <small className="uppercase font-medium text-[10px]">Role</small>
+            <small className="uppercase font-medium text-[10px]">{role}</small>
           </div>
         </div>
       </div>

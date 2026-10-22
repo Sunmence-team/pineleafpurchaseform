@@ -1,11 +1,11 @@
 import React, { useState, useEffect, useRef } from "react";
 import assets from "../../../../../assets/assets";
 import { useNavigate, useLocation } from "react-router-dom";
-import ActionCell from "../../../../../components/ActionCell";
-import { api, getErrorMessage } from "../../../../../helpers/api";
+import ActionCell from "../../../../../components/ui/ActionCell";
+import { getErrorMessage, hmApi } from "../../../../../helpers/api";
 import { toast } from "sonner";
 import { FaBars, FaPlus } from "react-icons/fa6";
-import { FaSearch } from "react-icons/fa";
+import { IoIosSearch } from "react-icons/io";
 import {
   formatISODateToCustom,
   formatterUtility,
@@ -188,102 +188,90 @@ const ManageApplicants = () => {
   ];
 
   return (
-    <div className="flex flex-col md:flex-row min-h-screen bg-gray-100">
-      <div className="flex-1 flex flex-col overflow-hidden">
-        {/* Top Header */}
-        <header className="flex items-center bg-white shadow-sm z-10 w-full px-4 md:px-6 lg:px-8 py-4">
-          <button
-            onClick={() => setOpenMenu(true)}
-            className="mr-4 text-gray-500 hover:text-gray-700"
-          >
-            <FaBars className="w-6 h-6" />
-          </button>
-          <img src={assets.logo} alt="Logo" className="w-10 h-10" />
-          <h1 className="text-xl font-bold text-gray-900 ps-6 truncate">
-            Manage Applicants
-          </h1>
-        </header>
-
-        <main className="flex-1 overflow-y-auto p-4 md:p-8">
-          <div className="grid gap-4 mb-8 items-end grid-cols-12">
-            <div className="relative w-full col-span-12 md:col-span-6 lg:col-span-4 h-12 border border-gray-300 rounded-lg focus:ring-2 focus:ring-secondary/50 flex gap-2 items-center px-3">
-              <FaSearch className="text-gray-400" />
-              <input
-                type="text"
-                placeholder="Search Applicants..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full h-full focus:outline-none"
-              />
-            </div>
-            <div className="flex flex-col gap-2 col-span-12 md:col-span-6 lg:col-span-3">
-              <label className="text-xs font-semibold text-gray-700">
-                Status
-              </label>
-              <select
-                value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value)}
-                className="h-12 rounded-lg border border-gray-300 outline-0 px-3 text-sm"
-              >
-                <option value="">All</option>
-                <option value="pending">Pending</option>
-                <option value="approved">Approved</option>
-                <option value="rejected">Rejected</option>
-              </select>
-            </div>
-            <div className="flex flex-col gap-2 col-span-12 md:col-span-4 lg:col-span-2">
-              <label className="text-xs font-semibold text-gray-700">
-                Applied from
-              </label>
-              <input
-                type="date"
-                value={appliedFrom}
-                onChange={(e) => setAppliedFrom(e.target.value)}
-                className="h-12 rounded-lg border border-gray-300 outline-0 px-3 text-sm"
-              />
-            </div>
-            <div className="flex flex-col gap-2 col-span-12 md:col-span-4 lg:col-span-2">
-              <label className="text-xs font-semibold text-gray-700">
-                Applied to
-              </label>
-              <input
-                type="date"
-                value={appliedTo}
-                onChange={(e) => setAppliedTo(e.target.value)}
-                className="h-12 rounded-lg border border-gray-300 outline-0 px-3 text-sm"
-              />
-            </div>
-            <div className="flex items-end col-span-12 md:col-span-4 lg:col-span-1">
-              <button
-                type="button"
-                onClick={() => {
-                  setStatusFilter("");
-                  setAppliedFrom("");
-                  setAppliedTo("");
-                }}
-                className="h-12 w-full rounded-lg bg-gray-300 text-sm font-semibold text-gray-700 hover:bg-gray-200"
-              >
-                Reset filters
-              </button>
-            </div>
-          </div>
-
-          <ReusableTable
-            columns={columns}
-            data={applicants}
-            isLoading={isLoading}
-            error={error}
-            currentPage={currentPage}
-            totalPages={Math.ceil(totalItems / itemsPerPage) || 1}
-            totalItems={totalItems}
-            itemsPerPage={itemsPerPage}
-            setCurrentPage={setCurrentPage}
-            setItemsPerPage={setItemsPerPage}
-            emptyDataHeading="No Applicants found"
-            emptyDataMessage="Try adjusting your search or add a new property."
-          />
-        </main>
+    <div className="flex flex-col gap-4">
+      <div>
+        <h2 className="text-lg font-semibold">Manage Applicants</h2>
+        <p className="text-sm text-tableHeading">
+          View and manage all individuals who has shown interest in the housing
+          sheme.
+        </p>
       </div>
+
+      <div className="grid gap-4 items-end grid-cols-12">
+        <div className="relative w-full col-span-12 md:col-span-6 lg:col-span-4 h-12 bg-secondary border border-primary/10 rounded-lg flex gap-2 items-center px-3">
+          <IoIosSearch className="text-gray-400" />
+          <input
+            type="text"
+            placeholder="Search Applicants..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full h-full focus:outline-none text-sm"
+          />
+        </div>
+        <div className="flex flex-col gap-2 col-span-12 md:col-span-6 lg:col-span-3">
+          <label className="text-xs font-semibold text-gray-700">Status</label>
+          <select
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
+            className="h-12 rounded-lg bg-secondary border border-primary/10 outline-0 px-3 text-sm"
+          >
+            <option value="">All</option>
+            <option value="pending">Pending</option>
+            <option value="approved">Approved</option>
+            <option value="rejected">Rejected</option>
+          </select>
+        </div>
+        <div className="flex flex-col gap-2 col-span-12 md:col-span-4 lg:col-span-2">
+          <label className="text-xs font-semibold text-gray-700">
+            Applied from
+          </label>
+          <input
+            type="date"
+            value={appliedFrom}
+            onChange={(e) => setAppliedFrom(e.target.value)}
+            className="h-12 rounded-lg bg-secondary border border-primary/10 outline-0 px-3 text-sm"
+          />
+        </div>
+        <div className="flex flex-col gap-2 col-span-12 md:col-span-4 lg:col-span-2">
+          <label className="text-xs font-semibold text-gray-700">
+            Applied to
+          </label>
+          <input
+            type="date"
+            value={appliedTo}
+            onChange={(e) => setAppliedTo(e.target.value)}
+            className="h-12 rounded-lg bg-secondary border border-primary/10 outline-0 px-3 text-sm"
+          />
+        </div>
+        <div className="flex items-end col-span-12 md:col-span-4 lg:col-span-1">
+          <button
+            type="button"
+            onClick={() => {
+              setStatusFilter("");
+              setAppliedFrom("");
+              setAppliedTo("");
+            }}
+            className="px-2 h-12 w-full rounded-lg bg-gray-300 text-sm font-semibold text-gray-700 hover:bg-gray-200"
+          >
+            Reset filters
+          </button>
+        </div>
+      </div>
+
+      <ReusableTable
+        columns={columns}
+        data={applicants}
+        isLoading={isLoading}
+        error={error}
+        currentPage={currentPage}
+        totalPages={Math.ceil(totalItems / itemsPerPage) || 1}
+        totalItems={totalItems}
+        itemsPerPage={itemsPerPage}
+        setCurrentPage={setCurrentPage}
+        setItemsPerPage={setItemsPerPage}
+        emptyDataHeading="No Applicants found"
+        emptyDataMessage="Try adjusting your search or add a new property."
+      />
     </div>
   );
 };

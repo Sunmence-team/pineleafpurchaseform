@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useCallback } from "react";
 import axios from "axios";
 import { toast } from "sonner";
+import { api } from "../helpers/api";
 
 const ClientsContext = createContext();
 

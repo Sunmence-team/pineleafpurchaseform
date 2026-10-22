@@ -45,7 +45,7 @@ const Login = () => {
           setTimeout(() => {
             toast("Redirecting to dashboard...");
             setTimeout(() => {
-              navigate("/dashboard");
+              navigate("/dashboard/overview");
             }, 2000);
           }, 1000);
         }

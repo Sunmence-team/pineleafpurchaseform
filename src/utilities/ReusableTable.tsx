@@ -14,7 +14,6 @@ const ReusableTable = <T extends object>({
   setCurrentPage,
   hasPagination = true,
   hasSerialNo = true,
-  tableType,
   itemsPerPage,
   setItemsPerPage,
   selectable = false,
@@ -200,7 +199,6 @@ const ReusableTable = <T extends object>({
               itemsPerPage={itemsPerPage}
               setCurrentPage={setCurrentPage}
               setItemsPerPage={setItemsPerPage}
-              tableType={tableType}
             />
           )}
       </div>

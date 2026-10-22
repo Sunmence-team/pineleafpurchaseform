@@ -2,11 +2,9 @@ import { Route, Routes } from "react-router-dom";
 import Form from "./pages/Form";
 
 import { Toaster } from "sonner";
-import ViewClient from "./pages/View";
 import EditClient from "./pages/Edit";
 import Success from "./pages/Success";
 import { useEffect } from "react";
-import BranchBreakDown from "./pages/dashboard/BranchBreakDown";
 import ManageUsers from "./pages/dashboard/hmanagement/users/ManageUsers";
 import ViewUser from "./pages/dashboard/hmanagement/users/ViewUser";
 import ManageProperties from "./pages/dashboard/hmanagement/houses/ManageProperties";
@@ -21,10 +19,15 @@ import ManageFlaggedAccounts from "./pages/dashboard/hmanagement/flaggedAccounts
 import ManageRefunds from "./pages/dashboard/hmanagement/refunds/ManageRefunds";
 import ViewRefund from "./pages/dashboard/hmanagement/refunds/ViewRefund";
 import ChangePassword from "./pages/ChangePassword";
+
 import Login from "./pages/auth/Login";
+
 import MainLayout from "./layout/MainLayout";
 import ProtectedRoute from "./helpers/ProtectRoute";
+
 import Dashboard from "./pages/dashboard/Dashboard";
+import BranchBreakDown from "./pages/dashboard/BranchBreakDown";
+import ViewClient from "./pages/View";
 
 function App() {
   useEffect(() => {

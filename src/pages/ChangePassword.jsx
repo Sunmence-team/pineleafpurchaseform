@@ -57,7 +57,7 @@ const ChangePassword = () => {
         if (response.status === 200) {
           toast.success("Password changed successfully!", { id: toastId });
           formik.resetForm();
-          setTimeout(() => navigate("/dashboard"), 1500);
+          setTimeout(() => navigate("/dashboard/overview"), 1500);
         }
       } catch (err) {
         console.error("Error changing password:", err);
@@ -210,7 +210,7 @@ const ChangePassword = () => {
               <div className="flex gap-3 pt-2">
                 <button
                   type="button"
-                  onClick={() => navigate("/dashboard")}
+                  onClick={() => navigate("/dashboard/overview")}
                   className="flex-1 py-3 bg-gray-200 text-gray-800 font-semibold rounded-lg hover:bg-gray-300 transition duration-300"
                 >
                   Cancel
