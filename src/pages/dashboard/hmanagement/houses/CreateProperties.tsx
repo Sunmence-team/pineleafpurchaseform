@@ -41,7 +41,8 @@ const CreateProperties: React.FC = () => {
     no_of_bedrooms: "",
   };
 
-  const [formValues, setFormValues] = useState<PropertyFormValues>(initialValues);
+  const [formValues, setFormValues] =
+    useState<PropertyFormValues>(initialValues);
 
   useEffect(() => {
     if (isEditMode && id) {
@@ -66,7 +67,7 @@ const CreateProperties: React.FC = () => {
 
           if (data.images && Array.isArray(data.images)) {
             const fullImageUrls = data.images.map(
-              (img: string) => `${HM_STORAGE_API_URL}${img}`
+              (img: string) => `${HM_STORAGE_API_URL}${img}`,
             );
             setImagePreviews(fullImageUrls);
           }
@@ -132,7 +133,7 @@ const CreateProperties: React.FC = () => {
 
   const handleSubmit = async (
     values: PropertyFormValues,
-    { setSubmitting }: FormikHelpers<PropertyFormValues>
+    { setSubmitting }: FormikHelpers<PropertyFormValues>,
   ) => {
     const formData = new FormData();
     (Object.keys(values) as (keyof PropertyFormValues)[]).forEach((key) => {
@@ -179,7 +180,8 @@ const CreateProperties: React.FC = () => {
 
   const inputClasses =
     "mt-1 block w-full rounded-lg border border-gray-300 focus:border-primary focus:ring-1 focus:ring-primary h-[50px] px-3.5 text-sm outline-none transition duration-200 bg-white";
-  const labelClasses = "block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1";
+  const labelClasses =
+    "block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1";
 
   return (
     <div className="flex flex-col gap-6">
@@ -446,8 +448,8 @@ const CreateProperties: React.FC = () => {
                   {isSubmitting
                     ? "Saving..."
                     : isEditMode
-                    ? "Update Property"
-                    : "Create Property"}
+                      ? "Update Property"
+                      : "Create Property"}
                 </button>
               </div>
             </Form>

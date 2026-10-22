@@ -104,7 +104,7 @@ const ViewUser: React.FC = () => {
             headers: {
               Authorization: `Bearer ${token}`,
             },
-          }
+          },
         );
 
         if (response.status === 200) {
@@ -215,7 +215,7 @@ const ViewUser: React.FC = () => {
 
       <div className="space-y-10">
         {/* Profile Section */}
-        <section>
+        <section className="border-b pb-4 border-primary/10">
           <h3 className="text-lg font-bold text-gray-900 border-l-4 border-primary pl-3 mb-6">
             Personal Information
           </h3>
@@ -237,7 +237,7 @@ const ViewUser: React.FC = () => {
         </section>
 
         {/* Address Section */}
-        <section>
+        <section className="border-b pb-4 border-primary/10">
           <h3 className="text-lg font-bold text-gray-900 border-l-4 border-primary pl-3 mb-6">
             Address Details
           </h3>
@@ -252,7 +252,7 @@ const ViewUser: React.FC = () => {
         </section>
 
         {/* Next of Kin Section */}
-        <section>
+        <section className="border-b pb-4 border-primary/10">
           <h3 className="text-lg font-bold text-gray-900 border-l-4 border-primary pl-3 mb-6">
             Next of Kin
           </h3>
@@ -269,7 +269,7 @@ const ViewUser: React.FC = () => {
         </section>
 
         {/* Professional Section */}
-        <section>
+        <section className="border-b pb-4 border-primary/10">
           <h3 className="text-lg font-bold text-gray-900 border-l-4 border-primary pl-3 mb-6">
             Professional Information
           </h3>

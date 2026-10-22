@@ -71,10 +71,11 @@ const ViewPurchase: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const [purchase, setPurchase] = useState<PurchaseDetail | null>(
-    location.state || null
+    location.state || null,
   );
   const [isLoading, setIsLoading] = useState(!location.state);
-  const [paymentDetails, setPaymentDetails] = useState<TransactionDetail | null>(null);
+  const [paymentDetails, setPaymentDetails] =
+    useState<TransactionDetail | null>(null);
   const [paymentActionNote, setPaymentActionNote] = useState("");
   const [isProcessingPaymentAction, setIsProcessingPaymentAction] =
     useState(false);
@@ -119,7 +120,7 @@ const ViewPurchase: React.FC = () => {
 
   const handlePaymentAction = async (
     paymentReference: string | undefined,
-    action: "approved" | "rejected"
+    action: "approved" | "rejected",
   ) => {
     if (!paymentReference) return;
     if (action === "rejected" && !paymentActionNote.trim()) {
@@ -148,7 +149,7 @@ const ViewPurchase: React.FC = () => {
           headers: {
             Authorization: `Bearer ${token}`,
           },
-        }
+        },
       );
 
       if (response.status === 200) {
@@ -156,7 +157,7 @@ const ViewPurchase: React.FC = () => {
           response.data.message ||
             (action === "rejected"
               ? "Payment rejected successfully."
-              : "Payment verified successfully.")
+              : "Payment verified successfully."),
         );
         setPurchase(response.data?.data);
       }
@@ -172,7 +173,7 @@ const ViewPurchase: React.FC = () => {
   };
 
   const paymentProofUrl = resolveProofUrl(
-    paymentDetails?.payment_gateway_response?.proof_of_payment
+    paymentDetails?.payment_gateway_response?.proof_of_payment,
   );
   const isPaymentProofPdf = paymentProofUrl.toLowerCase().endsWith(".pdf");
 
@@ -257,7 +258,7 @@ const ViewPurchase: React.FC = () => {
         {/* Left Column: Applicant & Application Details */}
         <div className="space-y-10">
           {/* Applicant Section */}
-          <section>
+          <section className="border-b pb-4 border-primary/10">
             <SectionHeader icon={FaUser} title="Applicant Information" />
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 bg-secondary p-6 rounded-xl border border-primary/10">
               <InfoItem
@@ -280,14 +281,14 @@ const ViewPurchase: React.FC = () => {
               <InfoItem
                 label="Approved Monthly Salary"
                 value={formatterUtility(
-                  Number(purchase.user?.admin_approved_salary)
+                  Number(purchase.user?.admin_approved_salary),
                 )}
               />
             </div>
           </section>
 
           {/* Application Details Section */}
-          <section>
+          <section className="border-b pb-4 border-primary/10">
             <SectionHeader
               icon={FaFileInvoiceDollar}
               title="Application Details"
@@ -322,7 +323,7 @@ const ViewPurchase: React.FC = () => {
         </div>
 
         {/* Right Column: Property Section */}
-        <section>
+        <section className="border-b pb-4 border-primary/10">
           <SectionHeader icon={FaHome} title="Property Information" />
           <div className="bg-secondary p-6 rounded-xl border border-primary/10 space-y-6">
             {purchase.property?.images &&
@@ -339,14 +340,8 @@ const ViewPurchase: React.FC = () => {
                 </div>
               )}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-              <InfoItem
-                label="Property Name"
-                value={purchase.property?.name}
-              />
-              <InfoItem
-                label="Estate"
-                value={purchase.property?.estate_name}
-              />
+              <InfoItem label="Property Name" value={purchase.property?.name} />
+              <InfoItem label="Estate" value={purchase.property?.estate_name} />
               <InfoItem
                 label="Type"
                 value={purchase.property?.type}
@@ -382,7 +377,7 @@ const ViewPurchase: React.FC = () => {
                       </p>
                       <p className="text-xs text-gray-500">
                         {new Date(
-                          tx.paid_at || tx.created_at || ""
+                          tx.paid_at || tx.created_at || "",
                         ).toLocaleString()}
                       </p>
                       <p className="text-[10px] text-gray-400 font-mono mt-1">
@@ -526,7 +521,7 @@ const ViewPurchase: React.FC = () => {
                       onClick={() =>
                         handlePaymentAction(
                           paymentDetails.reference,
-                          "approved"
+                          "approved",
                         )
                       }
                       className="h-12 rounded-lg bg-primary text-white font-medium hover:bg-primary/90 transition duration-300 disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
@@ -539,7 +534,7 @@ const ViewPurchase: React.FC = () => {
                       onClick={() =>
                         handlePaymentAction(
                           paymentDetails.reference,
-                          "rejected"
+                          "rejected",
                         )
                       }
                       className="h-12 rounded-lg bg-red-600 text-white font-medium hover:bg-red-700 transition duration-300 disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"

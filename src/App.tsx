@@ -5,12 +5,9 @@ import { Toaster } from "sonner";
 import EditClient from "./pages/Edit";
 import Success from "./pages/Success";
 import { useEffect } from "react";
-import ViewUser from "./pages/dashboard/hmanagement/users/ViewUser";
 import CreateProperties from "./pages/dashboard/hmanagement/houses/CreateProperties";
 import ViewProperty from "./pages/dashboard/hmanagement/houses/ViewProperty";
 import ManageProperties from "./pages/dashboard/hmanagement/houses/ManageProperties";
-import ViewPurchase from "./pages/dashboard/hmanagement/purchases/ViewPurchase";
-import ViewRefund from "./pages/dashboard/hmanagement/refunds/ViewRefund";
 import ChangePassword from "./pages/ChangePassword";
 
 import Login from "./pages/auth/Login";
@@ -28,6 +25,9 @@ import ManageSubscriptions from "./pages/dashboard/hmanagement/subscriptions/Man
 import ManageFlaggedAccounts from "./pages/dashboard/hmanagement/flaggedAccounts/ManageFlaggedAccounts";
 import ManageRefunds from "./pages/dashboard/hmanagement/refunds/ManageRefunds";
 import ViewApplicant from "./pages/dashboard/hmanagement/users/applicants/ViewApplicant";
+import ViewRefund from "./pages/dashboard/hmanagement/refunds/ViewRefund";
+import ViewPurchase from "./pages/dashboard/hmanagement/purchases/ViewPurchase";
+import ViewUser from "./pages/dashboard/hmanagement/users/ViewUser";
 
 function App() {
   useEffect(() => {

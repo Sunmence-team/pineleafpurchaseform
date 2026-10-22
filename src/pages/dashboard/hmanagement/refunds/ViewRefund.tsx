@@ -36,7 +36,7 @@ const ViewRefund: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const [refund, setRefund] = useState<RefundDetail | null>(
-    location.state?.refund || null
+    location.state?.refund || null,
   );
   const [isLoading, setIsLoading] = useState(!location.state?.refund);
   const [adminNote, setAdminNote] = useState("");
@@ -86,12 +86,12 @@ const ViewRefund: React.FC = () => {
           headers: {
             Authorization: `Bearer ${token}`,
           },
-        }
+        },
       );
 
       if (response.status === 200) {
         toast.success(
-          `Refund ${status === "settled" ? "approved" : "rejected"} successfully.`
+          `Refund ${status === "settled" ? "approved" : "rejected"} successfully.`,
         );
         setRefund(response.data.data || { ...refund, status });
         setAdminNote("");
@@ -186,7 +186,7 @@ const ViewRefund: React.FC = () => {
         {/* Left Column: User & Refund Information */}
         <div className="space-y-10">
           {/* User Section */}
-          <section>
+          <section className="border-b pb-4 border-primary/10">
             <SectionHeader icon={FaUser} title="User Information" />
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 bg-secondary p-6 rounded-xl border border-primary/10">
               <InfoItem
@@ -201,7 +201,7 @@ const ViewRefund: React.FC = () => {
           </section>
 
           {/* Refund Details Section */}
-          <section>
+          <section className="border-b pb-4 border-primary/10">
             <SectionHeader icon={FaInfoCircle} title="Refund Details" />
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 bg-secondary p-6 rounded-xl border border-primary/10">
               <InfoItem
@@ -232,7 +232,7 @@ const ViewRefund: React.FC = () => {
 
         {/* Right Column: Bank Section & Actions */}
         <div className="space-y-10">
-          <section>
+          <section className="border-b pb-4 border-primary/10">
             <SectionHeader icon={FaUniversity} title="Bank Information" />
             <div className="bg-secondary p-6 rounded-xl border border-primary/10 space-y-6">
               <div className="grid grid-cols-1 gap-6">
@@ -241,10 +241,7 @@ const ViewRefund: React.FC = () => {
                   label="Account Number"
                   value={refund.account_number}
                 />
-                <InfoItem
-                  label="Account Name"
-                  value={refund.account_name}
-                />
+                <InfoItem label="Account Name" value={refund.account_name} />
               </div>
             </div>
           </section>

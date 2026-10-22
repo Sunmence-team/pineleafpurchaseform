@@ -109,7 +109,7 @@ const ViewProperty: React.FC = () => {
       <div className="space-y-10">
         {/* Images Section */}
         {property.images && property.images.length > 0 && (
-          <section>
+          <section className="border-b pb-4 border-primary/10">
             <h3 className="text-lg font-bold text-gray-900 border-l-4 border-primary pl-3 mb-6">
               Property Images
             </h3>
@@ -127,7 +127,7 @@ const ViewProperty: React.FC = () => {
         )}
 
         {/* General Information */}
-        <section>
+        <section className="border-b pb-4 border-primary/10">
           <h3 className="text-lg font-bold text-gray-900 border-l-4 border-primary pl-3 mb-6">
             General Information
           </h3>
@@ -150,7 +150,7 @@ const ViewProperty: React.FC = () => {
         </section>
 
         {/* Description Section */}
-        <section>
+        <section className="border-b pb-4 border-primary/10">
           <h3 className="text-lg font-bold text-gray-900 border-l-4 border-primary pl-3 mb-6">
             Description
           </h3>

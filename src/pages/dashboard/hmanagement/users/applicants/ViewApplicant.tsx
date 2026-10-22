@@ -176,8 +176,8 @@ const ViewApplicant = () => {
 
       <div className="space-y-10">
         {/* Profile Section */}
-        <section>
-          <h3 className="text-lg font-bold text-gray-900 border-l-4 border-secondary pl-3 mb-6">
+        <section className="border-b pb-4 border-primary/10">
+          <h3 className="text-lg font-bold text-gray-900 border-l-4 border-primary pl-3 mb-6">
             Personal Information
           </h3>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -201,8 +201,8 @@ const ViewApplicant = () => {
         </section>
 
         {/* Address Section */}
-        <section>
-          <h3 className="text-lg font-bold text-gray-900 border-l-4 border-secondary pl-3 mb-6">
+        <section className="border-b pb-4 border-primary/10">
+          <h3 className="text-lg font-bold text-gray-900 border-l-4 border-primary pl-3 mb-6">
             Address Details
           </h3>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -216,8 +216,8 @@ const ViewApplicant = () => {
         </section>
 
         {/* Next of Kin Section */}
-        <section>
-          <h3 className="text-lg font-bold text-gray-900 border-l-4 border-secondary pl-3 mb-6">
+        <section className="border-b pb-4 border-primary/10">
+          <h3 className="text-lg font-bold text-gray-900 border-l-4 border-primary pl-3 mb-6">
             Next of Kin
           </h3>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -245,8 +245,8 @@ const ViewApplicant = () => {
         </section>
 
         {/* Professional Section */}
-        <section>
-          <h3 className="text-lg font-bold text-gray-900 border-l-4 border-secondary pl-3 mb-6">
+        <section className="border-b pb-4 border-primary/10">
+          <h3 className="text-lg font-bold text-gray-900 border-l-4 border-primary pl-3 mb-6">
             Professional Information
           </h3>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -270,8 +270,8 @@ const ViewApplicant = () => {
         </section>
 
         {/* Payment Section */}
-        <section>
-          <h3 className="text-lg font-bold text-gray-900 border-l-4 border-secondary pl-3 mb-6">
+        <section className="border-b pb-4 border-primary/10">
+          <h3 className="text-lg font-bold text-gray-900 border-l-4 border-primary pl-3 mb-6">
             Payment Information
           </h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
