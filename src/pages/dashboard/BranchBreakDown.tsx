@@ -1,30 +1,56 @@
-import React, { useState, useEffect, useCallback, useRef } from "react";
-import { useParams } from "react-router-dom";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
+import { useParams, useNavigate } from "react-router-dom";
 import axios from "axios";
 import { toast } from "sonner";
 import { format, parseISO } from "date-fns";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
-import { FaSearch, FaCaretDown, FaBars } from "react-icons/fa";
+import { IoIosSearch } from "react-icons/io";
 import { TfiReload } from "react-icons/tfi";
-import assets from "../../assets/assests";
+import { IoDownloadOutline } from "react-icons/io5";
+import { HiOutlineUsers } from "react-icons/hi2";
+import { BsClockHistory } from "react-icons/bs";
+import { LuBuilding2 } from "react-icons/lu";
+
 import logo from "../../assets/logo.png";
-import SideNav from "../../components/SideNav";
-import ApplicationsList from "../../components/ApplicationsList";
-import PaginationControls from "../../components/PaginationControls";
+import ReusableTable from "../../utilities/ReusableTable";
+import ActionCell from "../../components/ui/ActionCell";
 import DownloadAllModal from "../../components/modals/DownloadAllModal";
 import BranchDownloadModal from "../../components/modals/BranchDownloadModal";
-import "react-datepicker/dist/react-datepicker.css";
 import { useClients } from "../../context/ClientsContext";
+import { parseSafeDate } from "../../helpers/formatterUtility";
 import { branchOptions } from "../../lib/branchList";
-import { parseSafeDate } from "../../utilities/formatterUtility";
+import { api } from "../../helpers/api";
+import type { TableColumnProps } from "../../lib/interfaces";
+import "react-datepicker/dist/react-datepicker.css";
+import OverviewCards from "../../components/cards/OverviewCards";
 
 const API_URL = import.meta.env.VITE_API_BASE_URL;
 
-const BranchBreakDown = () => {
-  const { branch: branchKey } = useParams();
+export interface ClientRecord {
+  id: number | string;
+  client_name?: string;
+  club_name?: string;
+  email?: string;
+  mobile_number?: string;
+  club_contact?: string;
+  branches?: string;
+  state_of_origin?: string;
+  lga?: string;
+  site_location?: string;
+  number_of_plot?: string | number;
+  plot_number?: string | number;
+  land_price?: string | number;
+  created_at?: string;
+  [key: string]: any;
+}
+
+const BranchBreakDown: React.FC = () => {
+  const { branch: branchKey } = useParams<{ branch?: string }>();
+  const navigate = useNavigate();
+
   const selectedBranch = branchOptions.find((opt) => opt.keyWord === branchKey);
-  const branchTitle = selectedBranch ? selectedBranch.title : branchKey;
+  const branchTitle = selectedBranch ? selectedBranch.title : branchKey || "";
 
   const {
     allClients,
@@ -35,45 +61,48 @@ const BranchBreakDown = () => {
     removeClient,
   } = useClients();
 
-  const [fullFilteredData, setFullFilteredData] = useState([]);
-  const [paginatedData, setPaginatedData] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [debouncedSearchQuery, setDebouncedSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
-  const [recordsPerPage] = useState(10);
-  const [openMenu, setOpenMenu] = useState(false);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
   const [showDownloadOptions, setShowDownloadOptions] = useState(false);
-  const [branchLastDownload, setBranchLastDownload] = useState(null);
+  const [branchLastDownload, setBranchLastDownload] = useState<string | null>(
+    null,
+  );
   const [loadingDownloadTime, setLoadingDownloadTime] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
 
   // For first-time download
-  const [startDate, setStartDate] = useState(null);
+  const [startDate, setStartDate] = useState<Date | null>(null);
   const [startTime, setStartTime] = useState("");
 
   // Download options & Site exclusion states
   const [downloadAllModalOpen, setDownloadAllModalOpen] = useState(false);
   const [branchDownloadModalOpen, setBranchDownloadModalOpen] = useState(false);
   const [excludedSites, setExcludedSites] = useState("");
-  const [initialDownloadData, setInitialDownloadData] = useState([]);
-  const [filteredDownloadData, setFilteredDownloadData] = useState([]);
+  const [initialDownloadData, setInitialDownloadData] = useState<
+    ClientRecord[]
+  >([]);
+  const [filteredDownloadData, setFilteredDownloadData] = useState<
+    ClientRecord[]
+  >([]);
 
   const fetchLastDownloadTime = useCallback(async () => {
     if (!branchKey) return;
     setLoadingDownloadTime(true);
     const token = localStorage.getItem("token");
     try {
-      const response = await axios.get(
+      const response = await api.get(
         `${API_URL}/api/last/download-date?name=${branchKey}`,
         { headers: { Authorization: `Bearer ${token}` } },
       );
-      if (response.data.data && response.data.data.updated_at) {
+      if (response.data?.data?.updated_at) {
         setBranchLastDownload(response.data.data.updated_at);
       } else {
         setBranchLastDownload(null);
       }
-    } catch (error) {
-      if (error.response && error.response.status === 404) {
+    } catch (error: any) {
+      if (error?.response && error.response.status === 404) {
         setBranchLastDownload(null);
       } else {
         console.error("Error fetching branch last download time:", error);
@@ -84,12 +113,10 @@ const BranchBreakDown = () => {
   }, [branchKey]);
 
   useEffect(() => {
-    // Initial fetch if not already done
     if (!allClientsFetched) {
       fetchAllClients();
     }
     fetchLastDownloadTime();
-    // Reset view state when branch changes
     setCurrentPage(1);
     setSearchQuery("");
     setDebouncedSearchQuery("");
@@ -99,46 +126,47 @@ const BranchBreakDown = () => {
     const handler = setTimeout(() => {
       setDebouncedSearchQuery(searchQuery);
       setCurrentPage(1);
-    }, 500);
+    }, 400);
     return () => clearTimeout(handler);
   }, [searchQuery]);
 
-  const isBranchMatch = (b1, b2) => {
+  const isBranchMatch = (b1?: string, b2?: string) => {
     if (!b1 || !b2) return false;
     return String(b1).trim().toLowerCase() === String(b2).trim().toLowerCase();
   };
 
-  useEffect(() => {
-    let data = allClients.filter((item) =>
+  const fullFilteredData = useMemo(() => {
+    let data: ClientRecord[] = (allClients || []).filter((item: ClientRecord) =>
       isBranchMatch(item.branches, branchTitle),
     );
 
     if (debouncedSearchQuery) {
       const query = debouncedSearchQuery.toLowerCase();
       data = data.filter(
-        (item) =>
+        (item: ClientRecord) =>
           (item.client_name &&
             item.client_name.toLowerCase().includes(query)) ||
+          (item.club_name && item.club_name.toLowerCase().includes(query)) ||
           (item.email && item.email.toLowerCase().includes(query)) ||
-          (item.mobile_number && item.mobile_number.includes(query)),
+          (item.mobile_number && item.mobile_number.includes(query)) ||
+          (item.site_location &&
+            item.site_location.toLowerCase().includes(query)),
       );
     }
 
-    setFullFilteredData(data);
+    return data;
   }, [allClients, branchTitle, debouncedSearchQuery]);
 
-  useEffect(() => {
-    const startIndex = (currentPage - 1) * recordsPerPage;
-    const paginated = fullFilteredData.slice(
-      startIndex,
-      startIndex + recordsPerPage,
-    );
-    setPaginatedData(paginated);
-  }, [fullFilteredData, currentPage, recordsPerPage]);
+  const totalPages = Math.ceil(fullFilteredData.length / itemsPerPage) || 1;
+
+  const paginatedData = useMemo(() => {
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    return fullFilteredData.slice(startIndex, startIndex + itemsPerPage);
+  }, [fullFilteredData, currentPage, itemsPerPage]);
 
   useEffect(() => {
     if (branchDownloadModalOpen) {
-      let filterFrom;
+      let filterFrom: Date | null = null;
 
       if (branchLastDownload) {
         filterFrom = parseSafeDate(branchLastDownload);
@@ -155,7 +183,7 @@ const BranchBreakDown = () => {
         }
       }
 
-      const data = allClients.filter((item) => {
+      const data = (allClients || []).filter((item: ClientRecord) => {
         if (!isBranchMatch(item.branches, branchTitle)) return false;
         const createdDate = parseSafeDate(item.created_at);
         if (!createdDate || !filterFrom) return false;
@@ -203,10 +231,10 @@ const BranchBreakDown = () => {
     };
   }, [downloadAllModalOpen, branchDownloadModalOpen]);
 
-  const updateDownloadTime = async (downloadTime) => {
+  const updateDownloadTime = async (downloadTime: Date) => {
     const token = localStorage.getItem("token");
     try {
-      await axios.put(
+      await api.put(
         `${API_URL}/api/last/download-date`,
         { name: branchKey, date: format(downloadTime, "yyyy-MM-dd HH:mm:ss") },
         { headers: { Authorization: `Bearer ${token}` } },
@@ -217,7 +245,7 @@ const BranchBreakDown = () => {
     }
   };
 
-  const generateCSV = (data, filename) => {
+  const generateCSV = (data: ClientRecord[], filename: string) => {
     const headers = [
       "Client Name",
       "State of Origin",
@@ -231,7 +259,7 @@ const BranchBreakDown = () => {
 
     const rows = data.map((item) =>
       [
-        item.client_name || "",
+        item.client_name || item.club_name || "",
         item.state_of_origin || "",
         item.lga || "",
         item.site_location || "",
@@ -256,11 +284,11 @@ const BranchBreakDown = () => {
   };
 
   const generatePDF = (
-    data,
-    filename,
-    title,
-    filterFrom = null,
-    downloadStartTime = null,
+    data: ClientRecord[],
+    filename: string,
+    title: string,
+    filterFrom: Date | null = null,
+    downloadStartTime: Date | null = null,
   ) => {
     const pdf = new jsPDF({
       orientation: "portrait",
@@ -304,13 +332,13 @@ const BranchBreakDown = () => {
     ];
     const tableBody = data.map((item, index) => [
       index + 1,
-      item.client_name || "N/A",
+      item.client_name || item.club_name || "N/A",
       item.state_of_origin || "N/A",
       item.lga || "N/A",
       item.site_location || "N/A",
       item.number_of_plot || "N/A",
       item.plot_number || "N/A",
-      item.land_price ? item.land_price.toLocaleString("en-NG") : "N/A",
+      item.land_price ? Number(item.land_price).toLocaleString("en-NG") : "N/A",
       item.branches || "N/A",
     ]);
 
@@ -359,9 +387,9 @@ const BranchBreakDown = () => {
 
   const handleDownloadAllCSV = () => {
     const data = [...fullFilteredData].sort((a, b) => {
-      const dateA = parseSafeDate(a.created_at) || new Date(0);
-      const dateB = parseSafeDate(b.created_at) || new Date(0);
-      return dateB - dateA;
+      const timeA = parseSafeDate(a.created_at)?.getTime() || 0;
+      const timeB = parseSafeDate(b.created_at)?.getTime() || 0;
+      return timeB - timeA;
     });
 
     if (data.length === 0) return toast.error("No records to download");
@@ -374,9 +402,9 @@ const BranchBreakDown = () => {
 
   const handleDownloadAllPDF = () => {
     const data = [...fullFilteredData].sort((a, b) => {
-      const dateA = parseSafeDate(a.created_at) || new Date(0);
-      const dateB = parseSafeDate(b.created_at) || new Date(0);
-      return dateB - dateA;
+      const timeA = parseSafeDate(a.created_at)?.getTime() || 0;
+      const timeB = parseSafeDate(b.created_at)?.getTime() || 0;
+      return timeB - timeA;
     });
 
     if (data.length === 0) return toast.error("No records to download");
@@ -390,9 +418,9 @@ const BranchBreakDown = () => {
   const handleDownloadNewCSV = () => {
     const downloadStartTime = new Date();
     const data = [...filteredDownloadData].sort((a, b) => {
-      const dateA = parseSafeDate(a.created_at) || new Date(0);
-      const dateB = parseSafeDate(b.created_at) || new Date(0);
-      return dateB - dateA;
+      const timeA = parseSafeDate(a.created_at)?.getTime() || 0;
+      const timeB = parseSafeDate(b.created_at)?.getTime() || 0;
+      return timeB - timeA;
     });
 
     if (data.length === 0) return toast.error("No new records to download");
@@ -407,14 +435,14 @@ const BranchBreakDown = () => {
   const handleDownloadNewPDF = () => {
     const downloadStartTime = new Date();
     const data = [...filteredDownloadData].sort((a, b) => {
-      const dateA = parseSafeDate(a.created_at) || new Date(0);
-      const dateB = parseSafeDate(b.created_at) || new Date(0);
-      return dateB - dateA;
+      const timeA = parseSafeDate(a.created_at)?.getTime() || 0;
+      const timeB = parseSafeDate(b.created_at)?.getTime() || 0;
+      return timeB - timeA;
     });
 
     if (data.length === 0) return toast.error("No new records to download");
 
-    let filterFrom;
+    let filterFrom: Date | null = null;
     if (branchLastDownload) {
       filterFrom = parseSafeDate(branchLastDownload);
     } else {
@@ -440,9 +468,13 @@ const BranchBreakDown = () => {
     toast.success("PDF downloaded successfully!");
   };
 
-  const handleDelete = async (id) => {
+  const handleDelete = async (id: number | string) => {
     if (!id) return;
-    if (confirm("Are you sure to delete this entry?. This action is irreversible.")) {
+    if (
+      confirm(
+        "Are you sure you want to delete this entry? This action is irreversible.",
+      )
+    ) {
       const toastId = toast.loading("Deleting entry...");
       setIsDeleting(true);
       try {
@@ -452,14 +484,14 @@ const BranchBreakDown = () => {
           setIsDeleting(false);
           return;
         }
-  
-        const response = await axios.delete(`${API_URL}/api/applications/${id}`, {
+
+        const response = await api.delete(`${API_URL}/api/applications/${id}`, {
           headers: {
             Authorization: `Bearer ${token}`,
             "Content-Type": "application/json",
           },
         });
-  
+
         if (response.status === 200 || response.status === 204) {
           toast.success("Client entry deleted successfully!", { id: toastId });
           removeClient(id);
@@ -471,7 +503,7 @@ const BranchBreakDown = () => {
             id: toastId,
           });
         }
-      } catch (error) {
+      } catch (error: any) {
         console.error("Error deleting client:", error);
         toast.error(
           "Failed to delete client: " +
@@ -479,7 +511,7 @@ const BranchBreakDown = () => {
           { id: toastId },
         );
         if (axios.isAxiosError(error) && error.response?.status === 401) {
-          toast.info("Session expired!. Logging out...");
+          toast.info("Session expired! Logging out...");
           setTimeout(() => localStorage.removeItem("token"), 500);
         }
       } finally {
@@ -488,178 +520,237 @@ const BranchBreakDown = () => {
     }
   };
 
-  const totalPages = Math.ceil(fullFilteredData.length / recordsPerPage);
+  // Define Table Columns for ReusableTable
+  const columns: TableColumnProps<ClientRecord>[] = [
+    {
+      label: "Client Name",
+      key: "client_name",
+      render: (item) => (
+        <span className="font-medium text-tableData">
+          {item.client_name ?? item.club_name ?? "-"}
+        </span>
+      ),
+    },
+    {
+      label: "Email",
+      key: "email",
+      render: (item) => (
+        <span className="text-gray-600">{item.email ?? "-"}</span>
+      ),
+    },
+    {
+      label: "Phone Number",
+      key: "mobile_number",
+      render: (item) => (
+        <span>{item.mobile_number ?? item.club_contact ?? "-"}</span>
+      ),
+    },
+    {
+      label: "State / LGA",
+      key: "state_of_origin",
+      render: (item) => (
+        <span>
+          {item.state_of_origin || item.lga
+            ? `${item.state_of_origin || "-"} / ${item.lga || "-"}`
+            : "-"}
+        </span>
+      ),
+    },
+    {
+      label: "Property Name",
+      key: "site_location",
+      render: (item) => (
+        <span
+          className="max-w-[200px] truncate block"
+          title={item.site_location}
+        >
+          {item.site_location ?? "-"}
+        </span>
+      ),
+    },
+    {
+      label: "Plots",
+      key: "number_of_plot",
+      render: (item) => (
+        <span>
+          {item.number_of_plot ? `${item.number_of_plot} plot(s)` : "-"}
+        </span>
+      ),
+    },
+    {
+      label: "Plot No(s)",
+      key: "plot_number",
+      render: (item) => <span>{item.plot_number ?? "-"}</span>,
+    },
+    {
+      label: "Land Price",
+      key: "land_price",
+      render: (item) => (
+        <span className="font-medium">
+          {item.land_price
+            ? `₦${Number(item.land_price).toLocaleString("en-NG")}`
+            : "-"}
+        </span>
+      ),
+    },
+    {
+      label: "Action",
+      key: "action",
+      tableHeadingClassName: "text-center",
+      render: (item) => (
+        <ActionCell
+          rowId={item.id}
+          canView
+          onView={(id) => navigate(`/view-client/${id}`)}
+          onEdit={(id) => navigate(`/edit-client/${id}`)}
+          onDelete={handleDelete}
+        />
+      ),
+    },
+  ];
+
+  const isLoading = loadingAllClients || loadingApplications;
 
   return (
-    <div className="flex flex-col md:flex-row min-h-screen bg-gray-100">
-      <SideNav
-        openMenu={openMenu}
-        setOpenMenu={setOpenMenu}
-        branches={branchOptions}
-      />
-
-      <div className="flex-1 flex flex-col overflow-hidden">
-        {/* Top Header */}
-        <header className="flex items-center bg-white shadow-sm z-10 w-full px-4 md:px-6 lg:px-8 py-4">
-          <button
-            onClick={() => setOpenMenu(true)}
-            className="mr-4 text-gray-500 hover:text-gray-700"
-          >
-            <FaBars className="w-6 h-6" />
-          </button>
-          <img src={assets.logo} alt="Logo" className="w-10 h-10" />
-          <h1 className="text-xl font-bold text-gray-900 ps-6 truncate">
+    <div className="space-y-6">
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900 tracking-tight">
             {branchTitle} Branch
           </h1>
-        </header>
+          <p className="text-sm text-gray-500 mt-1">
+            Manage and checkout all applications in this branch
+          </p>
+        </div>
 
-        <main className="flex-1 overflow-y-auto p-4 md:p-8">
-          <div className="w-full space-y-6">
-            {(loadingAllClients || loadingApplications) && (
-              <div className="flex justify-center items-center min-h-[200px]">
-                <div className="animate-spin rounded-full h-12 w-12 border-4 border-secClr border-t-transparent"></div>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => fetchAllClients(true)}
+            className="p-2.5 bg-white border border-gray-200 text-gray-600 rounded-lg hover:bg-gray-50 hover:text-gray-900 transition shadow-xs"
+            title="Refresh Data"
+          >
+            <TfiReload className={isLoading ? "animate-spin" : ""} size={16} />
+          </button>
+
+          {/* Download Dropdown */}
+          <div className="relative">
+            <button
+              onClick={() => setShowDownloadOptions(!showDownloadOptions)}
+              className="px-4 py-2.5 bg-primary text-white text-sm font-semibold rounded-lg hover:bg-primary/95 flex items-center gap-2 shadow-xs transition"
+            >
+              <IoDownloadOutline size={18} />
+              <span>Download</span>
+            </button>
+
+            {showDownloadOptions && (
+              <div className="absolute right-0 mt-2 min-w-[210px] bg-white border border-gray-100 rounded-lg shadow-xl z-50 text-xs font-medium overflow-hidden animate-in fade-in zoom-in-95">
+                <button
+                  onClick={() => {
+                    fetchAllClients(true);
+                    setShowDownloadOptions(false);
+                    setBranchDownloadModalOpen(true);
+                  }}
+                  className="w-full text-left px-4 py-3 border-b border-gray-100 hover:bg-gray-50 text-gray-700 transition"
+                >
+                  Download new records
+                </button>
+                <button
+                  onClick={() => {
+                    fetchAllClients(true);
+                    setShowDownloadOptions(false);
+                    setDownloadAllModalOpen(true);
+                  }}
+                  className="w-full text-left px-4 py-3 hover:bg-gray-50 text-gray-700 transition"
+                >
+                  Download all records
+                </button>
               </div>
             )}
-
-            {!(loadingAllClients || loadingApplications) && (
-              <>
-                {/* Action Bar */}
-                <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-200">
-                  <div className="flex flex-col md:flex-row gap-4 justify-between items-center">
-                    <div className="relative w-full md:w-96">
-                      <input
-                        type="text"
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                        placeholder="Search in this branch..."
-                        className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-secClr outline-none"
-                      />
-                      <FaSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-                    </div>
-
-                    <div className="flex flex-wrap gap-2 w-full md:w-auto">
-                      <button
-                        onClick={() => fetchAllClients(true)}
-                        className="w-12 h-12 flex items-center justify-center bg-gray-100 text-gray-600 rounded-lg hover:bg-gray-200 transition"
-                        title="Refresh Data"
-                      >
-                        <TfiReload
-                          className={loadingAllClients ? "animate-spin" : ""}
-                        />
-                      </button>
-
-                      <div className="relative flex-1 md:flex-none">
-                        <button
-                          onClick={() =>
-                            setShowDownloadOptions(!showDownloadOptions)
-                          }
-                          className="w-full md:w-auto px-6 py-2.5 bg-secClr text-white font-semibold rounded-lg hover:bg-secClr/90 flex items-center justify-center gap-2"
-                        >
-                          Download <FaCaretDown />
-                        </button>
-
-                        {showDownloadOptions && (
-                          <div className="absolute right-0 mt-2 min-w-[200px] bg-white border border-gray-200 rounded-lg shadow-xl z-50 text-sm font-semibold overflow-hidden">
-                            <button
-                              onClick={() => {
-                                fetchAllClients(true);
-                                setShowDownloadOptions(false);
-                                setBranchDownloadModalOpen(true);
-                              }}
-                              className="w-full text-left p-3 border-b border-gray-100 hover:bg-gray-50 transition"
-                            >
-                              Download new records
-                            </button>
-                            <button
-                              onClick={() => {
-                                fetchAllClients(true);
-                                setShowDownloadOptions(false);
-                                setDownloadAllModalOpen(true);
-                              }}
-                              className="w-full text-left p-3 hover:bg-gray-50 transition"
-                            >
-                              Download all records
-                            </button>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Stats Summary */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div className="bg-white p-6 rounded-xl shadow-sm border border-secClr/20">
-                    <p className="text-sm text-gray-500 font-medium">
-                      Total Entries
-                    </p>
-                    <h3 className="text-2xl font-bold">
-                      {fullFilteredData.length}
-                    </h3>
-                  </div>
-                  <div className="bg-white p-6 rounded-xl shadow-sm border border-secClr/20">
-                    <p className="text-sm text-gray-500 font-medium">
-                      Last Download
-                    </p>
-                    <h3 className="text-lg font-bold">
-                      {loadingDownloadTime
-                        ? "Loading..."
-                        : branchLastDownload
-                          ? format(
-                              parseISO(branchLastDownload),
-                              "dd MMM yyyy, HH:mm",
-                            )
-                          : "Never"}
-                    </h3>
-                  </div>
-                  <div className="bg-white p-6 rounded-xl shadow-sm border border-secClr/20">
-                    <p className="text-sm text-gray-500 font-medium">
-                      Selected Branch
-                    </p>
-                    <h3 className="text-lg font-bold">{branchTitle}</h3>
-                  </div>
-                </div>
-
-                {/* List */}
-                <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-                  <ApplicationsList
-                    filteredData={paginatedData}
-                    currentPage={currentPage}
-                    recordsPerPage={recordsPerPage}
-                    isDeleting={isDeleting}
-                    handleDelete={handleDelete}
-                  />
-                </div>
-
-                {/* Pagination */}
-                <PaginationControls
-                  currentPage={currentPage}
-                  totalPages={totalPages}
-                  setCurrentPage={setCurrentPage}
-                  totalRecords={fullFilteredData.length}
-                  filteredData={paginatedData}
-                  getPageNumbers={() => {
-                    const pages = [];
-                    if (totalPages <= 3) {
-                      for (let i = 1; i <= totalPages; i++) pages.push(i);
-                    } else if (currentPage === 1) {
-                      pages.push(1, 2, 3);
-                    } else if (currentPage === totalPages) {
-                      pages.push(totalPages - 2, totalPages - 1, totalPages);
-                    } else {
-                      pages.push(currentPage - 1, currentPage, currentPage + 1);
-                    }
-                    return pages;
-                  }}
-                />
-              </>
-            )}
           </div>
-        </main>
+        </div>
       </div>
 
+      {/* Top Stat Overview Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <OverviewCards
+          title="Total Applications"
+          value={fullFilteredData.length}
+          icon={HiOutlineUsers}
+          subtitle="All active submissions"
+        />
+        <OverviewCards
+          title="Last Download"
+          value={
+            loadingDownloadTime
+              ? "Loading..."
+              : branchLastDownload
+                ? format(parseISO(branchLastDownload), "dd MMM yyyy, HH:mm")
+                : "Never"
+          }
+          icon={BsClockHistory}
+          subtitle={
+            branchLastDownload
+              ? "Timestamp of latest export"
+              : "No export recorded"
+          }
+        />
+        <OverviewCards
+          title="Current Branch"
+          value={branchTitle}
+          icon={LuBuilding2}
+          subtitle="Selected branch portal"
+        />
+      </div>
+
+      {/* Main Content Area: Search Bar + Table */}
+      <div className="space-y-5">
+        {/* Search bar inside container */}
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div className="w-full max-w-md bg-secondary border border-primary/10 rounded-md relative flex gap-2 items-center h-[45px] px-4">
+            <IoIosSearch className="w-4 h-4 md:w-5 md:h-5" />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search by client name, email, property..."
+              className="w-full h-full focus:outline-none text-sm md:text-base"
+            />
+          </div>
+
+          <div className="text-xs text-gray-500">
+            Showing{" "}
+            <span className="font-semibold text-gray-800">
+              {paginatedData.length}
+            </span>{" "}
+            of{" "}
+            <span className="font-semibold text-gray-800">
+              {fullFilteredData.length}
+            </span>{" "}
+            records
+          </div>
+        </div>
+
+        {/* Reusable Table Component */}
+        <ReusableTable<ClientRecord>
+          columns={columns}
+          data={paginatedData}
+          isLoading={isLoading}
+          error={null}
+          hasPagination={true}
+          hasSerialNo={true}
+          currentPage={currentPage}
+          totalPages={totalPages}
+          totalItems={fullFilteredData.length}
+          itemsPerPage={itemsPerPage}
+          setCurrentPage={setCurrentPage}
+          setItemsPerPage={setItemsPerPage}
+          getRowId={(item) => item.id}
+        />
+      </div>
+
+      {/* Modals */}
       <DownloadAllModal
-        isLoadingAllclients={loadingAllClients || loadingApplications}
+        isLoadingAllclients={isLoading}
         isOpen={downloadAllModalOpen}
         onClose={() => setDownloadAllModalOpen(false)}
         onDownloadCSV={handleDownloadAllCSV}
@@ -669,7 +760,7 @@ const BranchBreakDown = () => {
       <BranchDownloadModal
         isOpen={branchDownloadModalOpen}
         onClose={onModalCloseCleanup}
-        loading={loadingAllClients || loadingApplications}
+        loading={isLoading}
         lastDownloadTime={branchLastDownload}
         startDate={startDate}
         setStartDate={setStartDate}

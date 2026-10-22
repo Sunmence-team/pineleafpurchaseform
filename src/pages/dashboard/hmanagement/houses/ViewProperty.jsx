@@ -2,8 +2,8 @@ import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { FaArrowLeft } from "react-icons/fa6";
 import { toast } from "sonner";
-import assets from "../../../../assets/assests";
-import api, { getErrorMessage } from "../../../../utilities/api";
+import assets from "../../../../assets/assets";
+import { api, getErrorMessage } from "../../../../helpers/api";
 
 const HM_STORAGE_API_URL = import.meta.env.VITE_HM_STORAGE_BASE_URL;
 
@@ -17,7 +17,7 @@ const ViewProperty = () => {
   useEffect(() => {
     const fetchProperty = async () => {
       try {
-        const response = await api.get(`/api/admin/properties/${id}`, {
+        const response = await hmApi.get(`/api/admin/properties/${id}`, {
           headers: {
             Authorization: `Bearer ${token}`,
           },
@@ -36,7 +36,7 @@ const ViewProperty = () => {
   if (isLoading) {
     return (
       <div className="flex justify-center items-center min-h-screen bg-gray-50">
-        <div className="animate-spin rounded-full h-12 w-12 border-4 border-t-transparent border-primary"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-4 border-t-transparent border-secondary"></div>
       </div>
     );
   }
@@ -49,7 +49,7 @@ const ViewProperty = () => {
         </p>
         <button
           onClick={() => navigate("/dashboard/manage/properties")}
-          className="px-6 py-2 bg-primary text-white rounded-lg hover:bg-pryClr"
+          className="px-6 py-2 bg-secondary text-white rounded-lg hover:bg-secondary"
         >
           Back to Properties
         </button>
@@ -87,7 +87,7 @@ const ViewProperty = () => {
           {/* Images Section */}
           {property.images && property.images.length > 0 && (
             <section>
-              <h3 className="text-lg font-bold text-gray-900 border-l-4 border-primary pl-3 mb-6">
+              <h3 className="text-lg font-bold text-gray-900 border-l-4 border-secondary pl-3 mb-6">
                 Property Images
               </h3>
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
@@ -105,7 +105,7 @@ const ViewProperty = () => {
 
           {/* General Information */}
           <section>
-            <h3 className="text-lg font-bold text-gray-900 border-l-4 border-primary pl-3 mb-6">
+            <h3 className="text-lg font-bold text-gray-900 border-l-4 border-secondary pl-3 mb-6">
               General Information
             </h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
@@ -128,7 +128,7 @@ const ViewProperty = () => {
 
           {/* Description Section */}
           <section>
-            <h3 className="text-lg font-bold text-gray-900 border-l-4 border-primary pl-3 mb-6">
+            <h3 className="text-lg font-bold text-gray-900 border-l-4 border-secondary pl-3 mb-6">
               Description
             </h3>
             <div className="bg-gray-50 p-4 rounded-xl border border-gray-100">
@@ -143,7 +143,7 @@ const ViewProperty = () => {
         <div className="border-t border-gray-100 pt-8 mt-10 flex justify-end gap-4">
           <button
             onClick={() => navigate(`/dashboard/manage/properties/${id}/edit`)}
-            className="px-6 py-2 bg-primary text-white font-semibold rounded-lg hover:bg-pryClr transition"
+            className="px-6 py-2 bg-secondary text-white font-semibold rounded-lg hover:bg-secondary transition"
           >
             Edit Property
           </button>

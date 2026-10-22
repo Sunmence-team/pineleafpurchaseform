@@ -5,8 +5,9 @@ import axios from "axios";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { useReactToPrint } from "react-to-print";
-import assets from "../assets/assests";
-import { formatterUtility } from "../utilities/formatterUtility";
+import assets from "../assets/assets";
+import { formatterUtility } from "../helpers/formatterUtility";
+import { api } from "../helpers/api";
 
 const API_URL = import.meta.env.VITE_API_BASE_URL;
 const STORAGE_URL = "https://forms.pineleafestates.com/back/storage/app/public";
@@ -15,7 +16,7 @@ const ViewClient = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const [client, setClient] = useState(null);
-  const componentRef = useRef();
+  const componentRef = useRef(null);
 
   useEffect(() => {
     const fetchClient = async () => {
@@ -27,7 +28,7 @@ const ViewClient = () => {
           return;
         }
 
-        const response = await axios.post(
+        const response = await api.post(
           `${API_URL}/api/applications/${id}`,
           {},
           {
@@ -112,7 +113,8 @@ const ViewClient = () => {
   const handlePrint = useReactToPrint({
     contentRef: componentRef,
     documentTitle: client ? `${client.client_name}_details` : "Client_Details",
-    removeAfterPrint: true,
+    // removeAfterPrint: true,
+    preserveAfterPrint: false,
     pageStyle: `
       @page { size: A4; margin: 15mm; }
       @media print {
@@ -149,19 +151,19 @@ const ViewClient = () => {
   if (!client) {
     return (
       <div className="flex justify-center items-center min-h-screen bg-gray-50">
-        <div className="animate-spin rounded-full h-12 w-12 md:h-16 md:w-16 border-4 border-t-transparent border-secClr"></div>
+        <div className="animate-spin rounded-full h-12 w-12 md:h-16 md:w-16 border-4 border-t-transparent border-primary"></div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col p-4 md:p-6 md:p-8">
-      <div className="mx-auto bg-white rounded-2xl shadow-xl p-4 md:p-6 md:p-8 w-full max-w-4xl">
+    <div className="min-h-screen bg-gray-50 flex flex-col p-4 md:p-8">
+      <div className="mx-auto bg-white rounded-2xl shadow-xl p-4 md:p-8 w-full max-w-4xl">
         {/* Header */}
         <div className="flex flex-col md:flex-row md:justify-between md:items-center border-b border-gray-200 pb-4 md:pb-6 mb-6 md:mb-8 no-print gap-4">
           <div className="flex items-center gap-3 md:gap-4">
             <button
-              onClick={() => navigate("/dashboard")}
+              onClick={() => navigate("/dashboard/overview")}
               className="p-2 md:p-3 rounded-full bg-gray-100 hover:bg-gray-200 transition-colors duration-200"
               aria-label="Back to Dashboard"
             >
@@ -178,7 +180,7 @@ const ViewClient = () => {
           </div>
           <button
             onClick={handlePrint}
-            className="flex items-center justify-center px-4 py-2 md:px-5 md:py-3 bg-secClr text-white font-semibold rounded-lg hover:bg-secClr transition-colors duration-200 w-full md:w-auto"
+            className="flex items-center justify-center px-4 py-2 md:px-5 md:py-3 bg-primary text-white font-semibold rounded-lg hover:bg-primary transition-colors duration-200 w-full md:w-auto"
           >
             <FaDownload className="mr-2 text-sm md:text-base" />
             Download PDF
@@ -213,7 +215,7 @@ const ViewClient = () => {
               </>
             ) : (
               <div className="space-y-2 w-full">
-                <div className="inline-block px-3 py-1 bg-secClr/10 text-secClr text-xs font-semibold rounded-full uppercase tracking-wider">
+                <div className="inline-block px-3 py-1 bg-primary/10 text-primary text-xs font-semibold rounded-full uppercase tracking-wider">
                   {client.purchase_type}
                 </div>
                 <h2 className="text-2xl md:text-3xl font-bold text-gray-900 capitalize">
@@ -229,7 +231,7 @@ const ViewClient = () => {
           {/* Personal Information / Club Details dynamic block */}
           {client.purchase_type === "individual" ? (
             <div>
-              <h3 className="text-lg md:text-2xl font-semibold text-secClr border-b border-gray-200 py-3 mb-6">
+              <h3 className="text-lg md:text-2xl font-semibold text-primary border-b border-gray-200 py-3 mb-6">
                 Personal Information
               </h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
@@ -271,7 +273,7 @@ const ViewClient = () => {
           ) : (
             <div className="space-y-6">
               <div>
-                <h3 className="text-lg md:text-2xl font-semibold text-secClr border-b border-gray-200 py-3 mb-6">
+                <h3 className="text-lg md:text-2xl font-semibold text-primary border-b border-gray-200 py-3 mb-6">
                   {client.purchase_type === "club"
                     ? "Club Details"
                     : "Association Details"}
@@ -304,7 +306,7 @@ const ViewClient = () => {
               </div>
 
               <div>
-                <h3 className="text-lg md:text-2xl font-semibold text-secClr border-b border-gray-200 py-3 mb-4">
+                <h3 className="text-lg md:text-2xl font-semibold text-primary border-b border-gray-200 py-3 mb-4">
                   Registered Members
                 </h3>
                 {client.club_members && client.club_members.length > 0 ? (
@@ -323,7 +325,7 @@ const ViewClient = () => {
                             <td className="py-3 px-4 text-gray-500 font-medium">
                               {index + 1}
                             </td>
-                            <td className="py-3 px-4 font-semibold text-secClr">
+                            <td className="py-3 px-4 font-semibold text-primary">
                               {member.title || member.Title || ""}
                             </td>
                             <td className="py-3 px-4">
@@ -352,7 +354,7 @@ const ViewClient = () => {
           {client.purchase_type === "individual" &&
             (client.first_name_of_spouse || client.last_name_of_spouse) && (
               <div>
-                <h3 className="text-lg md:text-2xl font-semibold text-secClr border-b border-gray-200 py-3 mb-6">
+                <h3 className="text-lg md:text-2xl font-semibold text-primary border-b border-gray-200 py-3 mb-6">
                   Spouse Information
                 </h3>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
@@ -375,7 +377,7 @@ const ViewClient = () => {
           {/* Contact Info */}
           {client.purchase_type === "individual" && (
             <div>
-              <h3 className="text-lg md:text-2xl font-semibold text-secClr border-b border-gray-200 py-3 mb-6">
+              <h3 className="text-lg md:text-2xl font-semibold text-primary border-b border-gray-200 py-3 mb-6">
                 Contact Information
               </h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
@@ -392,7 +394,7 @@ const ViewClient = () => {
 
           {/* Next of Kin / Representative Details */}
           <div>
-            <h3 className="text-lg md:text-2xl font-semibold text-secClr border-b border-gray-200 py-3 mb-6">
+            <h3 className="text-lg md:text-2xl font-semibold text-primary border-b border-gray-200 py-3 mb-6">
               {client.purchase_type === "individual"
                 ? "Next of Kin"
                 : "Representative / Trustee Details"}
@@ -435,7 +437,7 @@ const ViewClient = () => {
 
           {/* Land Details */}
           <div>
-            <h3 className="text-lg md:text-2xl font-semibold text-secClr border-b border-gray-200 py-3 mb-6">
+            <h3 className="text-lg md:text-2xl font-semibold text-primary border-b border-gray-200 py-3 mb-6">
               Land Details
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
@@ -463,7 +465,7 @@ const ViewClient = () => {
 
           {/* Declaration */}
           <div>
-            <h3 className="text-lg md:text-2xl font-semibold text-secClr border-b border-gray-200 py-3 mb-6">
+            <h3 className="text-lg md:text-2xl font-semibold text-primary border-b border-gray-200 py-3 mb-6">
               Declaration
             </h3>
             <div className="flex flex-col md:flex-row justify-between gap-4 md:gap-6">
@@ -495,7 +497,7 @@ const ViewClient = () => {
           {/* Referral */}
           {client.referral_name && (
             <div>
-              <h3 className="text-lg md:text-2xl font-semibold text-secClr border-b border-gray-200 py-3 mb-6">
+              <h3 className="text-lg md:text-2xl font-semibold text-primary border-b border-gray-200 py-3 mb-6">
                 Referral
               </h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
@@ -515,7 +517,7 @@ const ViewClient = () => {
         {/* Footer */}
         <div className="border-t border-gray-200 pt-4 md:pt-6 mt-6 md:mt-8 flex justify-end no-print">
           <button
-            onClick={() => navigate("/dashboard")}
+            onClick={() => navigate("/dashboard/overview")}
             className="px-4 py-2 md:px-5 md:py-3 bg-gray-200 text-gray-800 font-semibold rounded-lg hover:bg-gray-300 transition-colors duration-200 w-full md:w-auto"
           >
             Back to Dashboard

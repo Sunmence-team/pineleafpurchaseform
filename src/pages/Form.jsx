@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { FaUser, FaUsers, FaBriefcase } from "react-icons/fa";
-import assets from "../assets/assests";
+import assets from "../assets/assets";
 import Section1 from "../section/Section1";
 import Section2 from "../section/Section2";
 import Section3 from "../section/Section3";
@@ -138,7 +138,7 @@ const Form = () => {
 
   if (!formData.purchase_type) {
     return (
-      <div className="w-full min-h-screen bg-secClr/20 flex items-center justify-center p-4">
+      <div className="w-full min-h-screen bg-primary/20 flex items-center justify-center p-4">
         <div className="w-[90%] md:w-[80%] lg:w-[65%] max-w-4xl bg-white rounded-2xl p-6 md:p-10 flex flex-col items-center shadow-2xl transition-all duration-300">
           <img
             src={assets.logo}
@@ -146,7 +146,7 @@ const Form = () => {
             alt="Pineleaf Estate Logo"
           />
           <div className="flex flex-col gap-2 text-center mt-4 mb-8">
-            <h2 className="text-secClr font-bold text-2xl md:text-3xl">
+            <h2 className="text-primary font-bold text-2xl md:text-3xl">
               Pineleaf Estate and Properties Limited
             </h2>
             <p className="text-black/50 text-sm md:text-base font-medium">
@@ -162,9 +162,9 @@ const Form = () => {
               <div
                 key={card.key + index}
                 onClick={() => resetFormWithPurchaseType(card.key)}
-                className="group flex flex-col items-center text-center p-6 border-2 border-gray-100 hover:border-secClr rounded-2xl cursor-pointer hover:shadow-md transition-all duration-300 bg-white"
+                className="group flex flex-col items-center text-center p-6 border-2 border-gray-100 hover:border-primary rounded-2xl cursor-pointer hover:shadow-md transition-all duration-300 bg-white"
               >
-                <div className="p-4 bg-pryClr rounded-full text-secClr mb-4 group-hover:bg-secClr group-hover:text-white transition-all duration-300">
+                <div className="p-4 bg-secondary rounded-full text-primary mb-4 group-hover:bg-primary group-hover:text-white transition-all duration-300">
                   {card.icon}
                 </div>
                 <h3 className="text-lg font-bold text-gray-900 mb-2 capitalize">
@@ -179,9 +179,9 @@ const Form = () => {
             {/* Card 3: Association
             <div
               onClick={() => resetFormWithPurchaseType("association")}
-              className="group flex flex-col items-center text-center p-6 border-2 border-gray-100 hover:border-secClr rounded-2xl cursor-pointer hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 bg-white"
+              className="group flex flex-col items-center text-center p-6 border-2 border-gray-100 hover:border-primary rounded-2xl cursor-pointer hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 bg-white"
             >
-              <div className="p-4 bg-pryClr rounded-full text-secClr mb-4 group-hover:bg-secClr group-hover:text-white transition-all duration-300">
+              <div className="p-4 bg-secondary rounded-full text-primary mb-4 group-hover:bg-primary group-hover:text-white transition-all duration-300">
                 <FaBriefcase className="text-3xl" />
               </div>
               <h3 className="text-lg font-bold text-gray-900 mb-2">
@@ -199,17 +199,17 @@ const Form = () => {
   }
 
   return (
-    <div className="w-full min-h-screen bg-secClr/20 flex items-center justify-center py-8">
+    <div className="w-full min-h-screen bg-primary/20 flex items-center justify-center py-8">
       <div className="w-[90%] md:w-[80%] lg:w-[65%] max-w-4xl bg-white rounded-2xl p-6 md:p-8 flex items-center justify-center flex-col shadow-xl">
         <img src={assets.logo} className="w-12" alt="Pineleaf Estate Logo" />
         <div className="flex flex-col gap-2 text-center mt-2">
-          <p className="text-secClr font-semibold text-2xl md:text-3xl">
+          <p className="text-primary font-semibold text-2xl md:text-3xl">
             Pineleaf Estate and Properties Limited
           </p>
           <p className="text-black/50 text-sm font-medium">
             Land Purchase Client Details Form - For Outright Payment
           </p>
-          <p className="text-xs font-bold text-secClr uppercase tracking-widest mt-1">
+          <p className="text-xs font-bold text-primary uppercase tracking-widest mt-1">
             Category: {formData.purchase_type}
           </p>
         </div>

@@ -19,7 +19,7 @@ const ConfirmDialog = ({
         <h4 className="text-xl font-semibold mb-4">{title}</h4>
         <div className="mb-6">
           {typeof message === "string" ? (
-            <p className="text-secClr">{message}</p>
+            <p className="text-primary">{message}</p>
           ) : (
             message
           )}
@@ -34,7 +34,7 @@ const ConfirmDialog = ({
           </button>
           <button
             onClick={onConfirm}
-            className="w-full md:w-1/2 h-[50px] bg-secClr text-white rounded-lg hover:bg-secClr/90 transition cursor-pointer disabled:cursor-not-allowed disabled:opacity-50"
+            className="w-full md:w-1/2 h-[50px] bg-primary text-white rounded-lg hover:bg-primary/90 transition cursor-pointer disabled:cursor-not-allowed disabled:opacity-50"
             disabled={isLoading}
           >
             {isLoading ? "Please wait..." : confirmText}

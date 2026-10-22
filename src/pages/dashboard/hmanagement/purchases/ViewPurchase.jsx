@@ -7,13 +7,13 @@ import {
   FaUser,
 } from "react-icons/fa";
 import { toast } from "sonner";
-import assets from "../../../../assets/assests";
-import api, { getErrorMessage } from "../../../../utilities/api";
+import assets from "../../../../assets/assets";
+import { api, getErrorMessage } from "../../../../helpers/api";
 import {
   formatISODateToCustom,
   formatterUtility,
   formatUnderScores,
-} from "../../../../utilities/formatterUtility";
+} from "../../../../helpers/formatterUtility";
 import { StatusTurnPriorityCard } from "../../../../components/cards/StatusCard";
 import Modal from "../../../../components/modals/Modal";
 
@@ -35,7 +35,7 @@ const ViewPurchase = () => {
     const fetchPurchaseDetail = async () => {
       setIsLoading(true);
       try {
-        const response = await api.get(`/api/admin/applications/${id}`, {
+        const response = await hmApi.get(`/api/admin/applications/${id}`, {
           headers: {
             Authorization: `Bearer ${token}`,
           },
@@ -87,7 +87,7 @@ const ViewPurchase = () => {
         payload.status = "approved";
       }
 
-      const response = await api.post(
+      const response = await hmApi.post(
         `/api/admin/applications/verify/manual`,
         payload,
         {
@@ -125,7 +125,7 @@ const ViewPurchase = () => {
   if (isLoading) {
     return (
       <div className="flex justify-center items-center min-h-screen bg-gray-50">
-        <div className="animate-spin rounded-full h-12 w-12 border-4 border-t-transparent border-primary"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-4 border-t-transparent border-secondary"></div>
       </div>
     );
   }
@@ -138,7 +138,7 @@ const ViewPurchase = () => {
         </p>
         <button
           onClick={() => navigate("/dashboard/manage/purchases")}
-          className="px-6 py-2 bg-primary text-white rounded-lg hover:bg-pryClr"
+          className="px-6 py-2 bg-secondary text-white rounded-lg hover:bg-secondary"
         >
           Back to Purchases
         </button>
@@ -147,8 +147,8 @@ const ViewPurchase = () => {
   }
 
   const SectionHeader = ({ icon: Icon, title }) => (
-    <h3 className="text-lg font-bold text-gray-900 border-l-4 border-primary pl-3 mb-6 flex items-center gap-2">
-      {/* <Icon className="text-primary" /> */}
+    <h3 className="text-lg font-bold text-gray-900 border-l-4 border-secondary pl-3 mb-6 flex items-center gap-2">
+      {/* <Icon className="text-secondary" /> */}
       {title}
     </h3>
   );
@@ -314,7 +314,7 @@ const ViewPurchase = () => {
                         </p>
                       </div>
                       <div className="text-right">
-                        <p className="text-sm font-bold text-primary">
+                        <p className="text-sm font-bold text-secondary">
                           {formatterUtility(Number(tx.amount))}
                         </p>
                         <span
@@ -331,7 +331,7 @@ const ViewPurchase = () => {
                     <button
                       type="button"
                       onClick={() => setPaymentDetails(tx)}
-                      className="bg-secClr h-10 rounded-lg text-white w-full cursor-pointer"
+                      className="bg-primary h-10 rounded-lg text-white w-full cursor-pointer"
                     >
                       View Payment
                     </button>
@@ -407,7 +407,7 @@ const ViewPurchase = () => {
                     href={paymentProofUrl}
                     target="_blank"
                     rel="noreferrer"
-                    className="inline-block text-sm font-semibold text-primary underline"
+                    className="inline-block text-sm font-semibold text-secondary underline"
                   >
                     {isPaymentProofPdf
                       ? "Open / Download PDF"
@@ -461,7 +461,10 @@ const ViewPurchase = () => {
                       type="button"
                       disabled={isProcessingPaymentAction}
                       onClick={() =>
-                        handlePaymentAction(paymentDetails.reference, "approved")
+                        handlePaymentAction(
+                          paymentDetails.reference,
+                          "approved",
+                        )
                       }
                       className="h-12 rounded-lg bg-[#2F5318] text-white font-medium hover:bg-[#254015] transition duration-300 disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
                     >

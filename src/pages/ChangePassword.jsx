@@ -6,8 +6,7 @@ import { FaEye, FaEyeSlash, FaLock } from "react-icons/fa6";
 import { FaBars } from "react-icons/fa";
 import axios from "axios";
 import { toast } from "sonner";
-import assets from "../assets/assests";
-import SideNav from "../components/SideNav";
+import assets from "../assets/assets";
 import { branchOptions } from "../lib/branchList";
 
 const API_URL = import.meta.env.VITE_API_BASE_URL;
@@ -44,7 +43,7 @@ const ChangePassword = () => {
           return;
         }
 
-        const response = await axios.post(
+        const response = await api.post(
           `${API_URL}/api/change-password`,
           values,
           {
@@ -58,7 +57,7 @@ const ChangePassword = () => {
         if (response.status === 200) {
           toast.success("Password changed successfully!", { id: toastId });
           formik.resetForm();
-          setTimeout(() => navigate("/dashboard"), 1500);
+          setTimeout(() => navigate("/dashboard/overview"), 1500);
         }
       } catch (err) {
         console.error("Error changing password:", err);
@@ -90,12 +89,6 @@ const ChangePassword = () => {
 
   return (
     <div className="flex flex-col md:flex-row min-h-screen bg-gray-100">
-      <SideNav
-        openMenu={openMenu}
-        setOpenMenu={setOpenMenu}
-        branches={branchOptions}
-      />
-
       <div className="flex-1 flex flex-col overflow-hidden">
         <header className="flex items-center bg-white shadow-sm z-10 w-full px-4 md:px-6 lg:px-8 py-4">
           <button
@@ -121,7 +114,7 @@ const ChangePassword = () => {
                   Current Password
                 </label>
                 <div className={inputClass}>
-                  <FaLock className="text-secClr" />
+                  <FaLock className="text-primary" />
                   <input
                     id="current_password"
                     name="current_password"
@@ -134,7 +127,7 @@ const ChangePassword = () => {
                   <button
                     type="button"
                     onClick={() => setShowCurrent(!showCurrent)}
-                    className="absolute right-3 text-gray-500 hover:text-secClr transition"
+                    className="absolute right-3 text-gray-500 hover:text-primary transition"
                   >
                     {showCurrent ? <FaEyeSlash /> : <FaEye />}
                   </button>
@@ -155,7 +148,7 @@ const ChangePassword = () => {
                   New Password
                 </label>
                 <div className={inputClass}>
-                  <FaLock className="text-secClr" />
+                  <FaLock className="text-primary" />
                   <input
                     id="new_password"
                     name="new_password"
@@ -168,7 +161,7 @@ const ChangePassword = () => {
                   <button
                     type="button"
                     onClick={() => setShowNew(!showNew)}
-                    className="absolute right-3 text-gray-500 hover:text-secClr transition"
+                    className="absolute right-3 text-gray-500 hover:text-primary transition"
                   >
                     {showNew ? <FaEyeSlash /> : <FaEye />}
                   </button>
@@ -188,7 +181,7 @@ const ChangePassword = () => {
                   Confirm New Password
                 </label>
                 <div className={inputClass}>
-                  <FaLock className="text-secClr" />
+                  <FaLock className="text-primary" />
                   <input
                     id="new_password_confirmation"
                     name="new_password_confirmation"
@@ -201,7 +194,7 @@ const ChangePassword = () => {
                   <button
                     type="button"
                     onClick={() => setShowConfirm(!showConfirm)}
-                    className="absolute right-3 text-gray-500 hover:text-secClr transition"
+                    className="absolute right-3 text-gray-500 hover:text-primary transition"
                   >
                     {showConfirm ? <FaEyeSlash /> : <FaEye />}
                   </button>
@@ -217,7 +210,7 @@ const ChangePassword = () => {
               <div className="flex gap-3 pt-2">
                 <button
                   type="button"
-                  onClick={() => navigate("/dashboard")}
+                  onClick={() => navigate("/dashboard/overview")}
                   className="flex-1 py-3 bg-gray-200 text-gray-800 font-semibold rounded-lg hover:bg-gray-300 transition duration-300"
                 >
                   Cancel
@@ -225,7 +218,7 @@ const ChangePassword = () => {
                 <button
                   type="submit"
                   disabled={formik.isSubmitting}
-                  className="flex-1 py-3 bg-secClr text-white font-semibold rounded-lg hover:bg-secClr/80 transition duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="flex-1 py-3 bg-primary text-white font-semibold rounded-lg hover:bg-primary/80 transition duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {formik.isSubmitting ? "Updating..." : "Update Password"}
                 </button>

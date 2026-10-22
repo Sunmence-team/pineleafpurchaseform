@@ -7,11 +7,9 @@ import {
   FaInfoCircle,
 } from "react-icons/fa";
 import { toast } from "sonner";
-import assets from "../../../../assets/assests";
-import api, { getErrorMessage } from "../../../../utilities/api";
-import {
-  formatterUtility,
-} from "../../../../utilities/formatterUtility";
+import assets from "../../../../assets/assets";
+import { api, getErrorMessage } from "../../../../helpers/api";
+import { formatterUtility } from "../../../../helpers/formatterUtility";
 import { StatusTurnPriorityCard } from "../../../../components/cards/StatusCard";
 
 const ViewRefund = () => {
@@ -28,7 +26,7 @@ const ViewRefund = () => {
     const fetchRefundDetail = async () => {
       setIsLoading(true);
       try {
-        const response = await api.get(`/api/admin/refunds/${id}`, {
+        const response = await hmApi.get(`/api/admin/refunds/${id}`, {
           headers: {
             Authorization: `Bearer ${token}`,
           },
@@ -58,7 +56,7 @@ const ViewRefund = () => {
 
     setIsProcessing(true);
     try {
-      const response = await api.patch(
+      const response = await hmApi.patch(
         `/api/admin/refunds/${id}`,
         {
           status,
@@ -68,7 +66,7 @@ const ViewRefund = () => {
           headers: {
             Authorization: `Bearer ${token}`,
           },
-        }
+        },
       );
 
       if (response.status === 200) {
@@ -85,7 +83,7 @@ const ViewRefund = () => {
   if (isLoading) {
     return (
       <div className="flex justify-center items-center min-h-screen bg-gray-50">
-        <div className="animate-spin rounded-full h-12 w-12 border-4 border-t-transparent border-primary"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-4 border-t-transparent border-secondary"></div>
       </div>
     );
   }
@@ -98,7 +96,7 @@ const ViewRefund = () => {
         </p>
         <button
           onClick={() => navigate("/dashboard/manage/refunds")}
-          className="px-6 py-2 bg-primary text-white rounded-lg hover:bg-pryClr"
+          className="px-6 py-2 bg-secondary text-white rounded-lg hover:bg-secondary"
         >
           Back to Refunds
         </button>
@@ -107,8 +105,8 @@ const ViewRefund = () => {
   }
 
   const SectionHeader = ({ icon: Icon, title }) => (
-    <h3 className="text-lg font-bold text-gray-900 border-l-4 border-primary pl-3 mb-6 flex items-center gap-2">
-      <Icon className="text-primary" />
+    <h3 className="text-lg font-bold text-gray-900 border-l-4 border-secondary pl-3 mb-6 flex items-center gap-2">
+      <Icon className="text-secondary" />
       {title}
     </h3>
   );
@@ -133,7 +131,11 @@ const ViewRefund = () => {
         <div className="flex items-center justify-between border-b border-gray-100 pb-6 mb-8">
           <div className="flex items-center gap-4">
             <button
-              onClick={() => navigate("/dashboard/manage/refunds", { state: location.state?.listState })}
+              onClick={() =>
+                navigate("/dashboard/manage/refunds", {
+                  state: location.state?.listState,
+                })
+              }
               className="p-2 rounded-full bg-gray-50 hover:bg-gray-100 transition"
             >
               <FaArrowLeft className="text-gray-600" />
@@ -166,10 +168,7 @@ const ViewRefund = () => {
 
             {/* Refund Details Section */}
             <section>
-              <SectionHeader
-                icon={FaInfoCircle}
-                title="Refund Details"
-              />
+              <SectionHeader icon={FaInfoCircle} title="Refund Details" />
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 bg-gray-50 p-6 rounded-xl border border-gray-100">
                 <InfoItem
                   label="Amount"
@@ -198,10 +197,7 @@ const ViewRefund = () => {
             <SectionHeader icon={FaUniversity} title="Bank Information" />
             <div className="bg-gray-50 p-6 rounded-xl border border-gray-100 space-y-6">
               <div className="grid grid-cols-1 gap-6">
-                <InfoItem
-                  label="Bank Name"
-                  value={refund.bank_name}
-                />
+                <InfoItem label="Bank Name" value={refund.bank_name} />
                 <InfoItem
                   label="Account Number"
                   value={refund.account_number}
@@ -219,7 +215,9 @@ const ViewRefund = () => {
         {/* Action Section for Pending Refunds */}
         {refund.status === "pending" && (
           <div className="mt-10 border-t border-gray-100 pt-8">
-            <h3 className="text-lg font-bold text-gray-900 mb-6">Process Refund</h3>
+            <h3 className="text-lg font-bold text-gray-900 mb-6">
+              Process Refund
+            </h3>
             <div className="space-y-4">
               <div className="space-y-2">
                 <label className="text-sm font-semibold text-gray-700">
@@ -229,7 +227,7 @@ const ViewRefund = () => {
                   rows={4}
                   value={adminNote}
                   onChange={(e) => setAdminNote(e.target.value)}
-                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
+                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-secondary/50"
                   placeholder="Enter a note or reason for the action..."
                 />
               </div>
