@@ -11,6 +11,7 @@ import ManageProperties from "./pages/dashboard/hmanagement/houses/ManagePropert
 import ChangePassword from "./pages/dashboard/settingstabs/ChangePassword";
 import Settings from "./pages/dashboard/Settings";
 import Properties from "./pages/properties/Properties";
+import DocumentLibrary from "./pages/documents/DocumentLibrary";
 import UnassignedEntries from "./pages/entries/UnassignedEntries";
 import OfflineEntries from "./pages/entries/OfflineEntries";
 
@@ -61,6 +62,7 @@ function App() {
           <Route element={<MainLayout />}>
             <Route path="/dashboard/overview" element={<Dashboard />} />
             <Route path="/dashboard/properties" element={<Properties />} />
+            <Route path="/dashboard/documents" element={<DocumentLibrary />} />
             <Route
               path="/dashboard/entries/unassigned"
               element={<UnassignedEntries />}
