@@ -1,6 +1,12 @@
 import type { IconType } from "react-icons";
 import { RxDashboard } from "react-icons/rx";
-import { BsBuildings, BsFillHouseGearFill, BsHouses } from "react-icons/bs";
+import {
+  BsBuildings,
+  BsFillHouseGearFill,
+  BsHouses,
+  BsShieldExclamation,
+  BsCloudSlash,
+} from "react-icons/bs";
 import { branchOptions } from "./branchList";
 
 export interface NavItem {
@@ -22,6 +28,18 @@ export const navItems: NavItem[] = [
     name: "Properties",
     icon: BsHouses,
     path: "/dashboard/properties",
+    role: ["admin", "user"],
+  },
+  {
+    name: "Unassigned Entries",
+    icon: BsShieldExclamation,
+    path: "/dashboard/entries/unassigned",
+    role: ["admin", "user"],
+  },
+  {
+    name: "Offline Entries",
+    icon: BsCloudSlash,
+    path: "/dashboard/entries/offline",
     role: ["admin", "user"],
   },
   {
