@@ -10,9 +10,7 @@ export const api = axios.create({
   },
 });
 
-const PROPERTY_API_URL =
-  import.meta.env.VITE_PROPERTY_BASE_URL ||
-  "https://laravel.pineleafesates.com.ng";
+const PROPERTY_API_URL = import.meta.env.VITE_PROPERTY_BASE_URL;
 
 export const propertyApi = axios.create({
   baseURL: PROPERTY_API_URL,
@@ -52,8 +50,28 @@ export const setupInterceptors = (logout: () => void) => {
       return Promise.reject(error);
     },
   );
+  hmApi.interceptors.response.use(
+    (res) => res,
+    (error) => {
+      if (error.code === "ERR_NETWORK") {
+        toast.error("No internet or server down");
+      } else if (error.response?.status === 401) {
+        toast.error("Session expired. Logging out...");
+        logout();
+      }
+      return Promise.reject(error);
+    },
+  );
 
   propertyApi.interceptors.request.use((config) => {
+    const token = localStorage.getItem("token");
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+  });
+
+  hmApi.interceptors.request.use((config) => {
     const token = localStorage.getItem("token");
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;

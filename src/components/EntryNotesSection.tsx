@@ -29,12 +29,12 @@ export const getStoredEntryNotes = (entryId: string | number): EntryNote[] => {
 
 export const saveStoredEntryNotes = (
   entryId: string | number,
-  notes: EntryNote[]
+  notes: EntryNote[],
 ) => {
   try {
     localStorage.setItem(
       `${NOTES_STORAGE_PREFIX}${entryId}`,
-      JSON.stringify(notes)
+      JSON.stringify(notes),
     );
   } catch (e) {
     console.error("Failed to save entry notes:", e);
@@ -48,7 +48,7 @@ interface EntryNotesSectionProps {
 const EntryNotesSection: React.FC<EntryNotesSectionProps> = ({ entryId }) => {
   const { user, role } = useUser();
   const [notes, setNotes] = useState<EntryNote[]>(() =>
-    getStoredEntryNotes(entryId)
+    getStoredEntryNotes(entryId),
   );
   const [newNote, setNewNote] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -58,7 +58,7 @@ const EntryNotesSection: React.FC<EntryNotesSectionProps> = ({ entryId }) => {
     setIsLoading(true);
     try {
       // 1. Attempt API fetch if endpoint is provided by backend
-      const response = await api.get(`/api/applications/${entryId}/notes`);
+      const response = await api.get(`/applications/${entryId}/notes`);
       const apiNotes = response.data?.data || response.data || [];
       if (Array.isArray(apiNotes) && apiNotes.length > 0) {
         setNotes(apiNotes);
@@ -89,7 +89,9 @@ const EntryNotesSection: React.FC<EntryNotesSectionProps> = ({ entryId }) => {
 
     const authorName =
       user?.full_name ||
-      (user?.first_name ? `${user.first_name} ${user.last_name || ""}`.trim() : null) ||
+      (user?.first_name
+        ? `${user.first_name} ${user.last_name || ""}`.trim()
+        : null) ||
       user?.username ||
       user?.email ||
       "System User";
@@ -107,7 +109,7 @@ const EntryNotesSection: React.FC<EntryNotesSectionProps> = ({ entryId }) => {
     try {
       // 1. Try sending to backend
       try {
-        const res = await api.post(`/api/applications/${entryId}/notes`, {
+        const res = await api.post(`/applications/${entryId}/notes`, {
           note: trimmed,
         });
         if (res.data?.data) {

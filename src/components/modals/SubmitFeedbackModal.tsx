@@ -72,7 +72,7 @@ const SubmitFeedbackModal: React.FC<SubmitFeedbackModalProps> = ({
       try {
         // 1. Dispatch to backend if available
         try {
-          await api.post(`/api/documents/${document.id}/feedback`, payload);
+          await api.post(`/documents/${document.id}/feedback`, payload);
         } catch (err) {
           console.warn("Backend feedback endpoint fallback:", err);
         }
@@ -124,7 +124,7 @@ const SubmitFeedbackModal: React.FC<SubmitFeedbackModalProps> = ({
             )}
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
             <div>
               <label htmlFor="total_sent" className={labelClass}>
                 Entries Sent

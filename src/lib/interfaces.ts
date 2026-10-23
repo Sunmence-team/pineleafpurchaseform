@@ -61,7 +61,7 @@ export interface PaginationControlProps {
 }
 
 export interface StatusCardProps {
-  type: "success" | "pending" | "failed";
+  type: "success" | "pending" | "failed" | string;
   statusText: string | number;
   icon?: IconType;
 }
@@ -132,6 +132,8 @@ export interface BulkSelectionBarProps {
   onCancel: () => void;
 }
 
+export type propertyStatus = "online" | "offline" | "all";
+
 export interface PropertyProp {
   id?: string | number;
   name: string;
@@ -147,8 +149,46 @@ export interface PropertyProp {
   description?: string;
   size?: string;
   created_at?: string;
+  status?: propertyStatus;
   is_offline?: boolean | number;
-  status?: "online" | "offline" | string;
   barrister_id?: number | string;
   barrister?: BarristerProp;
+}
+
+export interface ApplicantUser {
+  id: number | string;
+  firstname: string;
+  lastname: string;
+  email: string;
+  phone: string;
+  gender: string;
+  date_of_birth: string;
+  address: string;
+  address2: string;
+  country: string;
+  state: string;
+  city: string;
+  branch: string;
+  next_of_kin_name: string;
+  next_of_kin_phone: string;
+  next_of_kin_email: string;
+  next_of_kin_relationship: string;
+  next_of_kin_address: string;
+  job_description: string;
+  salary: number | string;
+  statement_of_account: string;
+}
+
+export interface Application {
+  id: number | string;
+  user_id: number | string;
+  amount: number | string;
+  payment_method: string;
+  reference: string;
+  paystack_reference: string;
+  status: string;
+  proof_of_payment: string;
+  created_at: string;
+  paid_at: string;
+  user: ApplicantUser;
 }

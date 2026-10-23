@@ -1,58 +1,61 @@
 import React, { useState } from "react";
-import { FaUser, FaUsers, FaBriefcase } from "react-icons/fa";
-import assets from "../assets/assets";
-import Section1 from "../section/Section1";
-import Section2 from "../section/Section2";
-import Section3 from "../section/Section3";
-import Section4 from "../section/Section4";
+import { FaUser, FaUsers } from "react-icons/fa";
+import assets from "../../assets/assets";
+import Section1 from "./section/Section1";
+import Section2 from "./section/Section2";
+import Section3 from "./section/Section3";
+import Section4 from "./section/Section4";
+import type { PurchaseFormData } from "./section/types";
 
-const Form = () => {
-  const [currentSection, setCurrentSection] = useState(1);
-  const [formData, setFormData] = useState({
-    purchase_type: "",
-    clubName: "",
-    clubContact: "",
-    clubMembers: [],
-    image: null,
-    title: "",
-    firstName: "",
-    middleName: "",
-    lastName: "",
-    address: "",
-    maritalStatus: "",
-    shouldSpouseNameShow: false,
-    gender: "",
-    spouseTitle: "",
-    spouseFirstName: "",
-    spouseMiddleName: "",
-    spouseLastName: "",
-    stateOfOrigin: "",
-    lga: "",
-    countryOfResidence: "",
-    email: "",
-    mobileNumber: "",
-    additionalInfo1: "",
-    additionalInfo2: "",
-    detail1: "",
-    detail2: "",
-    finalDetail1: "",
-    finalDetail2: "",
-    nextOfKinFullName: "",
-    nextOfKinRelationship: "",
-    nextOfKinRelationshipOther: "",
-    nextOfKinMobileNumber: "",
-    nextOfKinEmail: "",
-    clientDeclarationLandPrice: "",
-    clientDeclarationNumberOfPlots: "",
-    clientDeclarationSiteLocation: "",
-    clientDeclarationPlotNumber: "",
-    branches: "",
-    clientDeclarationClientName: "",
-    clientDeclarationSignature: "",
-    clientDeclarationDate: "",
-    referralFullName: "",
-    referralMobileNumber: "",
-  });
+const initialFormData: PurchaseFormData = {
+  purchase_type: "",
+  clubName: "",
+  clubContact: "",
+  clubMembers: [],
+  image: null,
+  title: "",
+  firstName: "",
+  middleName: "",
+  lastName: "",
+  address: "",
+  maritalStatus: "",
+  shouldSpouseNameShow: false,
+  gender: "",
+  spouseTitle: "",
+  spouseFirstName: "",
+  spouseMiddleName: "",
+  spouseLastName: "",
+  stateOfOrigin: "",
+  lga: "",
+  countryOfResidence: "",
+  email: "",
+  mobileNumber: "",
+  additionalInfo1: "",
+  additionalInfo2: "",
+  detail1: "",
+  detail2: "",
+  finalDetail1: "",
+  finalDetail2: "",
+  nextOfKinFullName: "",
+  nextOfKinRelationship: "",
+  nextOfKinRelationshipOther: "",
+  nextOfKinMobileNumber: "",
+  nextOfKinEmail: "",
+  clientDeclarationLandPrice: "",
+  clientDeclarationNumberOfPlots: "",
+  clientDeclarationSiteLocation: "",
+  clientDeclarationPlotNumber: "",
+  branches: "",
+  clientDeclarationClientName: "",
+  clientDeclarationSignature: "",
+  clientDeclarationDate: "",
+  referralFullName: "",
+  referralMobileNumber: "",
+};
+
+const Form: React.FC = () => {
+  const [currentSection, setCurrentSection] = useState<number>(1);
+  const [formData, setFormData] = useState<PurchaseFormData>(initialFormData);
 
   const nextSection = () => {
     if (currentSection < 4) {
@@ -66,51 +69,10 @@ const Form = () => {
     }
   };
 
-  const resetFormWithPurchaseType = (type) => {
+  const resetFormWithPurchaseType = (type: string) => {
     setFormData({
+      ...initialFormData,
       purchase_type: type,
-      clubName: "",
-      clubContact: "",
-      clubMembers: [],
-      image: null,
-      title: "",
-      firstName: "",
-      middleName: "",
-      lastName: "",
-      address: "",
-      maritalStatus: "",
-      shouldSpouseNameShow: false,
-      gender: "",
-      spouseTitle: "",
-      spouseFirstName: "",
-      spouseMiddleName: "",
-      spouseLastName: "",
-      stateOfOrigin: "",
-      lga: "",
-      countryOfResidence: "",
-      email: "",
-      mobileNumber: "",
-      additionalInfo1: "",
-      additionalInfo2: "",
-      detail1: "",
-      detail2: "",
-      finalDetail1: "",
-      finalDetail2: "",
-      nextOfKinFullName: "",
-      nextOfKinRelationship: "",
-      nextOfKinRelationshipOther: "",
-      nextOfKinMobileNumber: "",
-      nextOfKinEmail: "",
-      clientDeclarationLandPrice: "",
-      clientDeclarationNumberOfPlots: "",
-      clientDeclarationSiteLocation: "",
-      clientDeclarationPlotNumber: "",
-      branches: "",
-      clientDeclarationClientName: "",
-      clientDeclarationSignature: "",
-      clientDeclarationDate: "",
-      referralFullName: "",
-      referralMobileNumber: "",
     });
     setCurrentSection(1);
   };
@@ -152,7 +114,7 @@ const Form = () => {
             <p className="text-black/50 text-sm md:text-base font-medium">
               Land Purchase Client Details Form - For Outright Payment
             </p>
-            <p className="text-gray-400 text-xs sm:text-sm mt-1">
+            <p className="text-gray-400 text-xs md:text-sm mt-1">
               Select your purchase category below to start the application
             </p>
           </div>
@@ -175,23 +137,6 @@ const Form = () => {
                 </p>
               </div>
             ))}
-
-            {/* Card 3: Association
-            <div
-              onClick={() => resetFormWithPurchaseType("association")}
-              className="group flex flex-col items-center text-center p-6 border-2 border-gray-100 hover:border-primary rounded-2xl cursor-pointer hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 bg-white"
-            >
-              <div className="p-4 bg-secondary rounded-full text-primary mb-4 group-hover:bg-primary group-hover:text-white transition-all duration-300">
-                <FaBriefcase className="text-3xl" />
-              </div>
-              <h3 className="text-lg font-bold text-gray-900 mb-2">
-                Association
-              </h3>
-              <p className="text-xs text-gray-500 leading-relaxed">
-                Corporate, cooperative, union, or formal organization-based
-                property acquisitions.
-              </p>
-            </div> */}
           </div>
         </div>
       </div>
@@ -245,7 +190,7 @@ const Form = () => {
               formData={formData}
               setFormData={setFormData}
               prevSection={prevSection}
-              onSubmit={onSubmit} // Pass the onSubmit function
+              onSubmit={onSubmit}
             />
           )}
         </div>

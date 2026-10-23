@@ -1,47 +1,21 @@
 import React, { useState, useEffect } from "react";
-import { hmApi, getErrorMessage } from "../../../../helpers/api";
+import { getErrorMessage } from "../../../../helpers/api";
 import { toast } from "sonner";
 import { IoIosSearch } from "react-icons/io";
 import { formatterUtility } from "../../../../helpers/formatterUtility";
-import { StatusTurnPriorityCard } from "../../../../components/cards/StatusCard";
 import ReusableTable from "../../../../utilities/ReusableTable";
 import type { TableColumnProps } from "../../../../lib/interfaces";
+import StatusCard from "../../../../components/cards/StatusCard";
+import { useSubscriptions } from "../../../../hooks/useSubscriptions";
+import type { SubscriptionTransaction } from "../../../../services/subscriptionService";
 
-export interface SubscriptionTransaction {
-  id: number | string;
-  reference?: string;
-  transaction_reference?: string;
-  customer_name?: string;
-  customer_email?: string;
-  amount?: number | string;
-  total?: number | string;
-  status?: string;
-  transaction_status?: string;
-  payment_status?: string;
-  created_at?: string;
-  paid_at?: string;
-  updated_at?: string;
-  user?: {
-    firstname?: string;
-    lastname?: string;
-    email?: string;
-    [key: string]: any;
-  };
-  [key: string]: any;
-}
+export type { SubscriptionTransaction };
 
 const ManageSubscriptions: React.FC = () => {
-  const token = localStorage.getItem("token");
-  const [transactions, setTransactions] = useState<SubscriptionTransaction[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<unknown>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [debouncedSearchQuery, setDebouncedSearchQuery] = useState("");
-
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
-  const [totalItems, setTotalItems] = useState(0);
-  const [totalPages, setTotalPages] = useState(1);
   const [statusFilter, setStatusFilter] = useState("");
   const [yearFilter, setYearFilter] = useState("");
 
@@ -54,49 +28,31 @@ const ManageSubscriptions: React.FC = () => {
     return () => clearTimeout(handler);
   }, [searchQuery]);
 
-  const fetchTransactions = async () => {
-    setIsLoading(true);
-    setError(null);
+  // TanStack Query hook for subscriptions
+  const {
+    data: responseData,
+    isLoading,
+    error,
+  } = useSubscriptions({
+    page: currentPage,
+    per_page: itemsPerPage,
+    search: debouncedSearchQuery,
+    status: statusFilter,
+    year: yearFilter,
+  });
 
-    try {
-      const response = await hmApi.get(
-        "/api/admin/subscriptions/transactions",
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-          params: {
-            page: currentPage,
-            per_page: itemsPerPage,
-            search: debouncedSearchQuery,
-            status: statusFilter,
-            year: yearFilter,
-          },
-        }
-      );
-
-      const { data, total, last_page } = response.data.data;
-      setTransactions(data || []);
-      setTotalItems(total || 0);
-      setTotalPages(last_page || 1);
-    } catch (err) {
-      const msg = getErrorMessage(err);
-      setError(msg);
-      toast.error(msg);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  const transactions: SubscriptionTransaction[] =
+    responseData?.data?.data || [];
+  const totalItems = responseData?.data?.total || 0;
+  const totalPages = responseData?.data?.last_page || 1;
 
   useEffect(() => {
-    fetchTransactions();
-  }, [
-    currentPage,
-    itemsPerPage,
-    debouncedSearchQuery,
-    statusFilter,
-    yearFilter,
-  ]);
+    if (error) {
+      toast.error(
+        getErrorMessage(error, "Failed to fetch subscription transactions"),
+      );
+    }
+  }, [error]);
 
   const columns: TableColumnProps<SubscriptionTransaction>[] = [
     {
@@ -122,7 +78,9 @@ const ManageSubscriptions: React.FC = () => {
     {
       label: "Email",
       key: "email",
-      render: (item) => <span>{item.user?.email || item.customer_email || "-"}</span>,
+      render: (item) => (
+        <span>{item.user?.email || item.customer_email || "-"}</span>
+      ),
     },
     {
       label: "Amount",
@@ -137,8 +95,11 @@ const ManageSubscriptions: React.FC = () => {
       label: "Status",
       key: "status",
       render: (item) => (
-        <StatusTurnPriorityCard
-          status={item.status || item.transaction_status || item.payment_status}
+        <StatusCard
+          type={item.status || item.transaction_status || item.payment_status}
+          statusText={
+            item.status || item.transaction_status || item.payment_status
+          }
         />
       ),
     },
@@ -227,7 +188,7 @@ const ManageSubscriptions: React.FC = () => {
         columns={columns}
         data={transactions}
         isLoading={isLoading}
-        error={error}
+        error={error ? getErrorMessage(error) : null}
         currentPage={currentPage}
         totalPages={totalPages}
         totalItems={totalItems}

@@ -1,52 +1,35 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { FaArrowLeft } from "react-icons/fa";
 import { toast } from "sonner";
-import assets from "../../../../../assets/assets";
-import { hmApi, getErrorMessage } from "../../../../../helpers/api";
+import { getErrorMessage } from "../../../../../helpers/api";
 import {
   formatISODateToCustom,
   formatterUtility,
   formatUnderScores,
 } from "../../../../../helpers/formatterUtility";
-import { StatusTurnPriorityCard } from "../../../../../components/cards/StatusCard";
 import { FaDownload } from "react-icons/fa6";
-import Modal from "../../../../../components/modals/Modal";
+import StatusCard from "../../../../../components/cards/StatusCard";
+import {
+  useApplicant,
+  useVerifyManualPayment,
+} from "../../../../../hooks/useApplicant";
+import type { VerifyManualPaymentPayload } from "../../../../../services/applicantService";
 
 const HM_STORAGE_API_URL = import.meta.env.VITE_HM_STORAGE_BASE_URL;
 
-const ViewApplicant = () => {
-  const token = localStorage.getItem("token");
+const ViewApplicant: React.FC = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
-  const [application, setApplication] = useState(location.state || null);
-  const [isLoading, setIsLoading] = useState(!location.state);
-  const [isVerifying, setIsVerifying] = useState(false);
   const [paymentActionNote, setPaymentActionNote] = useState("");
 
-  useEffect(() => {
-    if (!application) {
-      const fetchApplication = async () => {
-        setIsLoading(true);
-        try {
-          const response = await hmApi.get(`/api/interest/${id}`, {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          });
-          setApplication(response.data.data || response.data);
-        } catch (err) {
-          const msg = getErrorMessage(err);
-          toast.error(msg);
-          console.error("Error fetching application:", err);
-        } finally {
-          setIsLoading(false);
-        }
-      };
-      fetchApplication();
-    }
-  }, [id, application]);
+  const {
+    data: application,
+    isLoading,
+  } = useApplicant(id, location.state);
+
+  const verifyPaymentMutation = useVerifyManualPayment();
 
   if (isLoading) {
     return (
@@ -70,7 +53,7 @@ const ViewApplicant = () => {
                 : undefined,
             })
           }
-          className="px-6 py-2 bg-secondary text-white rounded-lg hover:bg-secondary/90"
+          className="px-6 py-2 bg-secondary text-white rounded-lg hover:bg-secondary/90 cursor-pointer"
         >
           Back to applicants
         </button>
@@ -78,69 +61,65 @@ const ViewApplicant = () => {
     );
   }
 
-  const DetailItem = ({ label, value }) => (
+  const DetailItem = ({
+    label,
+    value,
+  }: {
+    label: string;
+    value: React.ReactNode;
+  }) => (
     <div className="flex flex-col space-y-1">
       <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
         {label}
       </span>
-      <span className="text-sm sm:text-base text-gray-900 font-medium">
+      <span className="text-sm md:text-base text-gray-900 font-medium">
         {value || "N/A"}
       </span>
     </div>
   );
 
-  const handlePaymentAction = async (paymentReference, action) => {
+  const handlePaymentAction = async (
+    paymentReference: string,
+    action: "approved" | "rejected",
+  ) => {
     if (action === "rejected" && !paymentActionNote.trim()) {
       toast.error("Please provide a rejection note.");
       return;
     }
 
-    setIsVerifying(true);
     try {
-      const payload: Record<string, any> = {
+      const payload: VerifyManualPaymentPayload = {
         reference: paymentReference,
-        status: "approved",
+        status: action,
       };
 
       if (action === "rejected") {
-        payload.status = "rejected";
         payload.note = paymentActionNote.trim();
       }
 
-      const response = await hmApi.post(
-        `/api/admin/interest/verify/manual`,
-        payload,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        },
-      );
+      const res = await verifyPaymentMutation.mutateAsync(payload);
 
-      if (response.status === 200) {
-        setApplication(response.data.data || response.data);
-        toast.success(
-          response.data.message ||
-            (action === "rejected"
-              ? "Payment rejected successfully"
-              : "Payment verified successfully"),
-        );
-      }
+      toast.success(
+        res?.message ||
+          (action === "rejected"
+            ? "Payment rejected successfully"
+            : "Payment verified successfully"),
+      );
+      setPaymentActionNote("");
     } catch (err) {
-      const msg = getErrorMessage(err);
+      const msg = getErrorMessage(err, "Error processing payment action");
       toast.error(msg);
       console.error("Error processing payment action:", err);
-    } finally {
-      setIsVerifying(false);
-      setPaymentActionNote("");
     }
   };
 
-  const proofOfPaymentImage = `${HM_STORAGE_API_URL}${application?.proof_of_payment}`;
+  const proofOfPaymentImage = application?.proof_of_payment
+    ? `${HM_STORAGE_API_URL}${application.proof_of_payment}`
+    : null;
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex md:flex-row flex-col items-center justify-between pb-6 mb-8  border-b border-gray-200">
+      <div className="flex md:flex-row flex-col items-center justify-between pb-6 mb-8 border-b border-gray-200">
         <div className="flex items-center gap-4">
           <button
             onClick={() =>
@@ -150,7 +129,7 @@ const ViewApplicant = () => {
                   : undefined,
               })
             }
-            className="p-2 rounded-full bg-gray-50 hover:bg-gray-100 transition-colors"
+            className="p-2 rounded-full bg-gray-50 hover:bg-gray-100 transition-colors cursor-pointer"
           >
             <FaArrowLeft className="text-gray-600" />
           </button>
@@ -159,13 +138,23 @@ const ViewApplicant = () => {
           </h1>
         </div>
         <div className="flex items-center gap-4">
-          <StatusTurnPriorityCard status={application?.status} />
+          <StatusCard
+            type={
+              application?.status === "approved"
+                ? "success"
+                : application?.status === "rejected"
+                  ? "failed"
+                  : "pending"
+            }
+            statusText={application?.status || "N/A"}
+          />
           {application?.user?.statement_of_account && (
             <a
-              href={`${HM_STORAGE_API_URL}${application?.user?.statement_of_account}`}
+              href={`${HM_STORAGE_API_URL}${application.user.statement_of_account}`}
               target="_blank"
+              rel="noreferrer"
               download
-              className="flex items-center justify-center px-4 py-2 sm:px-5 sm:py-3 bg-primary text-white font-semibold rounded-lg hover:bg-primary transition-colors duration-200 w-full sm:w-auto text-sm"
+              className="flex items-center justify-center px-4 py-2 md:px-5 md:py-3 bg-primary text-white font-semibold rounded-lg hover:bg-primary transition-colors duration-200 w-full md:w-auto text-sm"
             >
               <FaDownload className="mr-2 text-sm" />
               Download Statement
@@ -183,18 +172,20 @@ const ViewApplicant = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             <DetailItem
               label="First Name"
-              value={application?.user.firstname}
+              value={application?.user?.firstname}
             />
-            <DetailItem label="Last Name" value={application?.user.lastname} />
-            <DetailItem label="Email" value={application?.user.email} />
-            <DetailItem label="Phone" value={application?.user.phone} />
-            <DetailItem label="Gender" value={application?.user.gender} />
+            <DetailItem label="Last Name" value={application?.user?.lastname} />
+            <DetailItem label="Email" value={application?.user?.email} />
+            <DetailItem label="Phone" value={application?.user?.phone} />
+            <DetailItem label="Gender" value={application?.user?.gender} />
             <DetailItem
               label="Date of Birth"
               value={
-                formatISODateToCustom(application?.user.date_of_birth).split(
-                  " ",
-                )[0]
+                application?.user?.date_of_birth
+                  ? formatISODateToCustom(application.user.date_of_birth).split(
+                      " ",
+                    )[0]
+                  : "N/A"
               }
             />
           </div>
@@ -206,12 +197,12 @@ const ViewApplicant = () => {
             Address Details
           </h3>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            <DetailItem label="Address" value={application?.user.address} />
-            <DetailItem label="Address 2" value={application?.user.address2} />
-            <DetailItem label="Country" value={application?.user.country} />
-            <DetailItem label="State" value={application?.user.state} />
-            <DetailItem label="City" value={application?.user.city} />
-            <DetailItem label="Close Branch" value={application?.user.branch} />
+            <DetailItem label="Address" value={application?.user?.address} />
+            <DetailItem label="Address 2" value={application?.user?.address2} />
+            <DetailItem label="Country" value={application?.user?.country} />
+            <DetailItem label="State" value={application?.user?.state} />
+            <DetailItem label="City" value={application?.user?.city} />
+            <DetailItem label="Close Branch" value={application?.user?.branch} />
           </div>
         </section>
 
@@ -223,23 +214,23 @@ const ViewApplicant = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             <DetailItem
               label="Name"
-              value={application?.user.next_of_kin_name}
+              value={application?.user?.next_of_kin_name}
             />
             <DetailItem
               label="Phone"
-              value={application?.user.next_of_kin_phone}
+              value={application?.user?.next_of_kin_phone}
             />
             <DetailItem
               label="Email"
-              value={application?.user.next_of_kin_email}
+              value={application?.user?.next_of_kin_email}
             />
             <DetailItem
               label="Relationship"
-              value={application?.user.next_of_kin_relationship}
+              value={application?.user?.next_of_kin_relationship}
             />
             <DetailItem
               label="Address"
-              value={application?.user.next_of_kin_address}
+              value={application?.user?.next_of_kin_address}
             />
           </div>
         </section>
@@ -252,11 +243,15 @@ const ViewApplicant = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             <DetailItem
               label="Job Description"
-              value={application?.user.job_description}
+              value={application?.user?.job_description}
             />
             <DetailItem
               label="Salary"
-              value={formatterUtility(Number(application?.user.salary))}
+              value={
+                application?.user?.salary
+                  ? formatterUtility(Number(application.user.salary))
+                  : "N/A"
+              }
             />
             <DetailItem
               label="Statement Of Account"
@@ -297,7 +292,7 @@ const ViewApplicant = () => {
 
       {/* Footer */}
       <div className="border-t border-gray-100 pt-8 mt-10">
-        {application?.payment_method !== "paysatck" &&
+        {application?.payment_method !== "paystack" &&
           application?.status === "pending" && (
             <div className="space-y-4 mb-4">
               <div className="flex flex-col gap-2">
@@ -314,42 +309,46 @@ const ViewApplicant = () => {
               </div>
             </div>
           )}
-        <div className="flex gap-3 justify-end">
-          {application.proof_of_payment && (
+        <div className="flex gap-3 justify-end items-center">
+          {proofOfPaymentImage && (
             <a
               href={proofOfPaymentImage}
               target="_blank"
+              rel="noreferrer"
               download
-              className="flex items-center justify-center px-4 py-2 sm:px-5 sm:py-3 bg-primary text-white font-semibold rounded-lg hover:bg-primary transition-colors duration-200 w-full sm:w-auto text-sm"
+              className="flex items-center justify-center px-4 py-2 md:px-5 md:py-3 bg-primary text-white font-semibold rounded-lg hover:bg-primary transition-colors duration-200 w-full md:w-auto text-sm"
             >
               <FaDownload className="mr-2 text-sm" />
               Download proof of payment
             </a>
           )}
-          {application?.payment_method !== "paysatck" &&
+          {application?.payment_method !== "paystack" &&
             application?.status === "pending" && (
               <>
                 <button
+                  type="button"
                   onClick={() =>
-                    handlePaymentAction(application?.reference, "success")
+                    handlePaymentAction(application.reference || "", "approved")
                   }
-                  disabled={isVerifying}
-                  className="px-6 py-2 bg-primary text-white font-semibold rounded-lg transition-colors disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer"
+                  disabled={verifyPaymentMutation.isPending}
+                  className="px-6 py-2 bg-primary text-white font-semibold rounded-lg transition-colors disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer text-sm"
                 >
-                  {isVerifying ? "Processing..." : "Verify Payment"}
+                  {verifyPaymentMutation.isPending ? "Processing..." : "Verify Payment"}
                 </button>
                 <button
+                  type="button"
                   onClick={() =>
-                    handlePaymentAction(application?.reference, "rejected")
+                    handlePaymentAction(application.reference || "", "rejected")
                   }
-                  disabled={isVerifying}
-                  className="px-6 py-2 bg-red-600 text-white font-semibold rounded-lg transition-colors disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer"
+                  disabled={verifyPaymentMutation.isPending}
+                  className="px-6 py-2 bg-red-600 text-white font-semibold rounded-lg transition-colors disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer text-sm"
                 >
-                  {isVerifying ? "Processing..." : "Reject Payment"}
+                  {verifyPaymentMutation.isPending ? "Processing..." : "Reject Payment"}
                 </button>
               </>
             )}
           <button
+            type="button"
             onClick={() =>
               navigate("/dashboard/manage/applicants", {
                 state: location.state?.listState
@@ -357,7 +356,7 @@ const ViewApplicant = () => {
                   : undefined,
               })
             }
-            className="px-6 py-2 bg-gray-100 text-gray-700 font-semibold rounded-lg hover:bg-gray-200 transition-colors"
+            className="px-6 py-2 bg-gray-100 text-gray-700 font-semibold rounded-lg hover:bg-gray-200 transition-colors cursor-pointer text-sm"
           >
             Back to List
           </button>

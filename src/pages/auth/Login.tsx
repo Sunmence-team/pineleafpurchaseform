@@ -30,7 +30,7 @@ const Login = () => {
     }),
     onSubmit: async (values, { setSubmitting }) => {
       try {
-        const response = await api.post(`/api/login`, values, {
+        const response = await api.post(`/login`, values, {
           headers: {
             "Content-Type": "application/json",
           },

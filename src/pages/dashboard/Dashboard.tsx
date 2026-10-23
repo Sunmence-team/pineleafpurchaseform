@@ -38,7 +38,7 @@ const Dashboard: React.FC = () => {
       setLoadingStats(true);
       try {
         const [propsRes, barrRes] = await Promise.allSettled([
-          propertyApi.get("/api/properties/search", {
+          propertyApi.get("/properties/search", {
             params: { per_page: 200 },
           }),
           api.get("/barristers"),
@@ -112,9 +112,9 @@ const Dashboard: React.FC = () => {
   }, [storedDocs]);
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-4">
       {/* Welcome Banner */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-primary/10">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-2 border-b border-primary/10">
         <div>
           <h1 className="text-xl md:text-2xl font-bold text-gray-900">
             Welcome back, {user?.first_name || user?.username || "Admin"}
@@ -135,7 +135,7 @@ const Dashboard: React.FC = () => {
       </div>
 
       {/* Top Stats Overview Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
         <OverviewCards
           title="Total Form Entries"
           value={allClients.length}

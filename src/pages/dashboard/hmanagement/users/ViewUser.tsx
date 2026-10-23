@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { FaArrowLeft } from "react-icons/fa";
 import { toast } from "sonner";
-import { hmApi, getErrorMessage } from "../../../../helpers/api";
+import { getErrorMessage } from "../../../../helpers/api";
 import { FaDownload } from "react-icons/fa6";
 import Modal from "../../../../components/modals/Modal";
 import { useFormik } from "formik";
@@ -12,72 +12,27 @@ import {
   formatterUtility,
 } from "../../../../helpers/formatterUtility";
 import FormattedNumberInput from "../../../../components/FormattedNumberInput";
+import { useUserDetail, useVerifyUser } from "../../../../hooks/useUsers";
+import type { UserItem } from "../../../../services/userService";
 
 const HM_STORAGE_API_URL = import.meta.env.VITE_HM_STORAGE_BASE_URL;
 
-export interface UserDetail {
-  id: number;
-  firstname?: string;
-  lastname?: string;
-  email?: string;
-  phone?: string;
-  gender?: string;
-  date_of_birth?: string;
-  address?: string;
-  address2?: string;
-  country?: string;
-  state?: string;
-  city?: string;
-  branch?: string;
-  next_of_kin_name?: string;
-  next_of_kin_phone?: string;
-  next_of_kin_email?: string;
-  next_of_kin_relationship?: string;
-  next_of_kin_address?: string;
-  job_type?: string;
-  salary?: number | string;
-  monthly_revenue?: number | string;
-  admin_approved_salary?: number | string;
-  verified_salary?: number | string;
-  statement_of_account?: string;
-  is_verified?: number | boolean;
-  is_interested?: number | boolean;
-  interest_transactions_count?: number;
-  [key: string]: any;
-}
+export type UserDetail = UserItem;
 
 const ViewUser: React.FC = () => {
   const { id } = useParams<{ id: string }>();
-  const token = localStorage.getItem("token");
   const navigate = useNavigate();
   const location = useLocation();
-  const [user, setUser] = useState<UserDetail | null>(location.state || null);
-  const [isLoading, setIsLoading] = useState(!location.state);
-  const [isVerifying, setIsVerifying] = useState(false);
   const [openVerificationModal, setOpenVerificationModal] = useState(false);
 
-  useEffect(() => {
-    if (!user && id) {
-      const fetchUser = async () => {
-        setIsLoading(true);
-        try {
-          const response = await hmApi.get(`/api/users/${id}`, {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          });
-          setUser(response.data.data || response.data);
-        } catch (err) {
-          const msg = getErrorMessage(err);
-          toast.error(msg);
-          console.error("Error fetching user:", err);
-        } finally {
-          setIsLoading(false);
-        }
-      };
-      fetchUser();
-    }
-  }, [id, user, token]);
+  // TanStack Query for user details
+  const {
+    data: user,
+    isLoading,
+  } = useUserDetail(id, location.state);
+
+  // TanStack Mutation for user verification
+  const verifyUserMutation = useVerifyUser();
 
   const formik = useFormik({
     initialValues: {
@@ -95,30 +50,23 @@ const ViewUser: React.FC = () => {
         }),
     }),
     onSubmit: async (values, { resetForm }) => {
-      setIsVerifying(true);
+      if (!user?.id) return;
       try {
-        const response = await hmApi.post(
-          `/api/admin/users/${user?.id}/verify`,
-          values,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          },
-        );
+        const res = await verifyUserMutation.mutateAsync({
+          userId: user.id,
+          status: values.status,
+          admin_approved_salary: values.admin_approved_salary
+            ? Number(values.admin_approved_salary)
+            : null,
+        });
 
-        if (response.status === 200) {
-          setUser(response.data.data || response.data);
-          toast.success("User verified successfully");
-          setOpenVerificationModal(false);
-          resetForm();
-        }
+        toast.success(res?.message || "User verified successfully");
+        setOpenVerificationModal(false);
+        resetForm();
       } catch (err) {
-        const msg = getErrorMessage(err);
+        const msg = getErrorMessage(err, "Error verifying user");
         toast.error(msg);
         console.error("Error verifying user:", err);
-      } finally {
-        setIsVerifying(false);
       }
     },
   });
@@ -158,7 +106,7 @@ const ViewUser: React.FC = () => {
       <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
         {label}
       </span>
-      <span className="text-sm sm:text-base text-gray-900 font-medium">
+      <span className="text-sm md:text-base text-gray-900 font-medium">
         {value || "N/A"}
       </span>
     </div>
@@ -204,7 +152,7 @@ const ViewUser: React.FC = () => {
               href={`${HM_STORAGE_API_URL}${user?.statement_of_account}`}
               target="_blank"
               rel="noreferrer"
-              className="flex items-center justify-center px-4 py-2 bg-primary text-white font-semibold rounded-lg hover:bg-primary/90 transition-colors duration-200 w-full sm:w-auto text-sm cursor-pointer"
+              className="flex items-center justify-center px-4 py-2 bg-primary text-white font-semibold rounded-lg hover:bg-primary/90 transition-colors duration-200 w-full md:w-auto text-sm cursor-pointer"
             >
               <FaDownload className="mr-2 text-sm" />
               Download Statement
@@ -219,7 +167,7 @@ const ViewUser: React.FC = () => {
           <h3 className="text-lg font-bold text-gray-900 border-l-4 border-primary pl-3 mb-6">
             Personal Information
           </h3>
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 md:grid-cols-3 gap-6">
             <DetailItem label="First Name" value={user.firstname} />
             <DetailItem label="Last Name" value={user.lastname} />
             <DetailItem label="Email" value={user.email} />
@@ -241,7 +189,7 @@ const ViewUser: React.FC = () => {
           <h3 className="text-lg font-bold text-gray-900 border-l-4 border-primary pl-3 mb-6">
             Address Details
           </h3>
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 md:grid-cols-3 gap-6">
             <DetailItem label="Address" value={user.address} />
             <DetailItem label="Address 2" value={user.address2} />
             <DetailItem label="Country" value={user.country} />
@@ -256,7 +204,7 @@ const ViewUser: React.FC = () => {
           <h3 className="text-lg font-bold text-gray-900 border-l-4 border-primary pl-3 mb-6">
             Next of Kin
           </h3>
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 md:grid-cols-3 gap-6">
             <DetailItem label="Name" value={user.next_of_kin_name} />
             <DetailItem label="Phone" value={user.next_of_kin_phone} />
             <DetailItem label="Email" value={user.next_of_kin_email} />
@@ -273,7 +221,7 @@ const ViewUser: React.FC = () => {
           <h3 className="text-lg font-bold text-gray-900 border-l-4 border-primary pl-3 mb-6">
             Professional Information
           </h3>
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 md:grid-cols-3 gap-6">
             <DetailItem label="Job Type" value={user.job_type} />
             <DetailItem
               label="Declared Monthly Revenue"
@@ -321,7 +269,7 @@ const ViewUser: React.FC = () => {
                   name="status"
                   value={formik.values.status}
                   onChange={formik.handleChange}
-                  className="mt-1 block w-full rounded-md border border-gray-300 py-2 px-3 shadow-sm focus:border-primary focus:outline-none focus:ring-primary sm:text-sm"
+                  className="mt-1 block w-full rounded-md border border-gray-300 py-2 px-3 shadow-sm focus:border-primary focus:outline-none focus:ring-primary md:text-sm"
                 >
                   <option value="">Select Status</option>
                   <option value="verified">Verified</option>
@@ -368,10 +316,12 @@ const ViewUser: React.FC = () => {
               </button>
               <button
                 type="submit"
-                disabled={isVerifying}
+                disabled={verifyUserMutation.isPending}
                 className="px-4 py-2 bg-primary text-white rounded-md text-sm font-medium hover:bg-primary/90 disabled:opacity-50 cursor-pointer"
               >
-                {isVerifying ? "Verifying..." : "Confirm Verification"}
+                {verifyUserMutation.isPending
+                  ? "Verifying..."
+                  : "Confirm Verification"}
               </button>
             </div>
           </form>

@@ -4,8 +4,10 @@ import {
   unformatNumber,
 } from "../helpers/formatterUtility";
 
-export interface FormattedNumberInputProps
-  extends Omit<React.InputHTMLAttributes<HTMLInputElement>, "onChange" | "value" | "form"> {
+export interface FormattedNumberInputProps extends Omit<
+  React.InputHTMLAttributes<HTMLInputElement>,
+  "onChange" | "value" | "form"
+> {
   field?: {
     name?: string;
     value?: any;
@@ -13,7 +15,11 @@ export interface FormattedNumberInputProps
     onChange?: (e: any) => void;
   };
   form?: {
-    setFieldValue: (field: string, value: any, shouldValidate?: boolean) => void;
+    setFieldValue: (
+      field: string,
+      value: any,
+      shouldValidate?: boolean,
+    ) => void;
     [key: string]: any;
   };
   value?: any;
@@ -81,7 +87,7 @@ const FormattedNumberInput: React.FC<FormattedNumberInputProps> = ({
         onChange={handleChange}
         onBlur={onBlur}
         inputMode="decimal"
-        className={`w-full rounded-md border border-gray-300 py-2 px-3 shadow-sm focus:border-primary focus:outline-none focus:ring-primary sm:text-sm ${className}`}
+        className={`w-full rounded-md border border-gray-300 py-2 px-3 shadow-sm focus:border-primary focus:outline-none focus:ring-primary md:text-sm ${className}`}
       />
       {error && helperText && (
         <p className="mt-1 text-sm text-red-600">{helperText}</p>

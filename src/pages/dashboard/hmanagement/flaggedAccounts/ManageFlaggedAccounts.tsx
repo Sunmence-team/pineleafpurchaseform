@@ -1,51 +1,30 @@
 import React, { useState, useEffect } from "react";
-import { hmApi, getErrorMessage } from "../../../../helpers/api";
+import { getErrorMessage } from "../../../../helpers/api";
 import { toast } from "sonner";
 import Modal from "../../../../components/modals/Modal";
-import { StatusTurnPriorityCard } from "../../../../components/cards/StatusCard";
 import { IoIosSearch } from "react-icons/io";
 import ReusableTable from "../../../../utilities/ReusableTable";
 import type { TableColumnProps } from "../../../../lib/interfaces";
+import StatusCard from "../../../../components/cards/StatusCard";
+import {
+  useFlaggedAccounts,
+  useResolveFlaggedAccount,
+} from "../../../../hooks/useFlaggedAccounts";
+import type { FlaggedAccountItem } from "../../../../services/flaggedAccountService";
 
-export interface FlaggedAccountItem {
-  id: number;
-  reason?: string;
-  flag_type?: string;
-  type?: string;
-  attempts_count?: number;
-  attempts?: number;
-  status?: string;
-  resolution_status?: string;
-  last_attempt_at?: string;
-  updated_at?: string;
-  created_at?: string;
-  name?: string;
-  user?: {
-    id?: number;
-    firstname?: string;
-    lastname?: string;
-    email?: string;
-    [key: string]: any;
-  };
-  [key: string]: any;
-}
+export type { FlaggedAccountItem };
 
 const ManageFlaggedAccounts: React.FC = () => {
-  const token = localStorage.getItem("token");
-  const [flags, setFlags] = useState<FlaggedAccountItem[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<unknown>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [debouncedSearchQuery, setDebouncedSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
-  const [totalItems, setTotalItems] = useState(0);
-  const [totalPages, setTotalPages] = useState(1);
-  const [selectedFlag, setSelectedFlag] = useState<FlaggedAccountItem | null>(null);
+  const [selectedFlag, setSelectedFlag] = useState<FlaggedAccountItem | null>(
+    null,
+  );
   const [resolveNote, setResolveNote] = useState("");
   const [reEnableUser, setReEnableUser] = useState(false);
-  const [isResolving, setIsResolving] = useState(false);
 
   useEffect(() => {
     const handler = setTimeout(() => {
@@ -56,39 +35,30 @@ const ManageFlaggedAccounts: React.FC = () => {
     return () => clearTimeout(handler);
   }, [searchQuery]);
 
-  const fetchFlags = async () => {
-    setIsLoading(true);
-    setError(null);
+  // TanStack Query for fetching flagged accounts
+  const {
+    data: responseData,
+    isLoading,
+    error,
+  } = useFlaggedAccounts({
+    page: currentPage,
+    per_page: itemsPerPage,
+    search: debouncedSearchQuery,
+    status: statusFilter,
+  });
 
-    try {
-      const response = await hmApi.get("/api/admin/flagged-accounts", {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-        params: {
-          page: currentPage,
-          per_page: itemsPerPage,
-          search: debouncedSearchQuery,
-          status: statusFilter,
-        },
-      });
-
-      const { data, total, last_page } = response.data.data;
-      setFlags(data || []);
-      setTotalItems(total || 0);
-      setTotalPages(last_page || 1);
-    } catch (err) {
-      const msg = getErrorMessage(err);
-      setError(msg);
-      toast.error(msg);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  const flags: FlaggedAccountItem[] = responseData?.data?.data || [];
+  const totalItems = responseData?.data?.total || 0;
+  const totalPages = responseData?.data?.last_page || 1;
 
   useEffect(() => {
-    fetchFlags();
-  }, [currentPage, itemsPerPage, debouncedSearchQuery, statusFilter]);
+    if (error) {
+      toast.error(getErrorMessage(error, "Failed to fetch flagged accounts"));
+    }
+  }, [error]);
+
+  // TanStack Mutation for resolving flagged accounts
+  const resolveMutation = useResolveFlaggedAccount();
 
   const openResolveModal = (flag: FlaggedAccountItem) => {
     setSelectedFlag(flag);
@@ -98,27 +68,16 @@ const ManageFlaggedAccounts: React.FC = () => {
 
   const handleResolve = async () => {
     if (!selectedFlag) return;
-    setIsResolving(true);
     try {
-      await hmApi.post(
-        `/api/admin/flagged-accounts/${selectedFlag.id}/resolve`,
-        {
-          note: resolveNote,
-          re_enable_user: reEnableUser,
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
+      await resolveMutation.mutateAsync({
+        id: selectedFlag.id,
+        note: resolveNote,
+        re_enable_user: reEnableUser,
+      });
       toast.success("Flagged account resolved successfully");
       setSelectedFlag(null);
-      fetchFlags();
     } catch (err) {
-      toast.error(getErrorMessage(err));
-    } finally {
-      setIsResolving(false);
+      toast.error(getErrorMessage(err, "Failed to resolve flagged account"));
     }
   };
 
@@ -140,19 +99,24 @@ const ManageFlaggedAccounts: React.FC = () => {
     {
       label: "Reason",
       key: "reason",
-      render: (item) => <span>{item.reason || item.flag_type || item.type || "-"}</span>,
+      render: (item) => (
+        <span>{item.reason || item.flag_type || item.type || "-"}</span>
+      ),
     },
     {
       label: "Attempts",
       key: "attempts_count",
-      render: (item) => <span>{item.attempts_count ?? item.attempts ?? "-"}</span>,
+      render: (item) => (
+        <span>{item.attempts_count ?? item.attempts ?? "-"}</span>
+      ),
     },
     {
       label: "Status",
       key: "status",
       render: (item) => (
-        <StatusTurnPriorityCard
-          status={item.status || item.resolution_status}
+        <StatusCard
+          type={item.status}
+          statusText={item.status || item.resolution_status}
         />
       ),
     },
@@ -237,7 +201,7 @@ const ManageFlaggedAccounts: React.FC = () => {
         columns={columns}
         data={flags}
         isLoading={isLoading}
-        error={error}
+        error={error ? getErrorMessage(error) : null}
         currentPage={currentPage}
         totalPages={totalPages}
         totalItems={totalItems}
@@ -283,7 +247,7 @@ const ManageFlaggedAccounts: React.FC = () => {
               </label>
             </div>
 
-            <div className="flex flex-col gap-3 sm:flex-row sm:justify-end sm:items-center">
+            <div className="flex flex-col gap-3 md:flex-row md:justify-end md:items-center">
               <button
                 type="button"
                 onClick={() => setSelectedFlag(null)}
@@ -294,10 +258,10 @@ const ManageFlaggedAccounts: React.FC = () => {
               <button
                 type="button"
                 onClick={handleResolve}
-                disabled={isResolving}
+                disabled={resolveMutation.isPending}
                 className="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-60 cursor-pointer"
               >
-                {isResolving ? "Resolving..." : "Resolve Account"}
+                {resolveMutation.isPending ? "Resolving..." : "Resolve Account"}
               </button>
             </div>
           </div>

@@ -25,7 +25,7 @@ const BranchDownloadModal = ({
 
   return (
     <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 md:p-8 p-4">
-      <div className="bg-white rounded-2xl p-4 sm:p-6 w-full lg:w-[45%] md:w-[80%] shadow-2xl max-h-[calc(100vh-2rem)] overflow-y-auto">
+      <div className="bg-white rounded-2xl p-4 md:p-6 w-full lg:w-[45%] md:w-[80%] shadow-2xl max-h-[calc(100vh-2rem)] overflow-y-auto">
         {/* Header */}
         <div className="flex justify-between items-center mb-4">
           <h3 className="text-lg md:text-xl font-bold text-gray-900">
@@ -62,7 +62,7 @@ const BranchDownloadModal = ({
                   This is the first download for this branch. Please select a
                   start date and time.
                 </p>
-                <div className="flex flex-col sm:flex-row gap-3 mt-4">
+                <div className="flex flex-col md:flex-row gap-3 mt-4">
                   <div className="flex-1">
                     <label className="block text-sm font-medium text-gray-700 mb-1">
                       Date From

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import {
   FaArrowLeft,
@@ -7,66 +7,31 @@ import {
   FaInfoCircle,
 } from "react-icons/fa";
 import { toast } from "sonner";
-import { hmApi, getErrorMessage } from "../../../../helpers/api";
+import { getErrorMessage } from "../../../../helpers/api";
 import { formatterUtility } from "../../../../helpers/formatterUtility";
-import { StatusTurnPriorityCard } from "../../../../components/cards/StatusCard";
+import StatusCard from "../../../../components/cards/StatusCard";
+import {
+  useRefund,
+  useUpdateRefundStatus,
+} from "../../../../hooks/useRefunds";
+import type { RefundItem } from "../../../../services/refundService";
 
-export interface RefundDetail {
-  id: number;
-  amount?: number | string;
-  status?: string;
-  created_at?: string;
-  admin_note?: string;
-  bank_name?: string;
-  account_number?: string;
-  account_name?: string;
-  user?: {
-    firstname?: string;
-    lastname?: string;
-    email?: string;
-    phone?: string;
-    [key: string]: any;
-  };
-  [key: string]: any;
-}
+export type RefundDetail = RefundItem;
 
 const ViewRefund: React.FC = () => {
   const { id } = useParams<{ id: string }>();
-  const token = localStorage.getItem("token");
   const navigate = useNavigate();
   const location = useLocation();
-  const [refund, setRefund] = useState<RefundDetail | null>(
-    location.state?.refund || null,
-  );
-  const [isLoading, setIsLoading] = useState(!location.state?.refund);
   const [adminNote, setAdminNote] = useState("");
-  const [isProcessing, setIsProcessing] = useState(false);
 
-  useEffect(() => {
-    const fetchRefundDetail = async () => {
-      setIsLoading(true);
-      try {
-        const response = await hmApi.get(`/api/admin/refunds/${id}`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
+  // TanStack Query for single refund details
+  const {
+    data: refund,
+    isLoading,
+  } = useRefund(id, location.state?.refund);
 
-        if (response.status === 200 && response.data.data) {
-          setRefund(response.data.data);
-        }
-      } catch (err) {
-        toast.error(getErrorMessage(err));
-        navigate("/dashboard/manage/refunds");
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    if (!refund && id) {
-      fetchRefundDetail();
-    }
-  }, [id, navigate, refund, token]);
+  // TanStack Mutation for updating refund status
+  const updateRefundMutation = useUpdateRefundStatus();
 
   const handleStatusUpdate = async (status: "settled" | "rejected") => {
     if (status === "rejected" && !adminNote.trim()) {
@@ -74,32 +39,21 @@ const ViewRefund: React.FC = () => {
       return;
     }
 
-    setIsProcessing(true);
-    try {
-      const response = await hmApi.patch(
-        `/api/admin/refunds/${id}`,
-        {
-          status,
-          admin_note: adminNote,
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        },
-      );
+    if (!id) return;
 
-      if (response.status === 200) {
-        toast.success(
-          `Refund ${status === "settled" ? "approved" : "rejected"} successfully.`,
-        );
-        setRefund(response.data.data || { ...refund, status });
-        setAdminNote("");
-      }
+    try {
+      await updateRefundMutation.mutateAsync({
+        id,
+        status,
+        admin_note: adminNote,
+      });
+
+      toast.success(
+        `Refund ${status === "settled" ? "approved" : "rejected"} successfully.`,
+      );
+      setAdminNote("");
     } catch (err) {
-      toast.error(getErrorMessage(err));
-    } finally {
-      setIsProcessing(false);
+      toast.error(getErrorMessage(err, "Failed to update refund status"));
     }
   };
 
@@ -149,7 +103,7 @@ const ViewRefund: React.FC = () => {
         {label}
       </span>
       <span
-        className={`text-sm sm:text-base text-gray-900 font-medium truncate ${
+        className={`text-sm md:text-base text-gray-900 font-medium truncate ${
           capitalize ? "capitalize" : ""
         }`}
       >
@@ -179,7 +133,7 @@ const ViewRefund: React.FC = () => {
             Refund Request Details
           </h1>
         </div>
-        <StatusTurnPriorityCard status={refund?.status} />
+        <StatusCard type={refund?.status} statusText={refund?.status} />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
@@ -203,7 +157,7 @@ const ViewRefund: React.FC = () => {
           {/* Refund Details Section */}
           <section className="border-b pb-4 border-primary/10">
             <SectionHeader icon={FaInfoCircle} title="Refund Details" />
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 bg-secondary p-6 rounded-xl border border-primary/10">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 bg-secondary p-6 rounded-xl border border-primary/10">
               <InfoItem
                 label="Amount"
                 value={formatterUtility(Number(refund.amount))}
@@ -222,7 +176,7 @@ const ViewRefund: React.FC = () => {
                 }
               />
               {refund.admin_note && (
-                <div className="sm:col-span-2">
+                <div className="md:col-span-2">
                   <InfoItem label="Admin Note" value={refund.admin_note} />
                 </div>
               )}
@@ -266,17 +220,19 @@ const ViewRefund: React.FC = () => {
               <div className="flex gap-4">
                 <button
                   onClick={() => handleStatusUpdate("settled")}
-                  disabled={isProcessing}
+                  disabled={updateRefundMutation.isPending}
                   className="flex-1 py-2.5 bg-primary text-white font-semibold rounded-lg hover:bg-primary/90 transition disabled:opacity-50 cursor-pointer text-sm"
                 >
-                  {isProcessing ? "Processing..." : "Approve & Settle"}
+                  {updateRefundMutation.isPending
+                    ? "Processing..."
+                    : "Approve & Settle"}
                 </button>
                 <button
                   onClick={() => handleStatusUpdate("rejected")}
-                  disabled={isProcessing}
+                  disabled={updateRefundMutation.isPending}
                   className="flex-1 py-2.5 bg-red-600 text-white font-semibold rounded-lg hover:bg-red-700 transition disabled:opacity-50 cursor-pointer text-sm"
                 >
-                  {isProcessing ? "Processing..." : "Reject"}
+                  {updateRefundMutation.isPending ? "Processing..." : "Reject"}
                 </button>
               </div>
             </section>

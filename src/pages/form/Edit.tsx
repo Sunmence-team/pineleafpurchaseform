@@ -8,7 +8,8 @@ import "react-datepicker/dist/react-datepicker.css";
 import axios from "axios";
 import { toast } from "sonner";
 import { format } from "date-fns";
-import assets from "../assets/assets";
+import { api } from "../../helpers/api";
+import assets from "../../assets/assets";
 import {
   FaArrowLeft,
   FaUser,
@@ -28,18 +29,18 @@ import { BiBriefcase } from "react-icons/bi";
 
 const API_URL = import.meta.env.VITE_API_BASE_URL;
 
-const EditClient = () => {
+const EditClient: React.FC = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const [countries, setCountries] = useState([]);
-  const [states, setStates] = useState([]);
+  const [countries, setCountries] = useState<string[]>([]);
+  const [states, setStates] = useState<string[]>([]);
   const [loading, setLoading] = useState({
     countries: false,
     states: false,
   });
-  const [error, setError] = useState(null);
-  const [countryCodeMap, setCountryCodeMap] = useState({});
-  const [formData, setFormData] = useState(null);
+  const [error, setError] = useState<string | null>(null);
+  const [countryCodeMap, setCountryCodeMap] = useState<Record<string, any>>({});
+  const [formData, setFormData] = useState<any>(null);
   const [newTitle, setNewTitle] = useState("");
   const [newFirstName, setNewFirstName] = useState("");
   const [newMiddleName, setNewMiddleName] = useState("");
@@ -56,7 +57,7 @@ const EditClient = () => {
       setError(null);
       try {
         const response = await fetch(
-          "https://countriesnow.space/api/v0.1/countries",
+          "https://countriesnow.space/v0.1/countries",
         );
         const result = await response.json();
         if (result.error) throw new Error(result.msg);
@@ -91,7 +92,7 @@ const EditClient = () => {
         setError(null);
         try {
           const response = await fetch(
-            "https://countriesnow.space/api/v0.1/countries/states",
+            "https://countriesnow.space/v0.1/countries/states",
             {
               method: "POST",
               headers: { "Content-Type": "application/json" },
@@ -130,7 +131,7 @@ const EditClient = () => {
         }
 
         const response = await api.post(
-          `${API_URL}/api/applications/${id}`,
+          `${API_URL}/applications/${id}`,
           {},
           {
             headers: {
@@ -665,7 +666,7 @@ const EditClient = () => {
               );
 
               console.log(
-                "FormData being sent to POST /api/update_applications:",
+                "FormData being sent to POST /update_applications:",
                 id,
               );
               for (let [key, value] of formDataToSend.entries()) {
@@ -676,7 +677,7 @@ const EditClient = () => {
               }
 
               const response = await api.post(
-                `${API_URL}/api/update_applications/${id}`,
+                `${API_URL}/update_applications/${id}`,
                 formDataToSend,
                 {
                   headers: {
@@ -687,7 +688,7 @@ const EditClient = () => {
               );
 
               console.log(
-                "API Response from POST /api/update_applications:",
+                "API Response from POST /update_applications:",
                 response.data,
               );
 
@@ -939,7 +940,7 @@ const EditClient = () => {
                         Official Contact Number
                       </label>
                       <div className={parentClass}>
-                        <FaPhoneAlt classNaame="text-primary" />
+                        <FaPhoneAlt className="text-primary" />
                         <Field
                           type="text"
                           name="clubContact"
@@ -1006,7 +1007,7 @@ const EditClient = () => {
                                 <FaPlus /> <span>Add Member</span>
                               </button>
                             </div>
-                            <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
+                            <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
                               <select
                                 value={newTitle}
                                 onChange={(e) => setNewTitle(e.target.value)}
@@ -1164,6 +1165,7 @@ const EditClient = () => {
                           ...countries.map((country) => ({
                             value: country,
                             label: country,
+                            disabled: false,
                             key: country,
                           })),
                         ].map(({ key, value, label, disabled }) => (
@@ -1184,7 +1186,7 @@ const EditClient = () => {
                       State of Origin
                     </label>
                     <div className={parentClass}>
-                      <FaMapMarkerAlt claame="-3 text-primary" />
+                      <FaMapMarkerAlt className="-3 text-primary" />
                       <Field
                         as="select"
                         name="stateOfOrigin"
@@ -1216,6 +1218,7 @@ const EditClient = () => {
                           ...states.map((state) => ({
                             value: state,
                             label: state,
+                            disabled: false,
                             key: state,
                           })),
                         ].map(({ key, value, label, disabled }) => (
@@ -1236,7 +1239,7 @@ const EditClient = () => {
                       Local Government (LGA)
                     </label>
                     <div className={parentClass}>
-                      <FaMapMarkerAlt claame="-3 text-primary" />
+                      <FaMapMarkerAlt className="-3 text-primary" />
                       <Field
                         type="text"
                         name="lga"
@@ -1255,7 +1258,7 @@ const EditClient = () => {
                       Address
                     </label>
                     <div className={parentClass + " items-start! h-48! p-2!"}>
-                      <FaAddressCard clasame="text-primary" />
+                      <FaAddressCard className="text-primary" />
                       <Field
                         as="textarea"
                         name="address"
@@ -1433,7 +1436,7 @@ const EditClient = () => {
                         Email
                       </label>
                       <div className={parentClass}>
-                        <FaEnvelope classNaame="ext-primary" />
+                        <FaEnvelope className="ext-primary" />
                         <Field
                           type="email"
                           name="email"
@@ -1451,7 +1454,7 @@ const EditClient = () => {
                         Mobile Number
                       </label>
                       <div className={parentClass}>
-                        <FaPhoneAlt classNaame="ext-primary" />
+                        <FaPhoneAlt className="ext-primary" />
                         <Field
                           type="tel"
                           name="mobileNumber"
@@ -1595,7 +1598,7 @@ const EditClient = () => {
                         : "Representative Contact Mobile"}
                     </label>
                     <div className={parentClass}>
-                      <FaPhoneAlt classNaame="ext-primary" />
+                      <FaPhoneAlt className="ext-primary" />
                       <Field
                         type="tel"
                         name="nextOfKinMobileNumber"
@@ -1616,7 +1619,7 @@ const EditClient = () => {
                         : "Representative Contact Email"}
                     </label>
                     <div className={parentClass}>
-                      <FaEnvelope classNaame="ext-primary" />
+                      <FaEnvelope className="ext-primary" />
                       <Field
                         type="email"
                         name="nextOfKinEmail"
@@ -1680,7 +1683,7 @@ const EditClient = () => {
                       Site Location
                     </label>
                     <div className={parentClass}>
-                      <FaMapMarkerAlt claame="-3 text-primary" />
+                      <FaMapMarkerAlt className="-3 text-primary" />
                       <Field
                         type="text"
                         name="clientDeclarationSiteLocation"
@@ -1698,7 +1701,7 @@ const EditClient = () => {
                       Plot Number
                     </label>
                     <div className={parentClass}>
-                      <FaMapMarkerAlt claame="-3 text-primary" />
+                      <FaMapMarkerAlt className="-3 text-primary" />
                       <Field
                         type="text"
                         name="clientDeclarationPlotNumber"
@@ -1716,7 +1719,7 @@ const EditClient = () => {
                       Branch
                     </label>
                     <div className={parentClass}>
-                      <FaMapMarkerAlt claame="-3 text-primary" />
+                      <FaMapMarkerAlt className="-3 text-primary" />
                       <Field
                         type="text"
                         name="branches"
@@ -1734,10 +1737,14 @@ const EditClient = () => {
                       Declaration Date
                     </label>
                     <div className={parentClass}>
-                      <FaCalendarAlt clasame="3 text-primary z-10" />
+                      <FaCalendarAlt className="3 text-primary z-10" />
                       <DatePicker
-                        selected={values.clientDeclarationDate}
-                        onChange={(date) =>
+                        selected={
+                          values.clientDeclarationDate
+                            ? new Date(values.clientDeclarationDate)
+                            : null
+                        }
+                        onChange={(date: Date | null) =>
                           setFieldValue("clientDeclarationDate", date)
                         }
                         dateFormat="dd-MM-yyyy"
@@ -1786,7 +1793,7 @@ const EditClient = () => {
                       Phone
                     </label>
                     <div className={parentClass}>
-                      <FaPhoneAlt classNaame="ext-primary" />
+                      <FaPhoneAlt className="ext-primary" />
                       <Field
                         type="tel"
                         name="referralMobileNumber"

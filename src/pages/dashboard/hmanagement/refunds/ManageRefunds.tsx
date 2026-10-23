@@ -1,33 +1,18 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import ActionCell from "../../../../components/ui/ActionCell";
-import { hmApi, getErrorMessage } from "../../../../helpers/api";
+import { getErrorMessage } from "../../../../helpers/api";
 import { toast } from "sonner";
 import { formatterUtility } from "../../../../helpers/formatterUtility";
 import { IoIosSearch } from "react-icons/io";
 import ReusableTable from "../../../../utilities/ReusableTable";
 import type { TableColumnProps } from "../../../../lib/interfaces";
+import { useRefunds } from "../../../../hooks/useRefunds";
+import type { RefundItem } from "../../../../services/refundService";
 
-export interface RefundItem {
-  id: number;
-  status?: string;
-  created_at?: string;
-  account_name?: string;
-  bank_name?: string;
-  amount?: number | string;
-  user?: {
-    firstname?: string;
-    lastname?: string;
-    [key: string]: any;
-  };
-  [key: string]: any;
-}
+export type { RefundItem };
 
 const ManageRefunds: React.FC = () => {
-  const token = localStorage.getItem("token");
-  const [refunds, setRefunds] = useState<RefundItem[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<unknown>(null);
   const navigate = useNavigate();
   const location = useLocation();
   const savedListState = location.state?.listState;
@@ -35,24 +20,22 @@ const ManageRefunds: React.FC = () => {
   const hasMounted = useRef(false);
 
   const [searchQuery, setSearchQuery] = useState(
-    savedListState?.searchQuery || ""
+    savedListState?.searchQuery || "",
   );
   const [debouncedSearchQuery, setDebouncedSearchQuery] = useState(
-    savedListState?.searchQuery || ""
+    savedListState?.searchQuery || "",
   );
   const [statusFilter, setStatusFilter] = useState(
-    savedListState?.statusFilter || ""
+    savedListState?.statusFilter || "",
   );
 
   // Pagination state
   const [currentPage, setCurrentPage] = useState(
-    savedListState?.currentPage || 1
+    savedListState?.currentPage || 1,
   );
   const [itemsPerPage, setItemsPerPage] = useState(
-    savedListState?.itemsPerPage || 10
+    savedListState?.itemsPerPage || 10,
   );
-  const [totalItems, setTotalItems] = useState(0);
-  const [totalPages, setTotalPages] = useState(1);
 
   // Debounce search
   useEffect(() => {
@@ -76,39 +59,27 @@ const ManageRefunds: React.FC = () => {
     setCurrentPage(1);
   }, [statusFilter]);
 
-  const fetchRefunds = async () => {
-    setIsLoading(true);
-    setError(null);
-    try {
-      const response = await hmApi.get("/api/admin/refunds", {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-        params: {
-          page: currentPage,
-          per_page: itemsPerPage,
-          search: debouncedSearchQuery,
-          status: statusFilter,
-        },
-      });
-      if (response.status === 200) {
-        const { data, total, last_page } = response.data.data;
-        setRefunds(data || []);
-        setTotalItems(total || 0);
-        setTotalPages(last_page || 1);
-      }
-    } catch (err) {
-      const msg = getErrorMessage(err);
-      setError(msg);
-      toast.error(msg);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  // TanStack Query hook for refunds
+  const {
+    data: responseData,
+    isLoading,
+    error,
+  } = useRefunds({
+    page: currentPage,
+    per_page: itemsPerPage,
+    search: debouncedSearchQuery,
+    status: statusFilter,
+  });
+
+  const refunds: RefundItem[] = responseData?.data?.data || [];
+  const totalItems = responseData?.data?.total || 0;
+  const totalPages = responseData?.data?.last_page || 1;
 
   useEffect(() => {
-    fetchRefunds();
-  }, [currentPage, itemsPerPage, debouncedSearchQuery, statusFilter]);
+    if (error) {
+      toast.error(getErrorMessage(error, "Failed to fetch refunds"));
+    }
+  }, [error]);
 
   const columns: TableColumnProps<RefundItem>[] = [
     {
@@ -123,7 +94,9 @@ const ManageRefunds: React.FC = () => {
     {
       label: "Account Name",
       key: "account_name",
-      render: (item) => <span className="capitalize">{item.account_name ?? "-"}</span>,
+      render: (item) => (
+        <span className="capitalize">{item.account_name ?? "-"}</span>
+      ),
     },
     {
       label: "Bank",
@@ -243,7 +216,7 @@ const ManageRefunds: React.FC = () => {
         columns={columns}
         data={refunds}
         isLoading={isLoading}
-        error={error}
+        error={error ? getErrorMessage(error) : null}
         currentPage={currentPage}
         totalPages={totalPages}
         totalItems={totalItems}

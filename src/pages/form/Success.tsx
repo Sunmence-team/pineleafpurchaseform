@@ -2,7 +2,7 @@ import React from "react";
 import { FaCheckCircle } from "react-icons/fa";
 import { Link } from "react-router-dom";
 
-const Success = () => {
+const Success: React.FC = () => {
   return (
     <div className="min-h-screen flex items-center justify-center px-4 bg-primary/50">
       <div className="max-w-lg w-full bg-white rounded-xl shadow-2xl p-10 text-center transform transition-all duration-500 hover:scale-105">

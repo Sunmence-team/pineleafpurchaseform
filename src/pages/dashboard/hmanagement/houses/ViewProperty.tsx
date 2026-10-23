@@ -1,52 +1,28 @@
-import React, { useState, useEffect } from "react";
+import React, { useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { FaArrowLeft } from "react-icons/fa6";
 import { toast } from "sonner";
-import { hmApi, getErrorMessage } from "../../../../helpers/api";
+import { getErrorMessage } from "../../../../helpers/api";
+import { useHouse } from "../../../../hooks/useHouse";
+import type { HouseItem } from "../../../../services/houseService";
 
 const HM_STORAGE_API_URL = import.meta.env.VITE_HM_STORAGE_BASE_URL;
 
-export interface PropertyDetail {
-  id: number;
-  name?: string;
-  estate_name?: string;
-  location?: string;
-  type?: string;
-  price?: number | string;
-  no_of_bedrooms?: number | string;
-  total_units?: number | string;
-  description?: string;
-  images?: string[];
-  [key: string]: any;
-}
+export type PropertyDetail = HouseItem;
 
 const ViewProperty: React.FC = () => {
-  const token = localStorage.getItem("token");
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const [property, setProperty] = useState<PropertyDetail | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+
+  // TanStack Query hook for single house property
+  const { data: property, isLoading, error } = useHouse(id);
 
   useEffect(() => {
-    const fetchProperty = async () => {
-      try {
-        const response = await hmApi.get(`/api/admin/properties/${id}`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
-        setProperty(response.data.data || response.data);
-      } catch (err) {
-        toast.error(getErrorMessage(err));
-        navigate("/dashboard/manage/properties");
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    if (id) {
-      fetchProperty();
+    if (error) {
+      toast.error(getErrorMessage(error, "Failed to load property"));
+      navigate("/dashboard/manage/properties");
     }
-  }, [id, navigate, token]);
+  }, [error, navigate]);
 
   if (isLoading) {
     return (
@@ -77,7 +53,7 @@ const ViewProperty: React.FC = () => {
       <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
         {label}
       </span>
-      <span className="text-sm sm:text-base text-gray-900 font-medium">
+      <span className="text-sm md:text-base text-gray-900 font-medium">
         {value || "N/A"}
       </span>
     </div>
@@ -113,7 +89,7 @@ const ViewProperty: React.FC = () => {
             <h3 className="text-lg font-bold text-gray-900 border-l-4 border-primary pl-3 mb-6">
               Property Images
             </h3>
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 md:grid-cols-3 gap-4">
               {property.images.map((img, idx) => (
                 <img
                   key={idx}
@@ -131,7 +107,7 @@ const ViewProperty: React.FC = () => {
           <h3 className="text-lg font-bold text-gray-900 border-l-4 border-primary pl-3 mb-6">
             General Information
           </h3>
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 md:grid-cols-3 gap-6">
             <DetailItem label="Property Name" value={property.name} />
             <DetailItem label="Estate Name" value={property.estate_name} />
             <DetailItem label="Location" value={property.location} />

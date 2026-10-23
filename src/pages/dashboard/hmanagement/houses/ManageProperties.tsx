@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import ActionCell from "../../../../components/ui/ActionCell";
-import { hmApi, getErrorMessage } from "../../../../helpers/api";
+import { getErrorMessage } from "../../../../helpers/api";
 import { toast } from "sonner";
 import ConfirmDialog from "../../../../components/modals/ConfirmDialog";
 import { FaPlus } from "react-icons/fa6";
@@ -9,31 +9,20 @@ import { IoIosSearch } from "react-icons/io";
 import ReusableTable from "../../../../utilities/ReusableTable";
 import type { TableColumnProps } from "../../../../lib/interfaces";
 import ActionButton from "../../../../components/ui/ActionButton";
+import { useHouses, useDeleteHouse } from "../../../../hooks/useHouse";
+import type { HouseItem } from "../../../../services/houseService";
 
-export interface PropertyItem {
-  id: number;
-  name?: string;
-  estate_name?: string;
-  location?: string;
-  price?: number | string;
-  [key: string]: any;
-}
+export type PropertyItem = HouseItem;
 
 const ManageProperties: React.FC = () => {
-  const token = localStorage.getItem("token");
-  const [properties, setProperties] = useState<PropertyItem[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [isDeleting, setIsDeleting] = useState(false);
-  const [error, setError] = useState<unknown>(null);
+  const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
   const [debouncedSearchQuery, setDebouncedSearchQuery] = useState("");
   const [propertyToDelete, setPropertyToDelete] = useState<number | null>(null);
-  const navigate = useNavigate();
 
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
-  const [totalItems, setTotalItems] = useState(0);
 
   // Debounce search
   useEffect(() => {
@@ -44,59 +33,37 @@ const ManageProperties: React.FC = () => {
     return () => clearTimeout(handler);
   }, [searchQuery]);
 
-  const fetchProperties = async () => {
-    setIsLoading(true);
-    setError(null);
-    try {
-      const response = await hmApi.get("/api/admin/properties", {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-        params: {
-          page: currentPage,
-          limit: itemsPerPage,
-          search: debouncedSearchQuery,
-        },
-      });
+  // Fetch houses via TanStack Query hook
+  const {
+    data: responseData,
+    isLoading,
+    error,
+  } = useHouses({
+    page: currentPage,
+    limit: itemsPerPage,
+    search: debouncedSearchQuery,
+  });
 
-      if (response.status === 200) {
-        const { data, total } = response.data.data;
-        setProperties(data);
-        setTotalItems(total);
-      }
-    } catch (err) {
-      const msg = getErrorMessage(err);
-      setError(msg);
-      toast.error(msg);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  const properties: HouseItem[] = responseData?.data?.data || [];
+  const totalItems = responseData?.data?.total || 0;
+  const totalPages =
+    responseData?.data?.last_page || Math.ceil(totalItems / itemsPerPage) || 1;
 
-  useEffect(() => {
-    fetchProperties();
-  }, [currentPage, itemsPerPage, debouncedSearchQuery]);
+  // Delete mutation
+  const deleteMutation = useDeleteHouse();
 
   const handleDelete = async () => {
     if (!propertyToDelete) return;
-    setIsDeleting(true);
     try {
-      await hmApi.delete(`/api/admin/properties/${propertyToDelete}`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+      await deleteMutation.mutateAsync(propertyToDelete);
       toast.success("Property deleted successfully");
       setPropertyToDelete(null);
-      fetchProperties();
     } catch (err) {
       toast.error(getErrorMessage(err));
-    } finally {
-      setIsDeleting(false);
     }
   };
 
-  const columns: TableColumnProps<PropertyItem>[] = [
+  const columns: TableColumnProps<HouseItem>[] = [
     {
       label: "Property Name",
       key: "name",
@@ -173,13 +140,13 @@ const ManageProperties: React.FC = () => {
         </div>
       </div>
 
-      <ReusableTable<PropertyItem>
+      <ReusableTable<HouseItem>
         columns={columns}
         data={properties}
         isLoading={isLoading}
-        error={error}
+        error={error ? getErrorMessage(error) : null}
         currentPage={currentPage}
-        totalPages={Math.ceil(totalItems / itemsPerPage) || 1}
+        totalPages={totalPages}
         totalItems={totalItems}
         itemsPerPage={itemsPerPage}
         setCurrentPage={setCurrentPage}
@@ -193,7 +160,7 @@ const ManageProperties: React.FC = () => {
         message="Are you sure you want to delete this property? This action cannot be undone."
         onConfirm={handleDelete}
         onCancel={() => setPropertyToDelete(null)}
-        isLoading={isDeleting}
+        isLoading={deleteMutation.isPending}
       />
     </div>
   );

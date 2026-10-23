@@ -21,8 +21,8 @@ const BranchFilterModal = ({
   }
 
   return (
-    <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-2 sm:p-4">
-      <div className="bg-white rounded-2xl p-4 sm:p-6 w-full max-w-md shadow-2xl max-h-[calc(100vh-2rem)] overflow-y-auto">
+    <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-2 md:p-4">
+      <div className="bg-white rounded-2xl p-4 md:p-6 w-full max-w-md shadow-2xl max-h-[calc(100vh-2rem)] overflow-y-auto">
         <div className="flex justify-between items-center mb-4">
           <h3 className="text-lg md:text-xl font-bold text-gray-900">
             Filter by Branch

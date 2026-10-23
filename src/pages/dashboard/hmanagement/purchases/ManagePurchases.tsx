@@ -1,36 +1,18 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import ActionCell from "../../../../components/ui/ActionCell";
-import { hmApi, getErrorMessage } from "../../../../helpers/api";
+import { getErrorMessage } from "../../../../helpers/api";
 import { toast } from "sonner";
 import { formatterUtility } from "../../../../helpers/formatterUtility";
 import { IoIosSearch } from "react-icons/io";
 import ReusableTable from "../../../../utilities/ReusableTable";
 import type { TableColumnProps } from "../../../../lib/interfaces";
+import { usePurchases } from "../../../../hooks/usePurchases";
+import type { PurchaseItem } from "../../../../services/purchaseService";
 
-export interface PurchaseItem {
-  id: number;
-  status?: string;
-  created_at?: string;
-  user?: {
-    firstname?: string;
-    lastname?: string;
-    email?: string;
-    [key: string]: any;
-  };
-  property?: {
-    name?: string;
-    price?: number | string;
-    [key: string]: any;
-  };
-  [key: string]: any;
-}
+export type { PurchaseItem };
 
 const ManagePurchases: React.FC = () => {
-  const token = localStorage.getItem("token");
-  const [purchases, setPurchases] = useState<PurchaseItem[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<unknown>(null);
   const navigate = useNavigate();
   const location = useLocation();
   const savedListState = location.state?.listState;
@@ -38,24 +20,22 @@ const ManagePurchases: React.FC = () => {
   const hasMounted = useRef(false);
 
   const [searchQuery, setSearchQuery] = useState(
-    savedListState?.searchQuery || ""
+    savedListState?.searchQuery || "",
   );
   const [debouncedSearchQuery, setDebouncedSearchQuery] = useState(
-    savedListState?.searchQuery || ""
+    savedListState?.searchQuery || "",
   );
   const [statusFilter, setStatusFilter] = useState(
-    savedListState?.statusFilter || ""
+    savedListState?.statusFilter || "",
   );
 
   // Pagination state
   const [currentPage, setCurrentPage] = useState(
-    savedListState?.currentPage || 1
+    savedListState?.currentPage || 1,
   );
   const [itemsPerPage, setItemsPerPage] = useState(
-    savedListState?.itemsPerPage || 10
+    savedListState?.itemsPerPage || 10,
   );
-  const [totalItems, setTotalItems] = useState(0);
-  const [totalPages, setTotalPages] = useState(1);
 
   // Debounce search
   useEffect(() => {
@@ -79,39 +59,27 @@ const ManagePurchases: React.FC = () => {
     setCurrentPage(1);
   }, [statusFilter]);
 
-  const fetchPurchases = async () => {
-    setIsLoading(true);
-    setError(null);
-    try {
-      const response = await hmApi.get("/api/admin/applications", {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-        params: {
-          page: currentPage,
-          per_page: itemsPerPage,
-          search: debouncedSearchQuery,
-          status: statusFilter,
-        },
-      });
-      if (response.status === 200) {
-        const { data, total, last_page } = response.data.data;
-        setPurchases(data || []);
-        setTotalItems(total || 0);
-        setTotalPages(last_page || 1);
-      }
-    } catch (err) {
-      const msg = getErrorMessage(err);
-      setError(msg);
-      toast.error(msg);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  // TanStack Query hook for purchases
+  const {
+    data: responseData,
+    isLoading,
+    error,
+  } = usePurchases({
+    page: currentPage,
+    per_page: itemsPerPage,
+    search: debouncedSearchQuery,
+    status: statusFilter,
+  });
+
+  const purchases: PurchaseItem[] = responseData?.data?.data || [];
+  const totalItems = responseData?.data?.total || 0;
+  const totalPages = responseData?.data?.last_page || 1;
 
   useEffect(() => {
-    fetchPurchases();
-  }, [currentPage, itemsPerPage, debouncedSearchQuery, statusFilter]);
+    if (error) {
+      toast.error(getErrorMessage(error, "Failed to fetch purchases"));
+    }
+  }, [error]);
 
   const columns: TableColumnProps<PurchaseItem>[] = [
     {
@@ -242,7 +210,7 @@ const ManagePurchases: React.FC = () => {
         columns={columns}
         data={purchases}
         isLoading={isLoading}
-        error={error}
+        error={error ? getErrorMessage(error) : null}
         currentPage={currentPage}
         totalPages={totalPages}
         totalItems={totalItems}

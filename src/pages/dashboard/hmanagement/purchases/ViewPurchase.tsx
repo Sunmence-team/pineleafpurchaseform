@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import {
   FaArrowLeft,
@@ -7,104 +7,46 @@ import {
   FaUser,
 } from "react-icons/fa";
 import { toast } from "sonner";
-import { hmApi, getErrorMessage } from "../../../../helpers/api";
+import { getErrorMessage } from "../../../../helpers/api";
 import {
   formatISODateToCustom,
   formatterUtility,
   formatUnderScores,
 } from "../../../../helpers/formatterUtility";
-import { StatusTurnPriorityCard } from "../../../../components/cards/StatusCard";
 import Modal from "../../../../components/modals/Modal";
+import StatusCard from "../../../../components/cards/StatusCard";
+import {
+  usePurchase,
+  useVerifyPurchasePayment,
+} from "../../../../hooks/usePurchases";
+import type {
+  PurchaseItem,
+  PurchaseTransaction,
+  VerifyPurchasePaymentPayload,
+} from "../../../../services/purchaseService";
 
 const HM_STORAGE_API_URL = import.meta.env.VITE_HM_STORAGE_BASE_URL;
 
-export interface PurchaseDetail {
-  id: number;
-  status?: string;
-  agreed_duration_months?: number | string;
-  upfront_paid?: boolean | number;
-  created_at?: string;
-  approved_at?: string;
-  user?: {
-    firstname?: string;
-    lastname?: string;
-    email?: string;
-    phone?: string;
-    job_description?: string;
-    country?: string;
-    salary?: number | string;
-    admin_approved_salary?: number | string;
-    [key: string]: any;
-  };
-  property?: {
-    name?: string;
-    estate_name?: string;
-    type?: string;
-    price?: number | string;
-    location?: string;
-    images?: string[];
-    [key: string]: any;
-  };
-  transactions?: TransactionDetail[];
-  [key: string]: any;
-}
-
-export interface TransactionDetail {
-  id: number | string;
-  type?: string;
-  reference?: string;
-  amount?: number | string;
-  status?: string;
-  payment_method?: string;
-  created_at?: string;
-  paid_at?: string;
-  payment_gateway_response?: {
-    proof_of_payment?: string | { url?: string; path?: string };
-    [key: string]: any;
-  };
-  [key: string]: any;
-}
+export type PurchaseDetail = PurchaseItem;
+export type TransactionDetail = PurchaseTransaction;
 
 const ViewPurchase: React.FC = () => {
   const { id } = useParams<{ id: string }>();
-  const token = localStorage.getItem("token");
   const navigate = useNavigate();
   const location = useLocation();
-  const [purchase, setPurchase] = useState<PurchaseDetail | null>(
-    location.state || null,
-  );
-  const [isLoading, setIsLoading] = useState(!location.state);
+
+  // TanStack Query for purchase details
+  const {
+    data: purchase,
+    isLoading,
+  } = usePurchase(id, location.state);
+
   const [paymentDetails, setPaymentDetails] =
-    useState<TransactionDetail | null>(null);
+    useState<PurchaseTransaction | null>(null);
   const [paymentActionNote, setPaymentActionNote] = useState("");
-  const [isProcessingPaymentAction, setIsProcessingPaymentAction] =
-    useState(false);
 
-  useEffect(() => {
-    const fetchPurchaseDetail = async () => {
-      setIsLoading(true);
-      try {
-        const response = await hmApi.get(`/api/admin/applications/${id}`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
-
-        if (response.status === 200 && response.data.data) {
-          setPurchase(response.data.data);
-        }
-      } catch (err) {
-        toast.error(getErrorMessage(err));
-        navigate("/dashboard/manage/purchases");
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    if (id) {
-      fetchPurchaseDetail();
-    }
-  }, [id, navigate, token]);
+  // TanStack Mutation for verifying manual payment
+  const verifyPaymentMutation = useVerifyPurchasePayment();
 
   const resolveProofUrl = (proofValue: any): string => {
     if (!proofValue) return "";
@@ -128,47 +70,26 @@ const ViewPurchase: React.FC = () => {
       return;
     }
 
-    setIsProcessingPaymentAction(true);
-
     try {
-      const payload: Record<string, any> = {
+      const payload: VerifyPurchasePaymentPayload = {
         reference: paymentReference,
+        status: action,
+        ...(action === "rejected" ? { note: paymentActionNote.trim() } : {}),
       };
 
-      if (action === "rejected") {
-        payload.status = "rejected";
-        payload.note = paymentActionNote.trim();
-      } else {
-        payload.status = "approved";
-      }
+      const res = await verifyPaymentMutation.mutateAsync(payload);
 
-      const response = await hmApi.post(
-        `/api/admin/applications/verify/manual`,
-        payload,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        },
+      toast.success(
+        res?.message ||
+          (action === "rejected"
+            ? "Payment rejected successfully."
+            : "Payment verified successfully."),
       );
-
-      if (response.status === 200) {
-        toast.success(
-          response.data.message ||
-            (action === "rejected"
-              ? "Payment rejected successfully."
-              : "Payment verified successfully."),
-        );
-        setPurchase(response.data?.data);
-      }
-    } catch (err) {
-      const msg = getErrorMessage(err);
-      toast.error(msg);
-      console.error("Error processing payment action:", err);
-    } finally {
-      setIsProcessingPaymentAction(false);
       setPaymentDetails(null);
       setPaymentActionNote("");
+    } catch (err) {
+      toast.error(getErrorMessage(err, "Error processing payment action"));
+      console.error("Error processing payment action:", err);
     }
   };
 
@@ -223,7 +144,7 @@ const ViewPurchase: React.FC = () => {
         {label}
       </span>
       <span
-        className={`text-sm sm:text-base text-gray-900 font-medium truncate ${
+        className={`text-sm md:text-base text-gray-900 font-medium truncate ${
           capitalize ? "capitalize" : ""
         }`}
       >
@@ -249,13 +170,15 @@ const ViewPurchase: React.FC = () => {
           >
             <FaArrowLeft className="text-gray-600" />
           </button>
-          <h1 className="text-2xl font-bold text-gray-900">Purchase Details</h1>
+          <h1 className="text-2xl font-bold text-gray-900">
+            Purchase Application Details
+          </h1>
         </div>
-        <StatusTurnPriorityCard status={purchase?.status} />
+        <StatusCard type={purchase?.status} statusText={purchase?.status} />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
-        {/* Left Column: Applicant & Application Details */}
+        {/* Left Column: Applicant & Application Summary */}
         <div className="space-y-10">
           {/* Applicant Section */}
           <section className="border-b pb-4 border-primary/10">
@@ -265,24 +188,29 @@ const ViewPurchase: React.FC = () => {
                 label="Full Name"
                 value={`${purchase.user?.firstname ?? ""} ${purchase.user?.lastname ?? ""}`.trim()}
               />
+              <InfoItem label="Email" value={purchase.user?.email} />
               <InfoItem label="Phone" value={purchase.user?.phone} />
-              <div className="md:col-span-2">
-                <InfoItem label="Email" value={purchase.user?.email} />
-              </div>
               <InfoItem
-                label="Occupation"
+                label="Job / Occupation"
                 value={purchase.user?.job_description}
               />
-              <InfoItem label="Country" value={purchase.user?.country} />
               <InfoItem
-                label="Indicated Monthly Salary"
-                value={formatterUtility(Number(purchase.user?.salary))}
+                label="Declared Monthly Revenue"
+                value={
+                  purchase.user?.salary
+                    ? formatterUtility(Number(purchase.user.salary))
+                    : "N/A"
+                }
               />
               <InfoItem
-                label="Approved Monthly Salary"
-                value={formatterUtility(
-                  Number(purchase.user?.admin_approved_salary),
-                )}
+                label="Verified Monthly Revenue"
+                value={
+                  purchase.user?.admin_approved_salary
+                    ? formatterUtility(
+                        Number(purchase.user.admin_approved_salary),
+                      )
+                    : "N/A"
+                }
               />
             </div>
           </section>
@@ -293,253 +221,297 @@ const ViewPurchase: React.FC = () => {
               icon={FaFileInvoiceDollar}
               title="Application Details"
             />
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 bg-secondary p-6 rounded-xl border border-primary/10">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 bg-secondary p-6 rounded-xl border border-primary/10">
               <InfoItem
-                label="Agreed Duration"
-                value={`${purchase.agreed_duration_months ?? "-"} Months`}
+                label="Application Status"
+                value={purchase.status}
+                capitalize={true}
               />
               <InfoItem
-                label="Upfront Paid"
-                value={purchase.upfront_paid ? "Yes" : "No"}
-              />
-              <InfoItem
-                label="Submitted On"
+                label="Payment Duration"
                 value={
-                  purchase.created_at
-                    ? new Date(purchase.created_at).toLocaleDateString()
-                    : "-"
+                  purchase.agreed_duration_months
+                    ? `${purchase.agreed_duration_months} Months`
+                    : "Outright / N/A"
                 }
               />
               <InfoItem
-                label="Approved Date"
-                value={
-                  purchase.approved_at
-                    ? formatISODateToCustom(purchase.approved_at)
-                    : "-"
-                }
+                label="Upfront Requirement"
+                value={purchase.upfront_paid ? "Satisfied" : "Pending / None"}
               />
+              <InfoItem
+                label="Applied On"
+                value={formatISODateToCustom(purchase.created_at)}
+              />
+              {purchase.approved_at && (
+                <div className="md:col-span-2">
+                  <InfoItem
+                    label="Approved Date"
+                    value={formatISODateToCustom(purchase.approved_at)}
+                  />
+                </div>
+              )}
             </div>
           </section>
         </div>
 
-        {/* Right Column: Property Section */}
-        <section className="border-b pb-4 border-primary/10">
-          <SectionHeader icon={FaHome} title="Property Information" />
-          <div className="bg-secondary p-6 rounded-xl border border-primary/10 space-y-6">
-            {purchase.property?.images &&
-              purchase.property?.images.length > 0 && (
-                <div className="grid grid-cols-2 gap-4">
-                  {purchase.property?.images.map((image, idx) => (
+        {/* Right Column: Property Summary */}
+        <div className="space-y-10">
+          <section className="border-b pb-4 border-primary/10">
+            <SectionHeader icon={FaHome} title="Selected Property" />
+            <div className="bg-secondary p-6 rounded-xl border border-primary/10 space-y-6">
+              {purchase.property?.images &&
+                purchase.property.images.length > 0 && (
+                  <div className="rounded-xl overflow-hidden border border-gray-200">
                     <img
-                      key={idx}
-                      src={HM_STORAGE_API_URL + image}
-                      className="w-full h-40 object-cover rounded-lg mb-4"
-                      alt={purchase.property?.name ?? "Property Image"}
+                      src={`${HM_STORAGE_API_URL}${purchase.property.images[0]}`}
+                      alt={purchase.property.name || "Property image"}
+                      className="w-full h-48 object-cover"
                     />
-                  ))}
+                  </div>
+                )}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <InfoItem
+                  label="Property Name"
+                  value={purchase.property?.name}
+                />
+                <InfoItem
+                  label="Estate Name"
+                  value={purchase.property?.estate_name}
+                />
+                <InfoItem
+                  label="Property Type"
+                  value={purchase.property?.type}
+                  capitalize={true}
+                />
+                <InfoItem
+                  label="Price"
+                  value={
+                    purchase.property?.price
+                      ? formatterUtility(Number(purchase.property.price))
+                      : "N/A"
+                  }
+                />
+                <div className="md:col-span-2">
+                  <InfoItem
+                    label="Location"
+                    value={purchase.property?.location}
+                  />
                 </div>
-              )}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-              <InfoItem label="Property Name" value={purchase.property?.name} />
-              <InfoItem label="Estate" value={purchase.property?.estate_name} />
-              <InfoItem
-                label="Type"
-                value={purchase.property?.type}
-                className="capitalize"
-              />
-              <InfoItem
-                label="Price"
-                value={formatterUtility(Number(purchase.property?.price))}
-              />
-              <InfoItem
-                label="Location"
-                value={purchase.property?.location}
-                className="sm:col-span-2"
-              />
+              </div>
             </div>
-          </div>
-        </section>
+          </section>
+        </div>
+      </div>
 
-        {/* Transactions Section */}
-        <section className="lg:col-span-2">
-          <SectionHeader icon={FaFileInvoiceDollar} title="Transactions" />
-          <div className="space-y-4 grid lg:grid-cols-2 gap-4">
-            {purchase.transactions && purchase.transactions.length > 0 ? (
-              purchase.transactions.map((tx) => (
-                <div
-                  key={tx.id}
-                  className="flex flex-col gap-4 justify-between items-center p-4 bg-secondary rounded-xl border border-primary/10"
-                >
-                  <div className="flex w-full justify-between items-center">
-                    <div>
-                      <p className="text-sm font-bold text-gray-900 capitalize">
-                        {tx.type} Payment
-                      </p>
-                      <p className="text-xs text-gray-500">
-                        {new Date(
-                          tx.paid_at || tx.created_at || "",
-                        ).toLocaleString()}
-                      </p>
-                      <p className="text-[10px] text-gray-400 font-mono mt-1">
-                        Ref: {tx.reference}
-                      </p>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-sm font-bold text-primary">
-                        {formatterUtility(Number(tx.amount))}
-                      </p>
+      {/* Full Width Bottom: Transaction & Payment History */}
+      <div className="mt-8">
+        <SectionHeader
+          icon={FaFileInvoiceDollar}
+          title="Payment & Transactions History"
+        />
+        {purchase.transactions && purchase.transactions.length > 0 ? (
+          <div className="overflow-x-auto rounded-xl border border-primary/10">
+            <table className="w-full text-left text-sm text-gray-700">
+              <thead className="bg-secondary text-xs uppercase text-gray-500 font-semibold border-b border-primary/10">
+                <tr>
+                  <th className="px-6 py-4">Reference</th>
+                  <th className="px-6 py-4">Type</th>
+                  <th className="px-6 py-4">Amount</th>
+                  <th className="px-6 py-4">Method</th>
+                  <th className="px-6 py-4">Status</th>
+                  <th className="px-6 py-4">Date</th>
+                  <th className="px-6 py-4 text-center">Action</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-100 bg-white">
+                {purchase.transactions.map((tx) => (
+                  <tr key={tx.id} className="hover:bg-gray-50/50 transition">
+                    <td className="px-6 py-4 font-medium text-gray-900">
+                      {tx.reference || `TX-${tx.id}`}
+                    </td>
+                    <td className="px-6 py-4">
+                      {formatUnderScores(tx.type || "N/A", true)}
+                    </td>
+                    <td className="px-6 py-4 font-semibold text-gray-900">
+                      {formatterUtility(Number(tx.amount))}
+                    </td>
+                    <td className="px-6 py-4">
+                      {formatUnderScores(tx.payment_method || "N/A", true)}
+                    </td>
+                    <td className="px-6 py-4">
                       <span
-                        className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded ${
-                          tx.status === "success"
-                            ? "bg-green-100 text-green-700"
-                            : "bg-red-100 text-red-700"
+                        className={`px-2.5 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider ${
+                          tx.status === "approved" || tx.status === "success"
+                            ? "bg-green-100 text-green-700 border border-green-200"
+                            : tx.status === "pending"
+                              ? "bg-yellow-100 text-yellow-700 border border-yellow-200"
+                              : "bg-red-100 text-red-700 border border-red-200"
                         }`}
                       >
                         {tx.status}
                       </span>
-                    </div>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => setPaymentDetails(tx)}
-                    className="bg-primary h-10 rounded-lg text-white w-full cursor-pointer hover:bg-primary/90 transition text-sm font-medium"
-                  >
-                    View Payment
-                  </button>
-                </div>
-              ))
-            ) : (
-              <div className="text-center p-8 bg-secondary rounded-xl border border-dashed border-gray-300 col-span-2">
-                <p className="text-sm text-gray-500">
-                  No transactions recorded yet.
-                </p>
-              </div>
-            )}
+                    </td>
+                    <td className="px-6 py-4 text-gray-500">
+                      {formatISODateToCustom(tx.paid_at || tx.created_at)}
+                    </td>
+                    <td className="px-6 py-4 text-center">
+                      {tx.payment_method !== "paystack" &&
+                      tx.status === "pending" ? (
+                        <button
+                          type="button"
+                          onClick={() => setPaymentDetails(tx)}
+                          className="px-3 py-1.5 bg-primary text-white rounded-lg text-xs font-semibold hover:bg-primary/90 transition shadow-xs cursor-pointer"
+                        >
+                          Review Payment
+                        </button>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => setPaymentDetails(tx)}
+                          className="px-3 py-1.5 bg-secondary text-gray-700 border border-primary/10 rounded-lg text-xs font-semibold hover:bg-gray-100 transition cursor-pointer"
+                        >
+                          View Details
+                        </button>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
-        </section>
+        ) : (
+          <div className="bg-secondary p-8 rounded-xl border border-primary/10 text-center text-gray-500 text-sm">
+            No transactions or payment records recorded for this application yet.
+          </div>
+        )}
       </div>
 
       {paymentDetails && (
         <Modal onClose={() => setPaymentDetails(null)}>
           <div className="space-y-6">
-            <div className="grid md:grid-cols-2 gap-4">
-              <InfoItem
-                label="Payment Type"
-                value={paymentDetails.type}
-                capitalize={true}
-              />
-              <InfoItem
-                label="Amount"
-                value={formatterUtility(Number(paymentDetails.amount))}
-              />
-              <InfoItem
-                label="Status"
-                value={paymentDetails?.status}
-                capitalize={true}
-              />
-              <InfoItem
-                label="Payment Method"
-                value={formatUnderScores(paymentDetails?.payment_method, true)}
-              />
-              <InfoItem label="Reference" value={paymentDetails?.reference} />
-              <InfoItem
-                label="Payment Date"
-                value={
-                  paymentDetails.created_at
-                    ? formatISODateToCustom(paymentDetails.created_at)
-                    : "-"
-                }
-              />
-              <InfoItem
-                label="Confirmation Date"
-                value={paymentDetails.paid_at || "-"}
-              />
+            <h2 className="text-xl font-bold text-gray-900 border-b pb-3">
+              Transaction Details & Proof
+            </h2>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm bg-secondary p-4 rounded-xl border border-primary/10">
+              <div>
+                <span className="text-gray-500 text-xs block font-semibold uppercase">
+                  Reference
+                </span>
+                <span className="font-semibold text-gray-800">
+                  {paymentDetails.reference || `TX-${paymentDetails.id}`}
+                </span>
+              </div>
+              <div>
+                <span className="text-gray-500 text-xs block font-semibold uppercase">
+                  Amount
+                </span>
+                <span className="font-semibold text-gray-800">
+                  {formatterUtility(Number(paymentDetails.amount))}
+                </span>
+              </div>
+              <div>
+                <span className="text-gray-500 text-xs block font-semibold uppercase">
+                  Payment Method
+                </span>
+                <span className="font-semibold text-gray-800 capitalize">
+                  {formatUnderScores(
+                    paymentDetails.payment_method || "N/A",
+                    true,
+                  )}
+                </span>
+              </div>
+              <div>
+                <span className="text-gray-500 text-xs block font-semibold uppercase">
+                  Transaction Status
+                </span>
+                <span className="font-semibold text-gray-800 capitalize">
+                  {paymentDetails.status}
+                </span>
+              </div>
             </div>
-            {paymentDetails?.payment_gateway_response?.proof_of_payment && (
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                    Payment Proof
-                  </h3>
-                  <a
-                    href={paymentProofUrl}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="inline-block text-sm font-semibold text-primary underline"
-                  >
-                    {isPaymentProofPdf
-                      ? "Open / Download PDF"
-                      : "Open / Download Proof"}
-                  </a>
-                </div>
-                {isPaymentProofPdf ? (
-                  <div className="space-y-2">
-                    <div className="border border-gray-300 rounded-lg overflow-hidden">
-                      <object
-                        data={paymentProofUrl}
-                        type="application/pdf"
-                        width="100%"
-                        height="500"
+
+            {paymentProofUrl ? (
+              <div className="space-y-2">
+                <span className="text-sm font-semibold text-gray-700 block">
+                  Uploaded Proof of Payment
+                </span>
+                <div className="border border-gray-200 rounded-xl p-2 bg-gray-50 flex flex-col items-center justify-center max-h-96 overflow-auto">
+                  {isPaymentProofPdf ? (
+                    <div className="p-6 text-center space-y-3">
+                      <p className="text-sm text-gray-600 font-medium">
+                        Proof is in PDF format.
+                      </p>
+                      <a
+                        href={paymentProofUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="inline-block px-4 py-2 bg-primary text-white text-xs font-semibold rounded-lg hover:bg-primary/90 transition"
                       >
-                        <p className="p-4 text-sm text-gray-500">
-                          PDF preview is not available. You can open or download
-                          it below.
-                        </p>
-                      </object>
+                        Open PDF Document
+                      </a>
                     </div>
-                  </div>
-                ) : (
-                  <div className="space-y-2">
+                  ) : (
                     <img
                       src={paymentProofUrl}
-                      alt="Payment proof"
-                      className="w-full max-h-[500px] object-contain border border-gray-300 rounded-lg"
+                      alt="Proof of payment"
+                      className="max-h-80 w-auto rounded-lg object-contain shadow-xs"
                     />
-                  </div>
-                )}
+                  )}
+                </div>
               </div>
+            ) : (
+              <p className="text-sm text-gray-500 italic bg-gray-50 p-4 rounded-lg border border-dashed border-gray-200 text-center">
+                No proof document attached with this transaction.
+              </p>
             )}
-            {paymentDetails.type === "upfront" &&
+
+            {paymentDetails.payment_method !== "paystack" &&
               paymentDetails.status === "pending" && (
-                <div className="space-y-4">
-                  <div className="space-y-2">
-                    <label className="text-sm font-semibold text-gray-700">
-                      Rejection Note
+                <div className="space-y-4 pt-2">
+                  <div className="space-y-1">
+                    <label className="text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                      Rejection Reason / Admin Note
                     </label>
                     <textarea
-                      rows={4}
                       value={paymentActionNote}
                       onChange={(e) => setPaymentActionNote(e.target.value)}
-                      className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none"
-                      placeholder="Enter a note when rejecting this payment"
+                      placeholder="Add an administrative reason (required if rejecting)..."
+                      className="w-full h-20 p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 text-sm"
                     />
                   </div>
-                  <div className="grid gap-3 sm:grid-cols-2">
+
+                  <div className="flex gap-3 justify-end pt-2 border-t">
                     <button
                       type="button"
-                      disabled={isProcessingPaymentAction}
-                      onClick={() =>
-                        handlePaymentAction(
-                          paymentDetails.reference,
-                          "approved",
-                        )
-                      }
-                      className="h-12 rounded-lg bg-primary text-white font-medium hover:bg-primary/90 transition duration-300 disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
-                    >
-                      {isProcessingPaymentAction ? "Processing..." : "Verify"}
-                    </button>
-                    <button
-                      type="button"
-                      disabled={isProcessingPaymentAction}
+                      disabled={verifyPaymentMutation.isPending}
                       onClick={() =>
                         handlePaymentAction(
                           paymentDetails.reference,
                           "rejected",
                         )
                       }
-                      className="h-12 rounded-lg bg-red-600 text-white font-medium hover:bg-red-700 transition duration-300 disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
+                      className="px-5 py-2.5 bg-red-600 text-white font-semibold rounded-lg hover:bg-red-700 transition disabled:opacity-50 text-xs uppercase tracking-wider cursor-pointer"
                     >
-                      {isProcessingPaymentAction ? "Processing..." : "Reject"}
+                      {verifyPaymentMutation.isPending
+                        ? "Processing..."
+                        : "Reject Payment"}
+                    </button>
+                    <button
+                      type="button"
+                      disabled={verifyPaymentMutation.isPending}
+                      onClick={() =>
+                        handlePaymentAction(
+                          paymentDetails.reference,
+                          "approved",
+                        )
+                      }
+                      className="px-5 py-2.5 bg-primary text-white font-semibold rounded-lg hover:bg-primary/90 transition disabled:opacity-50 text-xs uppercase tracking-wider cursor-pointer"
+                    >
+                      {verifyPaymentMutation.isPending
+                        ? "Processing..."
+                        : "Verify & Approve"}
                     </button>
                   </div>
                 </div>

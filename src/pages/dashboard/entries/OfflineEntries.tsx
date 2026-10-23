@@ -38,7 +38,7 @@ const OfflineEntries: React.FC = () => {
   useEffect(() => {
     const fetchProps = async () => {
       try {
-        const res = await propertyApi.get("/api/properties/search", {
+        const res = await propertyApi.get("/properties/search", {
           params: { per_page: 200 },
         });
         const list = res.data?.data?.data || res.data?.data || [];
@@ -125,7 +125,7 @@ const OfflineEntries: React.FC = () => {
     if (!targetId) return;
     setIsDeleting(true);
     try {
-      await api.delete(`/api/applications/${targetId}`);
+      await api.delete(`/applications/${targetId}`);
       removeClient(targetId);
       toast.success("Entry deleted successfully");
       setDeleteModalOpen(false);
@@ -222,7 +222,7 @@ const OfflineEntries: React.FC = () => {
       </div>
 
       {/* Overview Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         <OverviewCards
           title="Offline Property Entries"
           value={offlineEntries.length}

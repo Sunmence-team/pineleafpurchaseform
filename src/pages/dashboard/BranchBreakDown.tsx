@@ -93,7 +93,7 @@ const BranchBreakDown: React.FC = () => {
     const token = localStorage.getItem("token");
     try {
       const response = await api.get(
-        `${API_URL}/api/last/download-date?name=${branchKey}`,
+        `${API_URL}/last/download-date?name=${branchKey}`,
         { headers: { Authorization: `Bearer ${token}` } },
       );
       if (response.data?.data?.updated_at) {
@@ -235,7 +235,7 @@ const BranchBreakDown: React.FC = () => {
     const token = localStorage.getItem("token");
     try {
       await api.put(
-        `${API_URL}/api/last/download-date`,
+        `${API_URL}/last/download-date`,
         { name: branchKey, date: format(downloadTime, "yyyy-MM-dd HH:mm:ss") },
         { headers: { Authorization: `Bearer ${token}` } },
       );
@@ -485,7 +485,7 @@ const BranchBreakDown: React.FC = () => {
           return;
         }
 
-        const response = await api.delete(`${API_URL}/api/applications/${id}`, {
+        const response = await api.delete(`${API_URL}/applications/${id}`, {
           headers: {
             Authorization: `Bearer ${token}`,
             "Content-Type": "application/json",

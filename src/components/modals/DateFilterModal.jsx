@@ -29,8 +29,8 @@ const DateFilterModal = ({
   }
 
   return (
-    <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-2 sm:p-4">
-      <div className="bg-white rounded-2xl p-4 sm:p-6 w-full max-w-2xl shadow-2xl max-h-[calc(100vh-2rem)] overflow-y-auto">
+    <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-2 md:p-4">
+      <div className="bg-white rounded-2xl p-4 md:p-6 w-full max-w-2xl shadow-2xl max-h-[calc(100vh-2rem)] overflow-y-auto">
         <div className="flex justify-between items-center mb-4">
           <h3 className="text-lg md:text-xl font-bold text-gray-900">
             Filter by Date and Time
@@ -56,7 +56,7 @@ const DateFilterModal = ({
             <button
               key={preset}
               onClick={() => onPresetSelect(preset)}
-              className={`px-6 h-[50px] text-xs sm:text-sm font-semibold rounded-md transition duration-300 ${
+              className={`px-6 h-[50px] text-xs md:text-sm font-semibold rounded-md transition duration-300 ${
                 activePreset === preset
                   ? "bg-primary text-white"
                   : "bg-gray-200 text-gray-800 hover:bg-gray-300"

@@ -1,14 +1,25 @@
 import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { BiSearch } from "react-icons/bi";
 import { BsBuildings, BsCloudCheck, BsCloudSlash } from "react-icons/bs";
+import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import OverviewCards from "../../../components/cards/OverviewCards";
 import ConfirmDialog from "../../../components/modals/ConfirmDialog";
 import ActionCell from "../../../components/ui/ActionCell";
-import { propertyApi, getErrorMessage } from "../../../helpers/api";
-import { formatterUtility } from "../../../helpers/formatterUtility";
-import type { PropertyProp, TableColumnProps } from "../../../lib/interfaces";
+import { getErrorMessage } from "../../../helpers/api";
+import {
+  formatterUtility,
+  formatUnderScores,
+} from "../../../helpers/formatterUtility";
+import { useProperty } from "../../../hooks/useProperty";
+import { updatePropertyStatus } from "../../../services/propertyService";
+import type {
+  PropertyProp,
+  propertyStatus,
+  TableColumnProps,
+} from "../../../lib/interfaces";
 import ReusableTable from "../../../utilities/ReusableTable";
+import StatusCard from "../../../components/cards/StatusCard";
 
 const OFFLINE_STORAGE_KEY = "pineleaf_properties_offline_overrides";
 
@@ -30,14 +41,12 @@ export const setOfflinePropertyIds = (ids: (string | number)[]) => {
 };
 
 const Properties: React.FC = () => {
-  const [properties, setProperties] = useState<PropertyProp[]>([]);
+  const queryClient = useQueryClient();
+
   const [searchTerm, setSearchTerm] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
-  const [totalItems, setTotalItems] = useState(0);
-  const [totalPages, setTotalPages] = useState(1);
-  const [isLoading, setIsLoading] = useState(false);
 
   // Status toggle confirmation
   const [statusModalOpen, setStatusModalOpen] = useState(false);
@@ -47,9 +56,9 @@ const Properties: React.FC = () => {
   const [isTogglingStatus, setIsTogglingStatus] = useState(false);
 
   // Filter tab: "all" | "online" | "offline"
-  const [statusFilter, setStatusFilter] = useState<
-    "all" | "online" | "offline"
-  >("all");
+  const [statusFilter, setStatusFilter] = useState<"all" | propertyStatus>(
+    "all",
+  );
 
   // Track offline IDs in state
   const [offlineIds, setOfflineIdsState] = useState<(string | number)[]>(() =>
@@ -65,37 +74,43 @@ const Properties: React.FC = () => {
     return () => clearTimeout(timer);
   }, [searchTerm]);
 
-  const fetchProperties = useCallback(async () => {
-    setIsLoading(true);
-    try {
-      const response = await propertyApi.get("/api/properties/search", {
-        params: {
-          name: debouncedSearch,
-          page: currentPage,
-          per_page: itemsPerPage,
-          sort_direction: "desc",
-        },
-      });
+  // Fetch properties via TanStack Query hook
+  const {
+    data: propertiesResponse,
+    isLoading,
+    error,
+  } = useProperty({
+    name: debouncedSearch,
+    page: currentPage,
+    per_page: itemsPerPage,
+    sort_direction: "desc",
+    status: statusFilter,
+  });
 
-      const responseData = response.data?.data;
-      const rawProperties: PropertyProp[] = Array.isArray(responseData)
-        ? responseData
-        : responseData?.data || [];
+  // Extract properties, total items and total pages
+  const { properties, totalItems, totalPages } = useMemo(() => {
+    const payload = propertiesResponse?.data;
+    const rawProperties: PropertyProp[] = Array.isArray(payload)
+      ? payload
+      : payload?.data || [];
 
-      setProperties(rawProperties);
-      setTotalItems(responseData?.total || rawProperties.length);
-      setTotalPages(responseData?.last_page || 1);
-    } catch (err) {
-      console.error(err);
-      toast.error(getErrorMessage(err, "Failed to fetch properties"));
-    } finally {
-      setIsLoading(false);
-    }
-  }, [debouncedSearch, currentPage, itemsPerPage]);
+    const total =
+      payload?.total ?? propertiesResponse?.total ?? rawProperties.length;
+    const lastPage = payload?.last_page ?? propertiesResponse?.last_page ?? 1;
 
+    return {
+      properties: rawProperties,
+      totalItems: total,
+      totalPages: lastPage,
+    };
+  }, [propertiesResponse]);
+
+  // Handle fetch error notification
   useEffect(() => {
-    fetchProperties();
-  }, [fetchProperties]);
+    if (error) {
+      toast.error(getErrorMessage(error, "Failed to fetch properties"));
+    }
+  }, [error]);
 
   // Determine if a property is offline based on local storage or API status
   const isPropertyOffline = useCallback(
@@ -115,16 +130,6 @@ const Properties: React.FC = () => {
     },
     [offlineIds],
   );
-
-  // Filtered properties based on statusFilter
-  const displayedProperties = useMemo(() => {
-    return properties.filter((item) => {
-      const offline = isPropertyOffline(item);
-      if (statusFilter === "online") return !offline;
-      if (statusFilter === "offline") return offline;
-      return true;
-    });
-  }, [properties, isPropertyOffline, statusFilter]);
 
   // Compute metrics for overview cards
   const onlineCount = useMemo(
@@ -152,7 +157,7 @@ const Properties: React.FC = () => {
     try {
       // 1. Try updating remote backend if supported
       try {
-        await propertyApi.put(`/api/properties/${propId}`, {
+        await updatePropertyStatus(propId, {
           is_offline: newStatusIsOffline ? 1 : 0,
           status: newStatusIsOffline ? "offline" : "online",
         });
@@ -171,18 +176,8 @@ const Properties: React.FC = () => {
       setOfflinePropertyIds(updatedIds);
       setOfflineIdsState(updatedIds);
 
-      // 3. Update active table state
-      setProperties((prev) =>
-        prev.map((p) =>
-          String(p.id) === String(propId)
-            ? {
-                ...p,
-                is_offline: newStatusIsOffline,
-                status: newStatusIsOffline ? "offline" : "online",
-              }
-            : p,
-        ),
-      );
+      // 3. Invalidate TanStack query cache to refetch fresh data
+      queryClient.invalidateQueries({ queryKey: ["properties"] });
 
       toast.success(
         `Property "${targetProperty.name}" marked as ${
@@ -203,12 +198,7 @@ const Properties: React.FC = () => {
       label: "Property Name",
       key: "name",
       render: (row) => (
-        <div className="flex flex-col">
-          <span className="font-semibold text-gray-900">{row.name}</span>
-          {row.estate_name && (
-            <span className="text-xs text-gray-400">{row.estate_name}</span>
-          )}
-        </div>
+        <span className="font-semibold text-gray-900">{row.name}</span>
       ),
     },
     {
@@ -236,20 +226,24 @@ const Properties: React.FC = () => {
       render: (row) => {
         const offline = isPropertyOffline(row);
         return (
-          <span
-            className={`px-3 py-1 text-xs font-semibold rounded-full flex items-center gap-1.5 w-max ${
-              offline
-                ? "bg-amber-50 text-amber-700 border border-amber-200"
-                : "bg-emerald-50 text-emerald-700 border border-emerald-200"
-            }`}
-          >
-            <span
-              className={`w-2 h-2 rounded-full ${
-                offline ? "bg-amber-500" : "bg-emerald-500"
-              }`}
-            />
-            {offline ? "Offline" : "Online"}
-          </span>
+          // <span
+          //   className={`px-3 py-1 text-xs font-semibold rounded-full flex items-center gap-1.5 w-max ${
+          //     offline
+          //       ? "bg-amber-50 text-amber-700 border border-amber-200"
+          //       : "bg-emerald-50 text-emerald-700 border border-emerald-200"
+          //   }`}
+          // >
+          //   <span
+          //     className={`w-2 h-2 rounded-full ${
+          //       offline ? "bg-amber-500" : "bg-emerald-500"
+          //     }`}
+          //   />
+          //   {offline ? "Offline" : "Online"}
+          // </span>
+          <StatusCard
+            type={offline ? "failed" : "success"}
+            statusText={row.status ?? "Online"}
+          />
         );
       },
     },
@@ -280,42 +274,15 @@ const Properties: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      {/* Header & Controls */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-xl font-bold text-gray-900">Properties</h1>
-          <p className="text-sm text-gray-500">
-            View, search, and manage online / offline status of all properties
-          </p>
-        </div>
-
-        {/* Filter Pills */}
-        <div className="flex items-center gap-2 bg-secondary p-1 rounded-lg border border-primary/10">
-          {(
-            [
-              { id: "all", label: "All" },
-              { id: "online", label: "Online" },
-              { id: "offline", label: "Offline" },
-            ] as const
-          ).map((tab) => (
-            <button
-              key={tab.id}
-              type="button"
-              onClick={() => setStatusFilter(tab.id)}
-              className={`px-3 py-1.5 text-xs font-semibold rounded-md transition cursor-pointer ${
-                statusFilter === tab.id
-                  ? "bg-white text-primary shadow-xs border border-primary/20"
-                  : "text-gray-600 hover:text-gray-900"
-              }`}
-            >
-              {tab.label}
-            </button>
-          ))}
-        </div>
+      <div>
+        <h1 className="text-xl font-bold text-gray-900">Properties</h1>
+        <p className="text-sm text-gray-500">
+          View, search, and manage online / offline status of all properties
+        </p>
       </div>
 
       {/* Overview Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         <OverviewCards
           title="Total Properties"
           value={totalItems || properties.length}
@@ -337,23 +304,37 @@ const Properties: React.FC = () => {
       </div>
 
       {/* Search Bar */}
-      <div className="max-w-md w-full bg-secondary border border-primary/10 rounded-lg relative flex gap-2 items-center h-[45px] px-4">
-        <BiSearch className="w-4 h-4 md:w-5 md:h-5 opacity-50" />
-        <input
-          type="text"
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          placeholder="Search properties by name..."
-          className="w-full h-full focus:outline-none text-sm"
-        />
+      <div className="flex md:flex-row flex-col gap-4">
+        <div className="max-w-md w-full bg-secondary border border-primary/10 rounded-lg relative flex gap-2 items-center h-12 px-4">
+          <BiSearch className="w-4 h-4 md:w-5 md:h-5 opacity-50" />
+          <input
+            type="text"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            placeholder="Search properties by name..."
+            className="w-full h-full focus:outline-none text-sm"
+          />
+        </div>
+        <select
+          onClick={(e) =>
+            setStatusFilter(e.currentTarget.value as propertyStatus)
+          }
+          className="bg-secondary border border-primary/10 rounded-lg h-12 px-4 outline-0"
+        >
+          {["all", "online", "offline"].map((tab) => (
+            <option key={tab} value={tab}>
+              {formatUnderScores(tab, true)}
+            </option>
+          ))}
+        </select>
       </div>
 
       {/* Table */}
       <ReusableTable
         columns={columns}
-        data={displayedProperties}
+        data={properties}
         isLoading={isLoading}
-        error={null}
+        error={error ? getErrorMessage(error) : null}
         currentPage={currentPage}
         totalPages={totalPages}
         totalItems={totalItems}

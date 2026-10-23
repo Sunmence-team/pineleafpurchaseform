@@ -43,7 +43,7 @@ const SearchablePropertyInput: React.FC<SearchablePropertyInputProps> = ({
     const timer = setTimeout(async () => {
       setLoading(true);
       try {
-        const response = await propertyApi.get("/api/properties/search", {
+        const response = await propertyApi.get("/properties/search", {
           params: { name: query.trim(), per_page: 8 },
         });
         const list = response.data?.data?.data || response.data?.data || [];

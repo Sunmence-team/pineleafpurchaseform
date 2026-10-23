@@ -5,8 +5,13 @@ import * as Yup from "yup";
 import { FaArrowLeft } from "react-icons/fa6";
 import { FaCloudUploadAlt, FaTimes } from "react-icons/fa";
 import { toast } from "sonner";
-import { hmApi, getErrorMessage } from "../../../../helpers/api";
+import { getErrorMessage } from "../../../../helpers/api";
 import FormattedNumberInput from "../../../../components/FormattedNumberInput";
+import {
+  useHouse,
+  useCreateHouse,
+  useUpdateHouse,
+} from "../../../../hooks/useHouse";
 
 const HM_STORAGE_API_URL = import.meta.env.VITE_HM_STORAGE_BASE_URL;
 
@@ -22,13 +27,20 @@ interface PropertyFormValues {
 }
 
 const CreateProperties: React.FC = () => {
-  const token = localStorage.getItem("token");
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const isEditMode = Boolean(id);
-  const [isLoading, setIsLoading] = useState<boolean>(isEditMode);
   const [images, setImages] = useState<File[]>([]);
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
+
+  // TanStack Query for loading property when in edit mode
+  const { data: property, isLoading: isFetchingProperty, error } = useHouse(
+    isEditMode ? id : null,
+  );
+
+  // TanStack Mutations for creating and updating
+  const createMutation = useCreateHouse();
+  const updateMutation = useUpdateHouse();
 
   const initialValues: PropertyFormValues = {
     name: "",
@@ -45,42 +57,33 @@ const CreateProperties: React.FC = () => {
     useState<PropertyFormValues>(initialValues);
 
   useEffect(() => {
-    if (isEditMode && id) {
-      const fetchProperty = async () => {
-        try {
-          const response = await hmApi.get(`/api/admin/properties/${id}`, {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          });
-          const data = response.data.data || response.data;
-          setFormValues({
-            name: data.name || "",
-            estate_name: data.estate_name || "",
-            location: data.location || "",
-            type: data.type || "",
-            price: data.price || "",
-            total_units: data.total_units || "",
-            description: data.description || "",
-            no_of_bedrooms: data.no_of_bedrooms || "",
-          });
-
-          if (data.images && Array.isArray(data.images)) {
-            const fullImageUrls = data.images.map(
-              (img: string) => `${HM_STORAGE_API_URL}${img}`,
-            );
-            setImagePreviews(fullImageUrls);
-          }
-        } catch (err) {
-          toast.error(getErrorMessage(err));
-          navigate("/dashboard/manage/properties");
-        } finally {
-          setIsLoading(false);
-        }
-      };
-      fetchProperty();
+    if (error) {
+      toast.error(getErrorMessage(error, "Failed to load property details"));
+      navigate("/dashboard/manage/properties");
     }
-  }, [id, isEditMode, navigate, token]);
+  }, [error, navigate]);
+
+  useEffect(() => {
+    if (property) {
+      setFormValues({
+        name: property.name || "",
+        estate_name: property.estate_name || "",
+        location: property.location || "",
+        type: property.type || "",
+        price: property.price || "",
+        total_units: property.total_units || "",
+        description: property.description || "",
+        no_of_bedrooms: property.no_of_bedrooms || "",
+      });
+
+      if (property.images && Array.isArray(property.images)) {
+        const fullImageUrls = property.images.map(
+          (img: string) => `${HM_STORAGE_API_URL}${img}`,
+        );
+        setImagePreviews(fullImageUrls);
+      }
+    }
+  }, [property]);
 
   const validationSchema = Yup.object({
     name: Yup.string().required("Property name is required"),
@@ -145,21 +148,11 @@ const CreateProperties: React.FC = () => {
     });
 
     try {
-      if (isEditMode) {
-        await hmApi.post(`/api/admin/properties/${id}`, formData, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "multipart/form-data",
-          },
-        });
+      if (isEditMode && id) {
+        await updateMutation.mutateAsync({ id, formData });
         toast.success("Property updated successfully");
       } else {
-        await hmApi.post("/api/admin/properties", formData, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "multipart/form-data",
-          },
-        });
+        await createMutation.mutateAsync(formData);
         toast.success("Property created successfully");
       }
       navigate("/dashboard/manage/properties");
@@ -170,7 +163,7 @@ const CreateProperties: React.FC = () => {
     }
   };
 
-  if (isLoading) {
+  if (isEditMode && isFetchingProperty) {
     return (
       <div className="flex justify-center items-center min-h-[400px]">
         <div className="animate-spin rounded-full h-12 w-12 border-4 border-t-transparent border-primary"></div>
@@ -182,6 +175,8 @@ const CreateProperties: React.FC = () => {
     "mt-1 block w-full rounded-lg border border-gray-300 focus:border-primary focus:ring-1 focus:ring-primary h-[50px] px-3.5 text-sm outline-none transition duration-200 bg-white";
   const labelClasses =
     "block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1";
+
+  const isSaving = createMutation.isPending || updateMutation.isPending;
 
   return (
     <div className="flex flex-col gap-6">
@@ -243,7 +238,7 @@ const CreateProperties: React.FC = () => {
                       name="estate_name"
                       type="text"
                       className={inputClasses}
-                      placeholder="e.g. Pineleaf Gardens"
+                      placeholder="e.g. Pineleaf Estate"
                     />
                     <ErrorMessage
                       name="estate_name"
@@ -275,16 +270,17 @@ const CreateProperties: React.FC = () => {
                       Property Type
                     </label>
                     <Field
+                      as="select"
                       id="type"
                       name="type"
-                      as="select"
                       className={inputClasses}
                     >
                       <option value="">Select Type</option>
-                      <option value="bungalow">Bungalow</option>
+                      <option value="apartment">Apartment</option>
                       <option value="duplex">Duplex</option>
-                      <option value="flat">Flat</option>
-                      <option value="commercial">Commercial</option>
+                      <option value="terrace">Terrace</option>
+                      <option value="bungalow">Bungalow</option>
+                      <option value="land">Land</option>
                     </Field>
                     <ErrorMessage
                       name="type"
@@ -294,18 +290,52 @@ const CreateProperties: React.FC = () => {
                   </div>
 
                   <div>
-                    <label htmlFor="price" className={labelClasses}>
-                      Price (₦)
+                    <Field name="price">
+                      {({
+                        field,
+                        form,
+                      }: {
+                        field: { name: string; value: string | number };
+                        form: {
+                          setFieldValue: (
+                            field: string,
+                            value: string | number,
+                          ) => void;
+                          setFieldTouched: (
+                            field: string,
+                            isTouched?: boolean,
+                          ) => void;
+                          errors: Record<string, string>;
+                          touched: Record<string, boolean>;
+                        };
+                      }) => (
+                        <FormattedNumberInput
+                          label="Price (₦)"
+                          name="price"
+                          value={field.value}
+                          onChange={(val) => form.setFieldValue("price", val)}
+                          onBlur={() => form.setFieldTouched("price", true)}
+                          placeholder="e.g. 50,000,000"
+                          error={form.touched.price && Boolean(form.errors.price)}
+                          helperText={form.touched.price && form.errors.price}
+                        />
+                      )}
+                    </Field>
+                  </div>
+
+                  <div>
+                    <label htmlFor="total_units" className={labelClasses}>
+                      Total Units
                     </label>
                     <Field
-                      id="price"
-                      name="price"
-                      component={FormattedNumberInput}
+                      id="total_units"
+                      name="total_units"
+                      type="number"
                       className={inputClasses}
-                      placeholder="0.00"
+                      placeholder="e.g. 10"
                     />
                     <ErrorMessage
-                      name="price"
+                      name="total_units"
                       component="div"
                       className="text-red-500 text-xs mt-1"
                     />
@@ -320,7 +350,7 @@ const CreateProperties: React.FC = () => {
                       name="no_of_bedrooms"
                       type="number"
                       className={inputClasses}
-                      placeholder="0"
+                      placeholder="e.g. 3"
                     />
                     <ErrorMessage
                       name="no_of_bedrooms"
@@ -329,19 +359,20 @@ const CreateProperties: React.FC = () => {
                     />
                   </div>
 
-                  <div>
-                    <label htmlFor="total_units" className={labelClasses}>
-                      Total Units
+                  <div className="md:col-span-2">
+                    <label htmlFor="description" className={labelClasses}>
+                      Description
                     </label>
                     <Field
-                      id="total_units"
-                      name="total_units"
-                      type="number"
-                      className={inputClasses}
-                      placeholder="1"
+                      as="textarea"
+                      id="description"
+                      name="description"
+                      rows={4}
+                      className="mt-1 block w-full rounded-lg border border-gray-300 focus:border-primary focus:ring-1 focus:ring-primary p-3.5 text-sm outline-none transition duration-200 bg-white"
+                      placeholder="Detailed property description..."
                     />
                     <ErrorMessage
-                      name="total_units"
+                      name="description"
                       component="div"
                       className="text-red-500 text-xs mt-1"
                     />
@@ -349,80 +380,53 @@ const CreateProperties: React.FC = () => {
                 </div>
               </section>
 
-              {/* Description */}
-              <section>
-                <h3 className="text-lg font-bold text-gray-900 border-l-4 border-primary pl-3 mb-6">
-                  Description
-                </h3>
-                <div>
-                  <label htmlFor="description" className={labelClasses}>
-                    Property Details & Features
-                  </label>
-                  <Field
-                    id="description"
-                    name="description"
-                    as="textarea"
-                    rows={4}
-                    className="mt-1 block w-full rounded-lg border border-gray-300 focus:border-primary focus:ring-1 focus:ring-primary p-3.5 text-sm outline-none transition duration-200 bg-white"
-                    placeholder="Describe the property details..."
-                  />
-                  <ErrorMessage
-                    name="description"
-                    component="div"
-                    className="text-red-500 text-xs mt-1"
-                  />
-                </div>
-              </section>
-
-              {/* Images */}
+              {/* Property Images Section */}
               <section>
                 <h3 className="text-lg font-bold text-gray-900 border-l-4 border-primary pl-3 mb-6">
                   Property Images
                 </h3>
-                <div>
+
+                <div className="space-y-4">
                   <label
-                    htmlFor="propertyImages"
-                    onDragOver={handleDragOver}
                     onDrop={handleDrop}
-                    className="mt-2 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-xl hover:border-primary transition cursor-pointer relative bg-white"
+                    onDragOver={handleDragOver}
+                    className="flex flex-col items-center justify-center border-2 border-dashed border-gray-300 rounded-xl p-8 hover:border-primary hover:bg-primary/5 transition-all cursor-pointer bg-white"
                   >
-                    <div className="space-y-2 text-center">
-                      <FaCloudUploadAlt className="mx-auto h-12 w-12 text-gray-400" />
-                      <div className="flex text-sm text-gray-600 justify-center">
-                        <span className="font-semibold text-primary hover:text-primary/90">
-                          Upload files
-                        </span>
-                        <input
-                          type="file"
-                          multiple
-                          onChange={handleImageChange}
-                          className="sr-only"
-                          accept="image/*"
-                          id="propertyImages"
-                        />
-                        <span className="pl-1">or drag and drop</span>
-                      </div>
-                      <p className="text-xs text-gray-500">
-                        PNG, JPG, GIF up to 10MB
-                      </p>
-                    </div>
+                    <FaCloudUploadAlt className="w-12 h-12 text-gray-400 mb-3" />
+                    <span className="text-sm font-semibold text-gray-700">
+                      Click to upload or drag and drop images
+                    </span>
+                    <span className="text-xs text-gray-500 mt-1">
+                      PNG, JPG, JPEG up to 10MB each
+                    </span>
+                    <input
+                      type="file"
+                      multiple
+                      accept="image/*"
+                      onChange={handleImageChange}
+                      className="hidden"
+                    />
                   </label>
 
+                  {/* Image Previews */}
                   {imagePreviews.length > 0 && (
-                    <div className="mt-4 flex flex-wrap gap-4">
+                    <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4 mt-4">
                       {imagePreviews.map((preview, index) => (
-                        <div key={index} className="relative group">
+                        <div
+                          key={index}
+                          className="relative group rounded-lg overflow-hidden border border-gray-200 h-28 bg-white shadow-xs"
+                        >
                           <img
                             src={preview}
-                            alt={`Preview ${index}`}
-                            className="h-24 w-24 object-cover rounded-xl border border-gray-200 shadow-xs"
+                            alt={`Preview ${index + 1}`}
+                            className="w-full h-full object-cover"
                           />
                           <button
                             type="button"
                             onClick={() => removeImage(index)}
-                            className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 shadow-sm opacity-0 group-hover:opacity-100 transition cursor-pointer"
+                            className="absolute top-1.5 right-1.5 bg-red-600 text-white rounded-full p-1 opacity-90 hover:opacity-100 transition shadow-sm cursor-pointer"
                           >
-                            <FaTimes size={10} />
+                            <FaTimes className="w-3 h-3" />
                           </button>
                         </div>
                       ))}
@@ -442,10 +446,10 @@ const CreateProperties: React.FC = () => {
                 </button>
                 <button
                   type="submit"
-                  disabled={isSubmitting}
+                  disabled={isSubmitting || isSaving}
                   className="px-6 py-2.5 bg-primary text-white font-semibold rounded-lg hover:bg-primary/90 transition disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer text-sm"
                 >
-                  {isSubmitting
+                  {isSubmitting || isSaving
                     ? "Saving..."
                     : isEditMode
                       ? "Update Property"

@@ -67,13 +67,13 @@ const ManageBarristers: React.FC = () => {
 
     try {
       await Promise.all(
-        deleteTargetIds.map((id) => api.delete(`/barristers/${id}`))
+        deleteTargetIds.map((id) => api.delete(`/barristers/${id}`)),
       );
 
       toast.success(
         deleteTargetIds.length > 1
           ? `${deleteTargetIds.length} barristers deleted successfully`
-          : "Barrister deleted successfully"
+          : "Barrister deleted successfully",
       );
       setDeleteModal(false);
       setDeleteTargetIds([]);
@@ -91,7 +91,7 @@ const ManageBarristers: React.FC = () => {
     setSelectedBarristerIds((prev) =>
       prev.includes(id)
         ? prev.filter((itemId) => itemId !== id)
-        : [...prev, id]
+        : [...prev, id],
     );
   };
 
@@ -123,7 +123,7 @@ const ManageBarristers: React.FC = () => {
   }, [fetchBarristers]);
 
   const validSelectedBarristerIds = selectedBarristerIds.filter((id) =>
-    barristers.some((barrister) => barrister.id === id)
+    barristers.some((barrister) => barrister.id === id),
   );
 
   const columns: TableColumnProps<BarristerProp>[] = [
@@ -191,7 +191,7 @@ const ManageBarristers: React.FC = () => {
   return (
     <>
       <div className="space-y-6" key={assignmentVersion}>
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-0">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-3 md:gap-0">
           <div>
             <h2 className="text-lg font-semibold text-gray-900">Barristers</h2>
             <p className="text-sm text-gray-500">

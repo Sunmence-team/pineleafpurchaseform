@@ -50,7 +50,7 @@ const DownloadModal = ({
 
   return (
     <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 md:p-8 p-4">
-      <div className="bg-white rounded-2xl p-4 sm:p-6 w-full lg:w-[45%] md:w-[80%] shadow-2xl max-h-[calc(100vh-2rem)] overflow-y-auto">
+      <div className="bg-white rounded-2xl p-4 md:p-6 w-full lg:w-[45%] md:w-[80%] shadow-2xl max-h-[calc(100vh-2rem)] overflow-y-auto">
         <div className="flex justify-between items-center mb-4">
           <h3 className="text-lg md:text-xl font-bold text-gray-900">
             Download Options

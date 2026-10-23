@@ -95,7 +95,7 @@ const UnassignedEntries: React.FC = () => {
     if (!targetId) return;
     setIsDeleting(true);
     try {
-      await api.delete(`/api/applications/${targetId}`);
+      await api.delete(`/applications/${targetId}`);
       removeClient(targetId);
       toast.success("Entry deleted successfully");
       setDeleteModalOpen(false);
@@ -184,7 +184,7 @@ const UnassignedEntries: React.FC = () => {
       </div>
 
       {/* Overview Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         <OverviewCards
           title="Unassigned Entries"
           value={unassignedEntries.length}

@@ -104,16 +104,12 @@ export const ClientsProvider = ({ children }) => {
 
         do {
           const payload = { page, per_page: 200 };
-          const response = await api.post(
-            `${API_URL}/api/all_clients`,
-            payload,
-            {
-              headers: {
-                Authorization: `Bearer ${token}`,
-                "Content-Type": "application/json",
-              },
+          const response = await api.post(`${API_URL}/all_clients`, payload, {
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json",
             },
-          );
+          });
 
           const { applications, meta } = parseApplicationsResponse(response);
           allData.push(...applications);
@@ -148,7 +144,7 @@ export const ClientsProvider = ({ children }) => {
       let response;
       if (query.trim()) {
         response = await api.get(
-          `${API_URL}/api/applications/search?query=${encodeURIComponent(query)}`,
+          `${API_URL}/applications/search?query=${encodeURIComponent(query)}`,
           {
             headers: { Authorization: `Bearer ${token}` },
             params: { page, per_page: perPage },
@@ -156,7 +152,7 @@ export const ClientsProvider = ({ children }) => {
         );
       } else {
         const payload = { page, per_page: perPage };
-        response = await api.post(`${API_URL}/api/all_clients`, payload, {
+        response = await api.post(`${API_URL}/all_clients`, payload, {
           headers: {
             Authorization: `Bearer ${token}`,
             "Content-Type": "application/json",

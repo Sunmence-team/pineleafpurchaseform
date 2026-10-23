@@ -1,28 +1,21 @@
 import React, { useState, useEffect, useRef } from "react";
-import assets from "../../../../../assets/assets";
 import { useNavigate, useLocation } from "react-router-dom";
 import ActionCell from "../../../../../components/ui/ActionCell";
-import { getErrorMessage, hmApi } from "../../../../../helpers/api";
+import { getErrorMessage } from "../../../../../helpers/api";
 import { toast } from "sonner";
-import { FaBars, FaPlus } from "react-icons/fa6";
 import { IoIosSearch } from "react-icons/io";
 import {
   formatISODateToCustom,
   formatterUtility,
   formatUnderScores,
 } from "../../../../../helpers/formatterUtility";
-import { StatusTurnPriorityCard } from "../../../../../components/cards/StatusCard";
-import { branchOptions } from "../../../../../lib/branchList";
 import ReusableTable from "../../../../../utilities/ReusableTable";
+import StatusCard from "../../../../../components/cards/StatusCard";
+import { useApplicants } from "../../../../../hooks/useApplicant";
+import type { Applicant } from "../../../../../services/applicantService";
+import type { TableColumnProps } from "../../../../../lib/interfaces";
 
 const ManageApplicants = () => {
-  const token = localStorage.getItem("token");
-  const [openMenu, setOpenMenu] = useState(false);
-  const [applicants, setApplicants] = useState([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [isDeleting, setIsDeleting] = useState(false);
-  const [error, setError] = useState(null);
-  const [propertyToDelete, setPropertyToDelete] = useState(null);
   const navigate = useNavigate();
   const location = useLocation();
   const savedListState = location.state?.listState;
@@ -50,7 +43,6 @@ const ManageApplicants = () => {
   const [itemsPerPage, setItemsPerPage] = useState(
     savedListState?.itemsPerPage || 10,
   );
-  const [totalItems, setTotalItems] = useState(0);
 
   // Debounce search
   useEffect(() => {
@@ -74,53 +66,30 @@ const ManageApplicants = () => {
     setCurrentPage(1);
   }, [statusFilter, appliedFrom, appliedTo]);
 
-  const fetchApplicants = async () => {
-    setIsLoading(true);
-    setError(null);
-    try {
-      const params: Record<string, any> = {
-        page: currentPage,
-        per_page: itemsPerPage,
-        search: debouncedSearchQuery,
-      };
+  // Fetch applicants via TanStack Query hook
+  const {
+    data: responseData,
+    isLoading,
+    error,
+  } = useApplicants({
+    page: currentPage,
+    per_page: itemsPerPage,
+    search: debouncedSearchQuery,
+    status: statusFilter,
+    applied_from: appliedFrom,
+    applied_to: appliedTo,
+  });
 
-      if (statusFilter) params.status = statusFilter;
-      if (appliedFrom) params.applied_from = appliedFrom;
-      if (appliedTo) params.applied_to = appliedTo;
-
-      const response = await hmApi.get("/api/interest", {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-        params,
-      });
-
-      if (response.status === 200) {
-        const { data, total } = response.data.data;
-        setApplicants(data);
-        setTotalItems(total);
-      }
-    } catch (err) {
-      const msg = getErrorMessage(err);
-      setError(msg);
-      toast.error(msg);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  const applicants: Applicant[] = responseData?.data?.data || [];
+  const totalItems = responseData?.data?.total || 0;
 
   useEffect(() => {
-    fetchApplicants();
-  }, [
-    currentPage,
-    itemsPerPage,
-    debouncedSearchQuery,
-    statusFilter,
-    appliedFrom,
-    appliedTo,
-  ]);
+    if (error) {
+      toast.error(getErrorMessage(error, "Failed to fetch applicants"));
+    }
+  }, [error]);
 
-  const columns = [
+  const columns: TableColumnProps<Applicant>[] = [
     {
       label: "Name",
       key: "name",
@@ -133,39 +102,54 @@ const ManageApplicants = () => {
     {
       label: "Email",
       key: "email",
-      render: (item) => item.user?.email,
+      render: (item) => <span>{item.user?.email || "-"}</span>,
     },
     {
       label: "Payment Method",
       key: "payment_method",
-      render: (item) =>
-        formatUnderScores(item.payment_method, true),
+      render: (item) => <span>{formatUnderScores(item.payment_method, true)}</span>,
     },
     {
       label: "Reference",
       key: "reference",
+      render: (item) => <span>{item.reference || "-"}</span>,
     },
     {
       label: "Amount",
       key: "amount",
-      render: (item) => formatterUtility(Number(item.amount)),
+      render: (item) => (
+        <span>{formatterUtility(Number(item.amount))}</span>
+      ),
     },
     {
       label: "Payment Status",
       key: "status",
-      render: (item) => <StatusTurnPriorityCard status={item.status} />,
+      render: (item) => (
+        <StatusCard
+          type={
+            item.status === "approved"
+              ? "success"
+              : item.status === "rejected"
+                ? "failed"
+                : "pending"
+          }
+          statusText={item.status || "N/A"}
+        />
+      ),
     },
     {
       label: "Date Created",
       key: "created_at",
-      render: (item) => formatISODateToCustom(item.created_at),
+      render: (item) => (
+        <span>{formatISODateToCustom(item.created_at)}</span>
+      ),
     },
     {
       label: "Action",
       key: "action",
       render: (item) => (
         <ActionCell
-          rowId={item.uuid}
+          rowId={Number(item.id) || 0}
           onView={() =>
             navigate(`/dashboard/manage/applicants/${item.id}/view`, {
               state: {
@@ -192,8 +176,8 @@ const ManageApplicants = () => {
       <div>
         <h2 className="text-lg font-semibold">Manage Applicants</h2>
         <p className="text-sm text-tableHeading">
-          View and manage all individuals who has shown interest in the housing
-          sheme.
+          View and manage all individuals who have shown interest in the housing
+          scheme.
         </p>
       </div>
 
@@ -262,7 +246,7 @@ const ManageApplicants = () => {
         columns={columns}
         data={applicants}
         isLoading={isLoading}
-        error={error}
+        error={error ? getErrorMessage(error) : null}
         currentPage={currentPage}
         totalPages={Math.ceil(totalItems / itemsPerPage) || 1}
         totalItems={totalItems}

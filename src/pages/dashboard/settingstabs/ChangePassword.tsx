@@ -36,7 +36,7 @@ const ChangePassword: React.FC = () => {
           return;
         }
 
-        const response = await api.post("/api/change-password", values, {
+        const response = await api.post("/change-password", values, {
           headers: {
             Authorization: `Bearer ${token}`,
             "Content-Type": "application/json",
@@ -58,8 +58,9 @@ const ChangePassword: React.FC = () => {
             toast.error(msg || "Validation error.", { id: toastId });
           } else {
             toast.error(
-              err.response?.data?.message || getErrorMessage(err, "Failed to change password."),
-              { id: toastId }
+              err.response?.data?.message ||
+                getErrorMessage(err, "Failed to change password."),
+              { id: toastId },
             );
           }
         } else {
@@ -75,7 +76,8 @@ const ChangePassword: React.FC = () => {
     "mt-1.5 flex items-center h-12 w-full rounded-lg border border-primary/10 bg-secondary px-3.5 focus-within:border-primary transition duration-200";
   const inputInnerClass =
     "w-full bg-transparent focus:outline-none text-sm indent-2 text-gray-900";
-  const labelClass = "block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1";
+  const labelClass =
+    "block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1";
 
   return (
     <div className="space-y-6">
@@ -112,11 +114,12 @@ const ChangePassword: React.FC = () => {
                 {showCurrent ? <FaEyeSlash size={16} /> : <FaEye size={16} />}
               </button>
             </div>
-            {formik.touched.current_password && formik.errors.current_password && (
-              <div className="text-xs text-red-500 mt-1">
-                {formik.errors.current_password}
-              </div>
-            )}
+            {formik.touched.current_password &&
+              formik.errors.current_password && (
+                <div className="text-xs text-red-500 mt-1">
+                  {formik.errors.current_password}
+                </div>
+              )}
           </div>
 
           <div className="relative">
