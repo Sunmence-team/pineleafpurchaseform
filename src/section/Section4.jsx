@@ -300,7 +300,7 @@ const Section4 = ({ formData, setFormData, prevSection, onSubmit }) => {
           }
 
           const response = await axios.post(
-            `${API_URL}/api/apply`,
+            `${API_URL}/api/clients`,
             formDataToSend,
             {
               headers: {
@@ -309,7 +309,7 @@ const Section4 = ({ formData, setFormData, prevSection, onSubmit }) => {
             },
           );
 
-          console.log("API Response from POST /api/apply:", response.data);
+          console.log("API Response from POST /api/clients:", response.data);
 
           if (response.status === 200 || response.status === 201) {
             toast.success("Application submitted successfully!", {
