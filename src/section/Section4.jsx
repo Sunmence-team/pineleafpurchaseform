@@ -264,9 +264,9 @@ const Section4 = ({ formData, setFormData, prevSection, onSubmit }) => {
 
           formDataToSend.append("land_price", formData.clientDeclarationLandPrice || "");
           formDataToSend.append("number_of_plot", formData.clientDeclarationNumberOfPlots || "");
-          formDataToSend.append("site_location", formData.clientDeclarationSiteLocation || "");
+          formDataToSend.append("property", formData.clientDeclarationSiteLocation || "");
           formDataToSend.append("plot_number", formData.clientDeclarationPlotNumber || "");
-          formDataToSend.append("branches", formData.branches || "");
+          formDataToSend.append("branch", formData.branches || "");
 
           const signatureFile = formData.clientDeclarationSignature
             ? base64ToFile(formData.clientDeclarationSignature, "signature.png")
