@@ -66,23 +66,6 @@ export interface StatusCardProps {
   icon?: IconType;
 }
 
-export interface SearchableInputProps<T> {
-  endpoint: string;
-  onSelect: (item: T) => void;
-  onInputChange?: (value: string) => void;
-  displayKey?: keyof T;
-  queryParam?: string;
-  requestMethod?: "get" | "post";
-  label?: string;
-  placeholder?: string;
-  className?: string;
-  inputContClassName?: string;
-  dataKey?: string;
-  initialValue?: string;
-  showIcon?: boolean;
-  fetchOnEmpty?: boolean;
-}
-
 export interface UserProps {
   id: number;
   username: string;
@@ -95,6 +78,38 @@ export interface UserProps {
   enabled: number;
   created_at: string;
   updated_at: string;
+}
+
+export interface SearchableInputProps<T = any> {
+  endpoint?: string;
+  fetcher?: (query: string, signal?: AbortSignal) => Promise<T[]>;
+  options?: T[];
+  onSelect: (item: T) => void;
+  onClear?: () => void;
+  onInputChange?: (value: string) => void;
+  displayKey?: keyof T | (keyof T)[] | ((item: T) => string);
+  getDisplayLabel?: (item: T) => string;
+  renderOption?: (item: T, isSelected: boolean) => React.ReactNode;
+  queryParam?: string;
+  requestMethod?: "get" | "post";
+  transformResponse?: (res: unknown) => T[];
+  label?: string;
+  placeholder?: string;
+  className?: string;
+  inputContClassName?: string;
+  dataKey?: string;
+  initialValue?: string;
+  value?: T | null | string;
+  showIcon?: boolean;
+  icon?: React.ReactNode;
+  fetchOnEmpty?: boolean;
+  isSelector?: boolean;
+  clearable?: boolean;
+  disabled?: boolean;
+  readOnly?: boolean;
+  debounceMs?: number;
+  minChars?: number;
+  error?: string | null;
 }
 
 export interface ActionButtonProps {
@@ -120,6 +135,7 @@ export interface BarristerProp {
   status?: string;
   created_at?: string;
   updated_at?: string;
+  properties: PropertyProp[];
 }
 
 export interface BulkSelectionBarProps {
@@ -191,4 +207,185 @@ export interface Application {
   created_at: string;
   paid_at: string;
   user: ApplicantUser;
+}
+
+export interface HomeUser extends ApplicantUser {
+  job_type?: string;
+  monthly_revenue?: number | string;
+  admin_approved_salary?: number | string;
+  verified_salary?: number | string;
+  is_verified?: number | boolean;
+  is_interested?: number | boolean;
+  interest_transactions_count?: number;
+}
+
+export interface SubscriptionTransaction {
+  id: number | string;
+  reference: string;
+  transaction_reference: string;
+  customer_name: string;
+  customer_email: string;
+  amount: number | string;
+  total: number | string;
+  status: string;
+  transaction_status: string;
+  payment_status: string;
+  created_at: string;
+  paid_at: string;
+  updated_at: string;
+  user: HomeUser;
+}
+
+export interface RefundItem {
+  id: number;
+  amount: number | string;
+  status: string;
+  created_at: string;
+  admin_note: string;
+  bank_name: string;
+  account_number: string;
+  account_name: string;
+  user: HomeUser;
+}
+
+export interface HouseProperty {
+  id: number;
+  name: string;
+  estate_name: string;
+  description: string;
+  images: string[];
+  location: string;
+  type: string;
+  price: number | string;
+  total_units: number | string;
+  unit_sold: number | string;
+  no_of_bedrooms: number | string;
+}
+
+export interface PurchaseTransaction {
+  id: number | string;
+  type: string;
+  reference: string;
+  amount: number | string;
+  status: string;
+  payment_method: string;
+  created_at: string;
+  paid_at: string;
+  payment_gateway_response?: {
+    proof_of_payment?:
+      | string
+      | {
+          url?: string;
+          path?: string;
+        };
+  };
+}
+
+export interface PurchaseItem {
+  id: number;
+  status: string;
+  agreed_duration_months: number | string;
+  upfront_paid: boolean | number;
+  created_at: string;
+  approved_at: string;
+  user: HomeUser;
+  property: HouseProperty;
+  transactions: PurchaseTransaction[];
+}
+
+export interface FlaggedAccountItem {
+  id: number;
+  reason?: string;
+  flag_type?: string;
+  type?: string;
+  attempts_count?: number;
+  attempts?: number;
+  status?: string;
+  resolution_status?: string;
+  last_attempt_at?: string;
+  updated_at?: string;
+  created_at?: string;
+  name?: string;
+  user?: HomeUser;
+}
+
+export interface BranchItem {
+  id: number;
+  name: string;
+  state: string;
+  country: string;
+  address: string;
+  status: string;
+}
+
+export interface ClubMember {
+  title: string;
+  firstName: string;
+  middleName?: string;
+  lastName: string;
+}
+export interface ClientEntry {
+  id: number | string;
+  purchase_type: string;
+  is_online: boolean;
+
+  personal_picture?: string;
+  title?: string;
+  first_name?: string;
+  middle_name?: string;
+  last_name?: string;
+  address?: string;
+  gender?: string;
+
+  marital_status?: string;
+  title_of_spouse?: string;
+  first_name_of_spouse?: string;
+  middle_name_of_spouse?: string;
+  last_name_of_spouse?: string;
+
+  lga?: string;
+  country?: string;
+  email: string;
+  mobile_number: string;
+
+  branch: BranchItem;
+
+  next_of_kin_full_name?: string;
+  next_of_kin_relationship?: string;
+  next_of_kin_mobile_number?: string;
+  next_of_kin_email?: string;
+  next_of_kin_address?: string;
+
+  declaration_name?: string;
+  land_price?: string | number;
+  number_of_plot?: string | number;
+  plot_number?: string | number;
+  client_name: string;
+  signature?: string;
+  declaration_date?: string;
+
+  referral_name?: string;
+  referral_number?: string;
+
+  downloaded_date: string;
+
+  club_name: string;
+  club_contact: string;
+  club_members: ClubMember[];
+
+  created_at: string;
+  updated_at?: string;
+
+  properties: PropertyProp;
+
+  branches?: string;
+  site_location?: string;
+
+  state_of_origin?: string;
+  dob?: string;
+  language?: string;
+  nationality?: string;
+  occupation?: string;
+  referral_date?: string;
+  referral_email?: string;
 }

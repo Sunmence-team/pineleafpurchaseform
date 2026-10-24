@@ -10,8 +10,8 @@ import {
   verifyPurchasePaymentService,
   type FetchPurchasesParams,
   type VerifyPurchasePaymentPayload,
-  type PurchaseItem,
 } from "../services/purchaseService";
+import { PurchaseItem } from "../lib/interfaces";
 
 export const usePurchases = (params: FetchPurchasesParams = {}) => {
   const page = params.page ?? 1;

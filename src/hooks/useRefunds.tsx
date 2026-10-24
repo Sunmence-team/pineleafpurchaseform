@@ -9,9 +9,9 @@ import {
   fetchRefundService,
   updateRefundStatusService,
   type FetchRefundsParams,
-  type UpdateRefundStatusPayload,
-  type RefundItem,
+  type UpdateRefundStatusPayload
 } from "../services/refundService";
+import { RefundItem } from "../lib/interfaces";
 
 export const useRefunds = (params: FetchRefundsParams = {}) => {
   const page = params.page ?? 1;

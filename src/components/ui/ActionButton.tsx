@@ -14,14 +14,16 @@ const ActionButton: React.FC<ActionButtonProps> = ({
 }) => {
   return (
     <button
-      className={`${overideBg ? "" : `action-btn`} h-10 px-4 min-w-25 rounded-md text-sm flex items-center justify-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer ${buttonStyle}`}
+      className={`${overideBg ? "" : `action-btn`} text-white h-10 px-4 min-w-25 rounded-md text-sm flex items-center justify-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer ${buttonStyle}`}
       type="button"
       onClick={onClick || action}
       disabled={disabled || loading}
     >
-      {(icon && !loading) && icon}
+      {icon && !loading && icon}
       {loading && (
-        <span className={`size-4 border-3 border-t-transparent rounded-full animate-spin`}></span>
+        <span
+          className={`size-4 border-3 border-t-transparent rounded-full animate-spin`}
+        ></span>
       )}
       {loading && loadingText ? loadingText : text}
     </button>

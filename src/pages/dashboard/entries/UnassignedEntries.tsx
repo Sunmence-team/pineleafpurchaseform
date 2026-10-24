@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { BiSearch } from "react-icons/bi";
 import {
   BsShieldExclamation,
@@ -11,160 +11,116 @@ import { toast } from "sonner";
 import OverviewCards from "../../../components/cards/OverviewCards";
 import ConfirmDialog from "../../../components/modals/ConfirmDialog";
 import ActionCell from "../../../components/ui/ActionCell";
-import { useClients } from "../../../context/ClientsContext";
 import { getStoredAssignments } from "../../../components/modals/AssignPropertiesModal";
 import { getOfflinePropertyIds } from "../properties/Properties";
 import { formatISODateToCustom } from "../../../helpers/formatterUtility";
-import type { TableColumnProps } from "../../../lib/interfaces";
+import type { ClientEntry, TableColumnProps } from "../../../lib/interfaces";
 import ReusableTable from "../../../utilities/ReusableTable";
 import { api, getErrorMessage } from "../../../helpers/api";
+import { useOldClientEntries } from "../../../hooks/useClientEntries";
 
 const UnassignedEntries: React.FC = () => {
-  const { allClients, loadingAllClients, fetchAllClients, removeClient } =
-    useClients();
-
-  const [searchTerm, setSearchTerm] = useState("");
+  const navigate = useNavigate();
+  const [searchQuery, setSearchQuery] = useState("");
+  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
-  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
-  const [targetId, setTargetId] = useState<number | string | null>(null);
-  const [isDeleting, setIsDeleting] = useState(false);
 
-  // Fetch all clients if not already loaded
   useEffect(() => {
-    if (allClients.length === 0 && !loadingAllClients) {
-      fetchAllClients(true);
+    const handler = setTimeout(() => {
+      setDebouncedSearchQuery(searchQuery);
+      setCurrentPage(1);
+    }, 500);
+
+    return () => clearTimeout(handler);
+  }, [searchQuery]);
+
+  const {
+    data: responseData,
+    isLoading,
+    error,
+  } = useOldClientEntries({
+    page: currentPage,
+    per_page: itemsPerPage,
+    search: debouncedSearchQuery,
+  });
+
+  const clientEntries: ClientEntry[] = responseData?.data?.data || [];
+  const totalItems = responseData?.data?.total || 0;
+  const totalPages = responseData?.data?.last_page || 1;
+
+  useEffect(() => {
+    if (error) {
+      toast.error(getErrorMessage(error, "Failed to fetch client entries."));
     }
-  }, [allClients.length, loadingAllClients, fetchAllClients]);
+  }, [error]);
 
-  // Read assigned property identifiers from stored assignments
-  const assignedPropertyNames = useMemo(() => {
-    const assignments = getStoredAssignments();
-    const names = new Set<string>();
-    for (const record of Object.values(assignments)) {
-      if (Array.isArray(record.properties)) {
-        for (const prop of record.properties) {
-          if (prop?.name) {
-            names.add(prop.name.trim().toLowerCase());
-          }
-        }
-      }
-    }
-    return names;
-  }, []);
-
-  // Filter entries that do NOT have a barrister assigned to their property / site location
-  const unassignedEntries = useMemo(() => {
-    return allClients.filter((client: any) => {
-      const site = (client.site_location || "").trim().toLowerCase();
-      if (!site || site === "n/a") {
-        return true; // No site specified -> unassigned
-      }
-      // Check if site name matches any assigned property
-      return !assignedPropertyNames.has(site);
-    });
-  }, [allClients, assignedPropertyNames]);
-
-  // Search filter
-  const filteredData = useMemo(() => {
-    if (!searchTerm.trim()) return unassignedEntries;
-    const lower = searchTerm.toLowerCase();
-    return unassignedEntries.filter((item: any) => {
-      const name = (item.client_name || "").toLowerCase();
-      const site = (item.site_location || "").toLowerCase();
-      const branch = (item.branches || "").toLowerCase();
-      const email = (item.email || "").toLowerCase();
-      return (
-        name.includes(lower) ||
-        site.includes(lower) ||
-        branch.includes(lower) ||
-        email.includes(lower)
-      );
-    });
-  }, [unassignedEntries, searchTerm]);
-
-  // Paginated slice
-  const paginatedData = useMemo(() => {
-    const start = (currentPage - 1) * itemsPerPage;
-    return filteredData.slice(start, start + itemsPerPage);
-  }, [filteredData, currentPage, itemsPerPage]);
-
-  const totalPages = Math.ceil(filteredData.length / itemsPerPage) || 1;
-
-  const handleDelete = async () => {
-    if (!targetId) return;
-    setIsDeleting(true);
-    try {
-      await api.delete(`/applications/${targetId}`);
-      removeClient(targetId);
-      toast.success("Entry deleted successfully");
-      setDeleteModalOpen(false);
-      setTargetId(null);
-    } catch (err) {
-      toast.error(getErrorMessage(err, "Failed to delete entry"));
-    } finally {
-      setIsDeleting(false);
-    }
-  };
-
-  const columns: TableColumnProps<any>[] = [
+  const columns: TableColumnProps<ClientEntry>[] = [
     {
       label: "Client Name",
       key: "client_name",
-      render: (row) => (
-        <div className="flex flex-col">
-          <span className="font-semibold text-gray-900">{row.client_name}</span>
-          <span className="text-xs text-gray-400">{row.email || "-"}</span>
-        </div>
+      className: "px-3 py-2 text-xs font-medium text-tableData max-w-[280px]",
+      render: (item) => (
+        <span
+          className="font-medium text-gray-900 block truncate capitalize"
+          title={item.client_name ?? item.club_name}
+        >
+          {item.client_name ?? item.club_name ?? "-"}
+        </span>
       ),
     },
     {
-      label: "Site / Property",
-      key: "site_location",
-      render: (row) => (
-        <span className="font-medium text-gray-800">
-          {row.site_location || "Not Specified"}
+      label: "Email",
+      key: "email",
+      className: "px-3 py-2 text-xs text-gray-600 max-w-[200px]",
+      render: (item) => (
+        <span className="truncate block" title={item.email}>
+          {item.email ?? "-"}
         </span>
+      ),
+    },
+    {
+      label: "Phone Number",
+      key: "mobile_number",
+      className: "px-3 py-2 text-xs text-gray-700 whitespace-nowrap",
+      render: (item) => (
+        <span>{item.mobile_number ?? item.club_contact ?? "-"}</span>
       ),
     },
     {
       label: "Branch",
       key: "branches",
-      render: (row) => <span>{row.branches || "-"}</span>,
+      className: "px-3 py-2 text-xs text-gray-700 whitespace-nowrap",
+      render: (item) => <span>{item.branch?.name ?? "-"}</span>,
     },
     {
-      label: "Plots",
-      key: "number_of_plot",
-      render: (row) => <span>{row.number_of_plot || "1"}</span>,
-    },
-    {
-      label: "Submission Date",
-      key: "created_at",
-      render: (row) => <span>{formatISODateToCustom(row.created_at)}</span>,
-    },
-    {
-      label: "Barrister Status",
-      key: "status",
-      render: () => (
-        <span className="px-3 py-1 text-xs font-semibold rounded-full bg-red-50 text-red-700 border border-red-200 flex items-center gap-1.5 w-max">
-          <span className="w-2 h-2 rounded-full bg-red-500" />
-          No Barrister Assigned
+      label: "Property Name",
+      key: "properties.name",
+      className: "px-3 py-2 text-xs text-gray-700 max-w-[250px]",
+      render: (item) => (
+        <span className="truncate block" title={item.properties?.name}>
+          {item.properties?.name ?? "-"}
         </span>
       ),
     },
     {
-      label: "Action",
+      label: "Date Filled",
+      key: "created_at",
+      className: "px-3 py-2 text-xs text-gray-700 whitespace-nowrap",
+      render: (item) => <span>{formatISODateToCustom(item.created_at)}</span>,
+    },
+    {
+      label: "Actions",
       key: "action",
+      tableHeadingClassName: "text-center",
+      className: "px-3 py-2 text-center whitespace-nowrap",
       render: (item) => (
         <ActionCell
-          rowId={Number(item.id)}
-          canView={true}
-          onView={() => window.open(`/view-client/${item.id}`, "_self")}
-          onEdit={() => window.open(`/edit-client/${item.id}`, "_self")}
-          onDelete={() => {
-            setTargetId(item.id);
-            setDeleteModalOpen(true);
-          }}
+          rowId={item.id}
+          canView
+          onView={(id) => navigate(`/dashboard/records/view/${id}`)}
+          onEdit={(id) => navigate(`/dashboard/records/edit/${id}`)}
+          // onDelete={handleDelete}
         />
       ),
     },
@@ -187,27 +143,19 @@ const UnassignedEntries: React.FC = () => {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         <OverviewCards
           title="Unassigned Entries"
-          value={unassignedEntries.length}
+          value={0}
           icon={BsShieldExclamation}
           subtitle="Entries without barrister property assignment"
         />
         <OverviewCards
           title="Total Form Entries"
-          value={allClients.length}
+          value={0}
           icon={BsHouseExclamation}
           subtitle="All submitted purchase forms"
         />
         <OverviewCards
           title="Assignment Coverage"
-          value={
-            allClients.length > 0
-              ? `${Math.round(
-                  ((allClients.length - unassignedEntries.length) /
-                    allClients.length) *
-                    100,
-                )}%`
-              : "0%"
-          }
+          value={0}
           icon={BsCheckCircle}
           subtitle="Entries assigned to barristers"
         />
@@ -219,9 +167,9 @@ const UnassignedEntries: React.FC = () => {
           <BiSearch className="w-4 h-4 md:w-5 md:h-5 opacity-50" />
           <input
             type="text"
-            value={searchTerm}
+            value={searchQuery}
             onChange={(e) => {
-              setSearchTerm(e.target.value);
+              setSearchQuery(e.target.value);
               setCurrentPage(1);
             }}
             placeholder="Search entries..."
@@ -233,20 +181,21 @@ const UnassignedEntries: React.FC = () => {
       {/* Table */}
       <ReusableTable
         columns={columns}
-        data={paginatedData}
-        isLoading={loadingAllClients}
-        error={null}
+        data={clientEntries}
+        isLoading={isLoading}
+        error={error ? getErrorMessage(error) : null}
+        hasSerialNo={true}
         currentPage={currentPage}
         totalPages={totalPages}
-        totalItems={filteredData.length}
+        totalItems={totalItems}
         itemsPerPage={itemsPerPage}
         setCurrentPage={setCurrentPage}
         setItemsPerPage={setItemsPerPage}
-        hasSerialNo={true}
+        getRowId={(item) => item.id}
       />
 
       {/* Delete Confirmation */}
-      <ConfirmDialog
+      {/* <ConfirmDialog
         isOpen={deleteModalOpen}
         isLoading={isDeleting}
         title="Delete Purchase Entry?"
@@ -257,7 +206,7 @@ const UnassignedEntries: React.FC = () => {
           setTargetId(null);
         }}
         onConfirm={handleDelete}
-      />
+      /> */}
     </div>
   );
 };

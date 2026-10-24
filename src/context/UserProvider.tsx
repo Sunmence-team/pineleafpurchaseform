@@ -34,12 +34,11 @@ export const UserProvider = ({ children }: userProviderProps) => {
       const response = await api.get("/user", {
         headers: { Authorization: `Bearer ${token}` },
       });
-      const { data } = response.data;
-      console.log("response.data", response.data)
+      const data = response.data;
       setUser(data);
-      setRole(data?.role ?? data?.crm_role);
+      setRole(data?.role);
       localStorage.setItem("user", JSON.stringify(data));
-      localStorage.setItem("role", data?.role || data?.crm_role);
+      localStorage.setItem("role", data?.role);
     } catch (err) {
       if (axios.isAxiosError(err) && err.response?.status === 401) {
         logout();
@@ -57,10 +56,10 @@ export const UserProvider = ({ children }: userProviderProps) => {
         setLoading(false);
         return;
       }
-      // if (storedUser) {
-      //   const parsedUser = JSON.parse(storedUser);
-      //   setUser(parsedUser)
-      // };
+      if (storedUser) {
+        const parsedUser = JSON.parse(storedUser);
+        setUser(parsedUser)
+      };
       try {
         setToken(storedToken);
         await refreshUser(storedToken);

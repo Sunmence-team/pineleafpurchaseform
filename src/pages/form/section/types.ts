@@ -1,11 +1,5 @@
 import React from "react";
-
-export interface ClubMember {
-  title: string;
-  firstName: string;
-  middleName?: string;
-  lastName: string;
-}
+import { ClubMember } from "../../../lib/interfaces";
 
 export interface PurchaseFormData {
   purchase_type: string;
@@ -43,9 +37,9 @@ export interface PurchaseFormData {
   nextOfKinEmail?: string;
   clientDeclarationLandPrice?: string | number;
   clientDeclarationNumberOfPlots?: string | number;
-  clientDeclarationSiteLocation?: string;
+  clientDeclarationSiteLocation?: string | number;
   clientDeclarationPlotNumber?: string | number;
-  branches?: string;
+  branches?: string | number;
   clientDeclarationClientName?: string;
   clientDeclarationSignature?: string;
   clientDeclarationDate?: string | Date | null;
@@ -53,7 +47,6 @@ export interface PurchaseFormData {
   referralMobileNumber?: string;
   referralDate?: string | Date | null;
   referralEmail?: string;
-  [key: string]: any;
 }
 
 export interface SectionProps {

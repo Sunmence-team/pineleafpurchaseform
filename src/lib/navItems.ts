@@ -80,37 +80,37 @@ export const navItems: NavItem[] = [
     children: [
       {
         name: "Manage Applicants",
-        path: "dashboard/manage/applicants",
+        path: "/dashboard/manage/applicants",
         role: ["admin"],
       },
       {
         name: "Manage Users",
-        path: "dashboard/manage/users",
+        path: "/dashboard/manage/users",
         role: ["admin"],
       },
       {
         name: "Manage Properties",
-        path: "dashboard/manage/properties",
+        path: "/dashboard/manage/properties",
         role: ["admin"],
       },
       {
         name: "Manage Purchases",
-        path: "dashboard/manage/purchases",
+        path: "/dashboard/manage/purchases",
         role: ["admin"],
       },
       {
         name: "Manage Subscriptions",
-        path: "dashboard/manage/subscriptions",
+        path: "/dashboard/manage/subscriptions",
         role: ["admin"],
       },
       {
         name: "Manage Refunds",
-        path: "dashboard/manage/refunds",
+        path: "/dashboard/manage/refunds",
         role: ["admin"],
       },
       {
         name: "Flagged Accounts",
-        path: "dashboard/manage/flagged-accounts",
+        path: "/dashboard/manage/flagged-accounts",
         role: ["admin"],
       },
     ],

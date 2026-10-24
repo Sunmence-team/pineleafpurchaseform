@@ -18,9 +18,9 @@ export interface ApplicantsResponse {
   data: {
     data: Application[];
     total: number;
-    current_page?: number;
-    per_page?: number;
-    last_page?: number;
+    current_page: number;
+    per_page: number;
+    last_page: number;
   };
   message?: string;
 }

@@ -11,8 +11,8 @@ import {
   updateHouseService,
   deleteHouseService,
   type FetchHousesParams,
-  type HouseItem,
 } from "../services/houseService";
+import { HouseProperty } from "../lib/interfaces";
 
 export const useHouses = (params: FetchHousesParams = {}) => {
   const page = params.page ?? 1;
@@ -28,7 +28,7 @@ export const useHouses = (params: FetchHousesParams = {}) => {
 
 export const useHouse = (
   id?: number | string | null,
-  initialData?: HouseItem | null,
+  initialData?: HouseProperty | null,
 ) => {
   return useQuery({
     queryKey: ["house", id ? String(id) : null],

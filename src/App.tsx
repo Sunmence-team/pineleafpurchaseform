@@ -41,7 +41,6 @@ import ViewRefund from "./pages/dashboard/hmanagement/refunds/ViewRefund";
 import Properties from "./pages/dashboard/properties/Properties";
 import DocumentLibrary from "./pages/dashboard/documents/DocumentLibrary";
 
-import ChangePassword from "./pages/dashboard/settingstabs/ChangePassword";
 import Settings from "./pages/dashboard/Settings";
 
 function App() {
@@ -66,15 +65,15 @@ function App() {
         <Route index path="/" element={<Form />} />
         <Route path="/login" element={<Login />} />
         <Route path="/success" element={<Success />} />
-        <Route path="/change-password" element={<ChangePassword />} />
 
         <Route element={<ProtectedRoute />}>
           <Route path="/dashboard" element={<MainLayout />}>
             <Route path="overview" element={<Dashboard />} />
 
             <Route path="records" element={<ManageEntries />} />
+            <Route path="records/view/:id" element={<ViewFormEntry endpointType="applications" />} />
             <Route path="old-records" element={<OldRecords />} />
-            <Route path="records/view/:id" element={<ViewFormEntry />} />
+            <Route path="old-records/view/:id" element={<ViewFormEntry endpointType="clients" />} />
             <Route path="records/edit/:id" element={<EditClient />} />
             <Route path="records/unassigned" element={<UnassignedEntries />} />
             <Route path="records/offline" element={<OfflineEntries />} />

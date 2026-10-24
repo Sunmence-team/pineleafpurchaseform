@@ -1,25 +1,7 @@
 import { hmApi } from "../helpers/api";
+import { RefundItem } from "../lib/interfaces";
 
-export interface RefundUser {
-  firstname?: string;
-  lastname?: string;
-  email?: string;
-  phone?: string;
-  [key: string]: any;
-}
-
-export interface RefundItem {
-  id: number;
-  amount?: number | string;
-  status?: string;
-  created_at?: string;
-  admin_note?: string;
-  bank_name?: string;
-  account_number?: string;
-  account_name?: string;
-  user?: RefundUser;
-  [key: string]: any;
-}
+export type { RefundItem };
 
 export interface FetchRefundsParams {
   page?: number;
@@ -36,7 +18,6 @@ export interface RefundsResponse {
     last_page?: number;
     current_page?: number;
     per_page?: number;
-    [key: string]: any;
   };
   message?: string;
 }
@@ -46,11 +27,6 @@ export interface UpdateRefundStatusPayload {
   status: "settled" | "rejected" | string;
   admin_note?: string;
 }
-
-const getAuthHeaders = () => {
-  const token = localStorage.getItem("token");
-  return token ? { Authorization: `Bearer ${token}` } : {};
-};
 
 export const fetchRefundsService = async (
   params: FetchRefundsParams = {},
@@ -64,7 +40,6 @@ export const fetchRefundsService = async (
   if (params.status) queryParams.status = params.status;
 
   const res = await hmApi.get("/admin/refunds", {
-    headers: getAuthHeaders(),
     params: queryParams,
   });
   return res.data;
@@ -73,9 +48,7 @@ export const fetchRefundsService = async (
 export const fetchRefundService = async (
   id: number | string,
 ): Promise<RefundItem> => {
-  const res = await hmApi.get(`/admin/refunds/${id}`, {
-    headers: getAuthHeaders(),
-  });
+  const res = await hmApi.get(`/admin/refunds/${id}`);
   return res.data?.data || res.data;
 };
 
@@ -83,8 +56,6 @@ export const updateRefundStatusService = async (
   payload: UpdateRefundStatusPayload,
 ) => {
   const { id, ...body } = payload;
-  const res = await hmApi.patch(`/admin/refunds/${id}`, body, {
-    headers: getAuthHeaders(),
-  });
+  const res = await hmApi.patch(`/admin/refunds/${id}`, body);
   return res.data;
 };

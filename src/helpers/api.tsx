@@ -10,15 +10,6 @@ export const api = axios.create({
   },
 });
 
-const PROPERTY_API_URL = import.meta.env.VITE_PROPERTY_BASE_URL;
-
-export const propertyApi = axios.create({
-  baseURL: PROPERTY_API_URL,
-  headers: {
-    Accept: "application/json",
-  },
-});
-
 const HM_API_URL = import.meta.env.VITE_HM_BASE_URL;
 
 export const hmApi = axios.create({
@@ -50,6 +41,16 @@ export const setupInterceptors = (logout: () => void) => {
       return Promise.reject(error);
     },
   );
+
+  
+  hmApi.interceptors.request.use((config) => {
+    const token = localStorage.getItem("token");
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+  });
+
   hmApi.interceptors.response.use(
     (res) => res,
     (error) => {
@@ -62,22 +63,6 @@ export const setupInterceptors = (logout: () => void) => {
       return Promise.reject(error);
     },
   );
-
-  propertyApi.interceptors.request.use((config) => {
-    const token = localStorage.getItem("token");
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
-    return config;
-  });
-
-  hmApi.interceptors.request.use((config) => {
-    const token = localStorage.getItem("token");
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
-    return config;
-  });
 };
 
 export function getErrorMessage(

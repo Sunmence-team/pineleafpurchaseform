@@ -13,9 +13,10 @@ import {
 } from "react-icons/fa";
 import { MdTitle } from "react-icons/md";
 import { toast } from "sonner";
-import type { ClubMember, SectionProps } from "./types";
-
-const COUNTRY_URL = import.meta.env.VITE_COUNTRY_BASE_URL;
+import SearchableInput from "../../../components/ui/SearchableInput";
+import { useCountryStates } from "../../../hooks/useCountryStates";
+import type { SectionProps } from "./types";
+import { ClubMember } from "../../../lib/interfaces";
 
 const Section1: React.FC<SectionProps> = ({
   formData,
@@ -30,15 +31,16 @@ const Section1: React.FC<SectionProps> = ({
         : URL.createObjectURL(formData.image)
       : null,
   );
-  const [countries, setCountries] = useState<string[]>([]);
-  const [states, setStates] = useState<string[]>([]);
-  const [loading, setLoading] = useState({
-    countries: false,
-    states: false,
-  });
-  const [error, setError] = useState<string | null>(null);
-  const [countryCodeMap, setCountryCodeMap] = useState<Record<string, any>>({});
-  const [countryIdMap, setCountryIdMap] = useState<Record<string, any>>({});
+  const {
+    countries,
+    states,
+    countryCodeMap,
+    loading,
+    error,
+    getMobilePlaceholder,
+    fetchCountries,
+    fetchStates,
+  } = useCountryStates(formData.countryOfResidence);
 
   // Local state for adding club members dynamically
   const [newTitle, setNewTitle] = useState("");
@@ -49,82 +51,6 @@ const Section1: React.FC<SectionProps> = ({
   const parentClass =
     "mt-1 block w-full rounded-md border border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 h-[50px] px-2 flex items-center bg-white";
   const inputClass = "w-full focus:outline-0 text-sm h-full indent-2";
-
-  // Fetch countries and ISO codes on component mount
-  useEffect(() => {
-    const fetchCountries = async () => {
-      setLoading((prev) => ({ ...prev, countries: true }));
-      setError(null);
-      try {
-        const response = await fetch(`${COUNTRY_URL}/countries`);
-        const result = await response.json();
-        if (!result || result.length === 0)
-          throw new Error("No countries found");
-
-        const countryList = result
-          .map((c: any) => ({ name: c.name, id: c.id, iso2: c.iso2 }))
-          .sort((a: any, b: any) => a.name.localeCompare(b.name));
-
-        const codeMap: Record<string, any> = {};
-        const idMap: Record<string, any> = {};
-        result.forEach((c: any) => {
-          codeMap[c.name] = c.iso2;
-          idMap[c.name] = c.id;
-        });
-
-        setCountries(countryList.map((c: any) => c.name));
-        setCountryCodeMap(codeMap);
-        setCountryIdMap(idMap);
-      } catch (err) {
-        console.error("Error fetching countries:", err);
-        setError("Failed to load countries.");
-        toast.error("Failed to load countries.");
-      } finally {
-        setLoading((prev) => ({ ...prev, countries: false }));
-      }
-    };
-    fetchCountries();
-  }, []);
-
-  // Fetch states when countryOfResidence changes
-  useEffect(() => {
-    if (
-      formData.countryOfResidence &&
-      countryIdMap[formData.countryOfResidence]
-    ) {
-      const fetchStates = async () => {
-        setLoading((prev) => ({ ...prev, states: true }));
-        const countryId = countryIdMap[formData.countryOfResidence];
-        try {
-          const response = await fetch(
-            `${COUNTRY_URL}/countries/${countryId}/states`,
-          );
-          const result = await response.json();
-          const stateList = result?.map((s: any) => s.name) || [];
-          setStates(stateList.sort());
-        } catch (err) {
-          console.error("Error fetching states:", err);
-          setStates([]);
-        } finally {
-          setLoading((prev) => ({ ...prev, states: false }));
-        }
-      };
-      fetchStates();
-    } else {
-      setStates([]);
-    }
-  }, [formData.countryOfResidence, countryIdMap]);
-
-  const getMobilePlaceholder = (countryName?: string) => {
-    if (!countryName || !countryCodeMap[countryName])
-      return "Enter phone number";
-    try {
-      const countryCode = getCountryCallingCode(countryCodeMap[countryName]);
-      return `+${countryCode} XXXXXXXXXX`;
-    } catch {
-      return "Enter phone number";
-    }
-  };
 
   const validationSchema = Yup.object({
     purchase_type: Yup.string().required(),
@@ -305,6 +231,7 @@ const Section1: React.FC<SectionProps> = ({
     handleBlur,
     handleSubmit,
     setFieldValue,
+    setFieldTouched,
   } = formik;
 
   const handleAddMember = () => {
@@ -962,37 +889,54 @@ const Section1: React.FC<SectionProps> = ({
           >
             Country of Residence
           </label>
-          <div className={parentClass}>
-            <BiGlobe className="text-primary" />
-            <select
-              name="countryOfResidence"
-              id="countryOfResidence"
-              className={inputClass}
-              value={values.countryOfResidence}
-              onChange={(e) => {
-                const selectedCountry = e.target.value;
-                setFieldValue("countryOfResidence", selectedCountry);
-                setFieldValue("stateOfOrigin", "");
-                setFieldValue("lga", "");
-                setFieldValue("mobileNumber", "");
-                setFormData((prev) => ({
-                  ...prev,
-                  countryOfResidence: selectedCountry,
-                  stateOfOrigin: "",
-                  lga: "",
-                  mobileNumber: "",
-                }));
-              }}
-              onBlur={handleBlur}
-            >
-              <option value="">Select Country</option>
-              {countries.map((country) => (
-                <option key={country} value={country}>
-                  {country}
-                </option>
-              ))}
-            </select>
-          </div>
+          <SearchableInput
+            fetcher={fetchCountries}
+            options={countries}
+            value={values.countryOfResidence}
+            placeholder={loading.countries ? "Loading countries..." : "Select Country"}
+            disabled={loading.countries}
+            isSelector={true}
+            clearable={true}
+            fetchOnEmpty={true}
+            icon={<BiGlobe className="text-primary" />}
+            inputContClassName={`mt-1 w-full rounded-md border ${
+              touched.countryOfResidence && errors.countryOfResidence
+                ? "border-red-500"
+                : "border-gray-300"
+            } h-[50px] shadow-sm bg-white px-2`}
+            onSelect={(item: string) => {
+              const selectedCountry = typeof item === "string" ? item : (item as any)?.name || "";
+              setFieldValue("countryOfResidence", selectedCountry);
+              setFieldValue("stateOfOrigin", "");
+              setFieldValue("lga", "");
+              setFieldValue("mobileNumber", "");
+              setFormData((prev) => ({
+                ...prev,
+                countryOfResidence: selectedCountry,
+                stateOfOrigin: "",
+                lga: "",
+                mobileNumber: "",
+              }));
+              setFieldTouched("countryOfResidence", true);
+            }}
+            onClear={() => {
+              setFieldValue("countryOfResidence", "");
+              setFieldValue("stateOfOrigin", "");
+              setFieldValue("lga", "");
+              setFieldValue("mobileNumber", "");
+              setFormData((prev) => ({
+                ...prev,
+                countryOfResidence: "",
+                stateOfOrigin: "",
+                lga: "",
+                mobileNumber: "",
+              }));
+              setFieldTouched("countryOfResidence", true);
+            }}
+            onInputChange={(val) => {
+              setFieldTouched("countryOfResidence", true);
+            }}
+          />
           {touched.countryOfResidence && errors.countryOfResidence && (
             <div className="text-xs text-red-500 mt-1">
               {errors.countryOfResidence}
@@ -1007,40 +951,54 @@ const Section1: React.FC<SectionProps> = ({
           >
             State {values.purchase_type === "individual" && " of Origin"}
           </label>
-          <div className={parentClass}>
-            <FaMapMarkerAlt className="text-primary" />
-            <select
-              name="stateOfOrigin"
-              id="stateOfOrigin"
-              className={inputClass}
-              disabled={!values.countryOfResidence || loading.states}
-              value={values.stateOfOrigin}
-              onChange={(e) => {
-                const selectedState = e.target.value;
-                setFieldValue("stateOfOrigin", selectedState);
-                setFieldValue("lga", "");
-                setFormData((prev) => ({
-                  ...prev,
-                  stateOfOrigin: selectedState,
-                  lga: "",
-                }));
-              }}
-              onBlur={handleBlur}
-            >
-              <option value="">
-                {loading.states
-                  ? "Loading..."
-                  : !values.countryOfResidence
-                    ? "Select country first"
-                    : "Select State"}
-              </option>
-              {states.map((state) => (
-                <option key={state} value={state}>
-                  {state}
-                </option>
-              ))}
-            </select>
-          </div>
+          <SearchableInput
+            key={values.countryOfResidence || "no-country"}
+            fetcher={fetchStates}
+            options={states}
+            value={values.stateOfOrigin}
+            placeholder={
+              loading.states
+                ? "Loading states..."
+                : !values.countryOfResidence
+                  ? "Select country first"
+                  : "Select State"
+            }
+            disabled={!values.countryOfResidence || loading.states}
+            isSelector={true}
+            clearable={true}
+            fetchOnEmpty={true}
+            icon={<FaMapMarkerAlt className="text-primary" />}
+            inputContClassName={`mt-1 w-full rounded-md border ${
+              touched.stateOfOrigin && errors.stateOfOrigin
+                ? "border-red-500"
+                : "border-gray-300"
+            } h-[50px] shadow-sm bg-white px-2`}
+            onSelect={(item: string) => {
+              const selectedState =
+                typeof item === "string" ? item : (item as any)?.name || "";
+              setFieldValue("stateOfOrigin", selectedState);
+              setFieldValue("lga", "");
+              setFormData((prev) => ({
+                ...prev,
+                stateOfOrigin: selectedState,
+                lga: "",
+              }));
+              setFieldTouched("stateOfOrigin", true);
+            }}
+            onClear={() => {
+              setFieldValue("stateOfOrigin", "");
+              setFieldValue("lga", "");
+              setFormData((prev) => ({
+                ...prev,
+                stateOfOrigin: "",
+                lga: "",
+              }));
+              setFieldTouched("stateOfOrigin", true);
+            }}
+            onInputChange={() => {
+              setFieldTouched("stateOfOrigin", true);
+            }}
+          />
           {touched.stateOfOrigin && errors.stateOfOrigin && (
             <div className="text-xs text-red-500 mt-1">
               {errors.stateOfOrigin}

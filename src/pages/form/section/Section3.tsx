@@ -1,4 +1,4 @@
-import React, { useRef, useState, useEffect } from "react";
+import React, { useRef, useMemo, useCallback } from "react";
 import { useFormik } from "formik";
 import * as Yup from "yup";
 import DatePicker from "react-datepicker";
@@ -10,11 +10,13 @@ import {
   formatNumberWithCommas,
   unformatNumber,
 } from "../../../helpers/formatterUtility";
-import { propertyApi } from "../../../helpers/api";
 import type { SectionProps } from "./types";
-import { branchOptions } from "../../../lib/branchList";
-
-const PROPERTY_URL = import.meta.env.VITE_PROPERTY_BASE_URL;
+import SearchablePropertyInput from "../../../components/ui/SearchablePropertyInput";
+import FormattedNumberInput from "../../../components/FormattedNumberInput";
+import SearchableInput from "../../../components/ui/SearchableInput";
+import { useBranches } from "../../../hooks/useBranches";
+import { fetchBranchesService } from "../../../services/branchService";
+import { BranchItem } from "../../../lib/interfaces";
 
 const Section3: React.FC<SectionProps> = ({
   formData,
@@ -23,16 +25,17 @@ const Section3: React.FC<SectionProps> = ({
   nextSection,
 }) => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
-  const dropdownRef = useRef<HTMLDivElement | null>(null);
   const isDrawing = useRef<boolean>(false);
   const lastTouch = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
-  const [siteLocations, setSiteLocations] = useState<any[]>([]);
-  const [searchTerm, setSearchTerm] = useState(
-    formData.clientDeclarationSiteLocation || "",
-  );
-  const [showDropdown, setShowDropdown] = useState(false);
-  const [isValidSelection, setIsValidSelection] = useState(
-    !!formData.clientDeclarationSiteLocation,
+  const [selectedProperty, setSelectedProperty] = React.useState<any>(null);
+
+  const { data: branchesList = [], isLoading: isLoadingBranches } = useBranches();
+
+  const fetchBranches = useCallback(
+    async (query: string, signal?: AbortSignal): Promise<BranchItem[]> => {
+      return await fetchBranchesService({ search: query, signal });
+    },
+    [],
   );
 
   const fullName =
@@ -49,72 +52,23 @@ const Section3: React.FC<SectionProps> = ({
     ? `${fullName} ${spouseName?.trim() ? spouseName : ""}`.trim()
     : clubName;
 
-  useEffect(() => {
-    const delayDebounceFn = setTimeout(() => {
-      if (searchTerm.trim() !== "") {
-        const fetchSiteLocations = async () => {
-          try {
-            const response = await propertyApi.get(
-              `${PROPERTY_URL}/properties/search?name=${searchTerm}`,
-            );
-
-            if (
-              response.data &&
-              response.data.data &&
-              Array.isArray(response.data.data.data)
-            ) {
-              setSiteLocations(response.data.data.data);
-            }
-          } catch (error) {
-            console.error("Error fetching site locations:", error);
-          }
-        };
-
-        fetchSiteLocations();
-      }
-    }, 300);
-
-    return () => clearTimeout(delayDebounceFn);
-  }, [searchTerm]);
-
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (
-        dropdownRef.current &&
-        !dropdownRef.current.contains(event.target as Node)
-      ) {
-        setShowDropdown(false);
-      }
-    };
-
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
-
   const parentClass =
-    "mt-1 block w-full rounded-md border border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 h-[50px] px-2 flex items-center bg-white";
+    "mt-1 block w-full rounded-md border border-gray-300 shadow-sm h-[50px] px-2 flex items-center bg-white";
   const inputClass = "w-full focus:outline-0 text-sm h-full indent-2";
 
   const validationSchema = Yup.object({
     clientDeclarationLandPrice: Yup.string()
       .required("Land price is required")
-      .transform((value) => unformatNumber(value))
       .test("is-numeric", "Land price must be a valid number", (value) => {
-        return !isNaN(Number(value)) && Number(value) >= 0;
-      })
-      .typeError("Land price must be a number"),
+        if (!value) return false;
+        const unformatted = unformatNumber(value);
+        return !isNaN(Number(unformatted)) && Number(unformatted) >= 0;
+      }),
     clientDeclarationNumberOfPlots: Yup.number()
       .required("Number of plots is required")
       .min(1, "Number of plots must be at least 1"),
     clientDeclarationSiteLocation: Yup.string()
-      .required("Site location is required")
-      .test(
-        "is-valid-location",
-        "Please select a valid property from the list",
-        function (value) {
-          return siteLocations.some((loc) => loc.name === value);
-        },
-      ),
+      .required("Site location is required"),
     clientDeclarationPlotNumber: Yup.string()
       .trim()
       .required("Plot number is required")
@@ -178,7 +132,16 @@ const Section3: React.FC<SectionProps> = ({
     handleBlur,
     handleSubmit,
     setFieldValue,
+    setFieldTouched,
   } = formik;
+
+  const selectedBranchName = useMemo(() => {
+    if (!values.branches) return "";
+    const found = branchesList.find(
+      (b) => String(b.id) === String(values.branches),
+    );
+    return found ? found.name : String(values.branches);
+  }, [values.branches, branchesList]);
 
   const clearSignature = () => {
     const canvas = canvasRef.current;
@@ -214,7 +177,7 @@ const Section3: React.FC<SectionProps> = ({
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6 md:space-y-8">
-      <p className="font-semibold text-lg md:text-xl md:text-2xl text-center text-gray-900">
+      <p className="font-semibold text-lg md:text-2xl text-center text-gray-900">
         Section 3: Client's Declaration
       </p>
 
@@ -268,37 +231,31 @@ const Section3: React.FC<SectionProps> = ({
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
         <div className="relative">
-          <label
-            htmlFor="clientDeclarationLandPrice"
-            className="block text-sm md:text-base font-medium text-gray-700 mb-1 md:mb-2"
-          >
-            Land Price
-          </label>
-          <div className={parentClass}>
-            <BiMoney className="text-primary" />
-            <input
-              type="text"
-              name="clientDeclarationLandPrice"
-              id="clientDeclarationLandPrice"
-              className={inputClass}
-              value={values.clientDeclarationLandPrice}
-              onChange={(e) => {
-                const { value } = e.target;
-                const unformattedValue = unformatNumber(value);
-                setFieldValue(
-                  "clientDeclarationLandPrice",
-                  formatNumberWithCommas(unformattedValue),
-                );
-              }}
-              onBlur={handleBlur}
-            />
-          </div>
-          {touched.clientDeclarationLandPrice &&
-            errors.clientDeclarationLandPrice && (
-              <div className="text-xs md:text-sm text-red-500 mt-1">
-                {errors.clientDeclarationLandPrice}
-              </div>
-            )}
+          <FormattedNumberInput
+            label="Land Price"
+            name="clientDeclarationLandPrice"
+            id="clientDeclarationLandPrice"
+            icon={<BiMoney className="text-primary" />}
+            inputContClassName={parentClass}
+            className={inputClass}
+            placeholder="Enter land price"
+            value={values.clientDeclarationLandPrice}
+            onChange={(val) => {
+              setFieldValue("clientDeclarationLandPrice", val);
+            }}
+            onBlur={() => {
+              setFieldTouched("clientDeclarationLandPrice", true);
+            }}
+            error={
+              touched.clientDeclarationLandPrice &&
+              Boolean(errors.clientDeclarationLandPrice)
+            }
+            helperText={
+              touched.clientDeclarationLandPrice
+                ? (errors.clientDeclarationLandPrice as string)
+                : undefined
+            }
+          />
         </div>
 
         <div className="relative">
@@ -328,68 +285,48 @@ const Section3: React.FC<SectionProps> = ({
             )}
         </div>
 
-        <div className="relative lg:col-span-1 md:col-span-2" ref={dropdownRef}>
+        <div className="relative lg:col-span-1 md:col-span-2">
           <label
             htmlFor="clientDeclarationSiteLocation"
             className="block text-sm md:text-base font-medium text-gray-700 mb-1 md:mb-2"
           >
             Property Name
           </label>
-          <div className={parentClass}>
-            <BiMap className="text-primary" />
-            <input
-              type="text"
-              id="clientDeclarationSiteLocation"
-              placeholder="Search property name..."
-              className={inputClass}
-              value={searchTerm}
-              onChange={(e) => {
-                const value = e.target.value;
-                setSearchTerm(value);
-                setIsValidSelection(false);
-                setFieldValue("clientDeclarationSiteLocation", "");
-                setShowDropdown(true);
-              }}
-              onBlur={() => {
-                setTimeout(() => {
-                  if (!isValidSelection) {
-                    setSearchTerm("");
-                    setFieldValue("clientDeclarationSiteLocation", "");
-                  }
-                }, 200);
-              }}
-              onFocus={() => setShowDropdown(true)}
-              autoComplete="off"
-            />
-          </div>
-          {showDropdown && searchTerm && (
-            <div className="absolute z-20 w-full bg-white border border-gray-300 mt-1 max-h-60 overflow-auto rounded-md shadow-lg">
-              {siteLocations.length > 0 ? (
-                siteLocations.map((location) => (
-                  <div
-                    key={location.id}
-                    className="px-4 py-2 hover:bg-primary hover:text-white cursor-pointer transition-colors duration-200 text-sm"
-                    onMouseDown={(e) => {
-                      e.preventDefault();
-                      setFieldValue(
-                        "clientDeclarationSiteLocation",
-                        location.name,
-                      );
-                      setSearchTerm(location.name);
-                      setIsValidSelection(true);
-                      setShowDropdown(false);
-                    }}
-                  >
-                    {location.name}
-                  </div>
-                ))
-              ) : (
-                <div className="px-4 py-2 text-gray-500 text-sm">
-                  No results found
-                </div>
-              )}
-            </div>
-          )}
+          <SearchablePropertyInput
+            selectedItem={selectedProperty}
+            value={
+              selectedProperty?.name ||
+              (typeof values.clientDeclarationSiteLocation === "string"
+                ? values.clientDeclarationSiteLocation
+                : "")
+            }
+            placeholder="Search property name..."
+            clearable={true}
+            icon={<BiMap className="text-primary" />}
+            inputContClassName={`${parentClass} relative ${
+              touched.clientDeclarationSiteLocation &&
+              errors.clientDeclarationSiteLocation
+                ? "border-red-500"
+                : "border-gray-300"
+            }`}
+            className={inputClass}
+            onSelect={(property) => {
+              setSelectedProperty(property);
+              setFieldValue(
+                "clientDeclarationSiteLocation",
+                property?.id ?? "",
+              );
+              setFieldTouched("clientDeclarationSiteLocation", true);
+            }}
+            onClear={() => {
+              setSelectedProperty(null);
+              setFieldValue("clientDeclarationSiteLocation", "");
+              setFieldTouched("clientDeclarationSiteLocation", true);
+            }}
+            onBlur={() => {
+              setFieldTouched("clientDeclarationSiteLocation", true);
+            }}
+          />
           {touched.clientDeclarationSiteLocation &&
             errors.clientDeclarationSiteLocation && (
               <div className="text-xs md:text-sm text-red-500 mt-1">
@@ -405,24 +342,38 @@ const Section3: React.FC<SectionProps> = ({
           >
             Branch (Please select the branch closest to you)
           </label>
-          <div className={parentClass}>
-            <BiMap className="text-primary" />
-            <select
-              name="branches"
-              id="branches"
-              className={inputClass}
-              value={values.branches}
-              onChange={handleChange}
-              onBlur={handleBlur}
-            >
-              <option value="">Select Branch</option>
-              {branchOptions.map((branch) => (
-                <option key={branch.keyWord} value={branch.keyWord}>
-                  {branch.title}
-                </option>
-              ))}
-            </select>
-          </div>
+          <SearchableInput<BranchItem>
+            fetcher={fetchBranches}
+            options={branchesList}
+            value={selectedBranchName}
+            displayKey="name"
+            placeholder={isLoadingBranches ? "Loading branches..." : "Select Branch"}
+            disabled={isLoadingBranches}
+            isSelector={true}
+            clearable={true}
+            fetchOnEmpty={true}
+            icon={<BiMap className="text-primary" />}
+            inputContClassName={`${parentClass} relative ${
+              touched.branches && errors.branches
+                ? "border-red-500"
+                : "border-gray-300"
+            }`}
+            className={inputClass}
+            renderOption={(item, isSelected) => (
+              <p className="font-semibold text-gray-900">{item.name}</p>
+            )}
+            onSelect={(branch: BranchItem) => {
+              setFieldValue("branches", branch.id);
+              setFieldTouched("branches", true);
+            }}
+            onClear={() => {
+              setFieldValue("branches", "");
+              setFieldTouched("branches", true);
+            }}
+            onInputChange={() => {
+              setFieldTouched("branches", true);
+            }}
+          />
           {touched.branches && errors.branches && (
             <div className="text-xs md:text-sm text-red-500 mt-1">
               {errors.branches}

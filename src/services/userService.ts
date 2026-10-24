@@ -1,35 +1,8 @@
 import { hmApi } from "../helpers/api";
+import { HomeUser } from "../lib/interfaces";
 
-export interface UserItem {
-  id: number;
-  firstname?: string;
-  lastname?: string;
-  email?: string;
-  phone?: string;
-  country?: string;
-  gender?: string;
-  date_of_birth?: string;
-  address?: string;
-  address2?: string;
-  state?: string;
-  city?: string;
-  branch?: string;
-  next_of_kin_name?: string;
-  next_of_kin_phone?: string;
-  next_of_kin_email?: string;
-  next_of_kin_relationship?: string;
-  next_of_kin_address?: string;
-  job_type?: string;
-  salary?: number | string;
-  monthly_revenue?: number | string;
-  admin_approved_salary?: number | string;
-  verified_salary?: number | string;
-  statement_of_account?: string;
-  is_verified?: number | boolean;
-  is_interested?: number | boolean;
-  interest_transactions_count?: number;
-  [key: string]: any;
-}
+export type UserItem = HomeUser;
+export type { HomeUser };
 
 export interface FetchUsersParams {
   page?: number;
@@ -42,12 +15,11 @@ export interface FetchUsersParams {
 export interface UsersResponse {
   status?: string;
   data: {
-    data: UserItem[];
+    data: HomeUser[];
     total: number;
     last_page?: number;
     current_page?: number;
     per_page?: number;
-    [key: string]: any;
   };
   message?: string;
 }
@@ -57,11 +29,6 @@ export interface VerifyUserPayload {
   status: "verified" | "rejected" | string;
   admin_approved_salary?: number | string | null;
 }
-
-const getAuthHeaders = () => {
-  const token = localStorage.getItem("token");
-  return token ? { Authorization: `Bearer ${token}` } : {};
-};
 
 export const fetchUsersService = async (
   params: FetchUsersParams = {},
@@ -80,7 +47,6 @@ export const fetchUsersService = async (
   }
 
   const res = await hmApi.get("/users", {
-    headers: getAuthHeaders(),
     params: queryParams,
   });
   return res.data;
@@ -88,17 +54,13 @@ export const fetchUsersService = async (
 
 export const fetchUserService = async (
   id: number | string,
-): Promise<UserItem> => {
-  const res = await hmApi.get(`/users/${id}`, {
-    headers: getAuthHeaders(),
-  });
+): Promise<HomeUser> => {
+  const res = await hmApi.get(`/users/${id}`);
   return res.data?.data || res.data;
 };
 
 export const verifyUserService = async (payload: VerifyUserPayload) => {
   const { userId, ...body } = payload;
-  const res = await hmApi.post(`/admin/users/${userId}/verify`, body, {
-    headers: getAuthHeaders(),
-  });
+  const res = await hmApi.post(`/admin/users/${userId}/verify`, body);
   return res.data;
 };

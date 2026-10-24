@@ -4,12 +4,9 @@ import { toast } from "sonner";
 import { IoIosSearch } from "react-icons/io";
 import { formatterUtility } from "../../../../helpers/formatterUtility";
 import ReusableTable from "../../../../utilities/ReusableTable";
-import type { TableColumnProps } from "../../../../lib/interfaces";
+import type { SubscriptionTransaction, TableColumnProps } from "../../../../lib/interfaces";
 import StatusCard from "../../../../components/cards/StatusCard";
 import { useSubscriptions } from "../../../../hooks/useSubscriptions";
-import type { SubscriptionTransaction } from "../../../../services/subscriptionService";
-
-export type { SubscriptionTransaction };
 
 const ManageSubscriptions: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState("");

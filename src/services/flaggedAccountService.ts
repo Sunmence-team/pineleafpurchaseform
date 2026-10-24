@@ -1,29 +1,6 @@
 import { hmApi } from "../helpers/api";
-
-export interface FlaggedAccountUser {
-  id?: number;
-  firstname?: string;
-  lastname?: string;
-  email?: string;
-  [key: string]: any;
-}
-
-export interface FlaggedAccountItem {
-  id: number;
-  reason?: string;
-  flag_type?: string;
-  type?: string;
-  attempts_count?: number;
-  attempts?: number;
-  status?: string;
-  resolution_status?: string;
-  last_attempt_at?: string;
-  updated_at?: string;
-  created_at?: string;
-  name?: string;
-  user?: FlaggedAccountUser;
-  [key: string]: any;
-}
+import { FlaggedAccountItem } from "../lib/interfaces";
+export type { FlaggedAccountItem };
 
 export interface FetchFlaggedAccountsParams {
   page?: number;
@@ -37,10 +14,9 @@ export interface FlaggedAccountsResponse {
   data: {
     data: FlaggedAccountItem[];
     total: number;
-    last_page?: number;
-    current_page?: number;
-    per_page?: number;
-    [key: string]: any;
+    last_page: number;
+    current_page: number;
+    per_page: number;
   };
   message?: string;
 }
@@ -50,11 +26,6 @@ export interface ResolveFlaggedAccountPayload {
   note?: string;
   re_enable_user?: boolean;
 }
-
-const getAuthHeaders = () => {
-  const token = localStorage.getItem("token");
-  return token ? { Authorization: `Bearer ${token}` } : {};
-};
 
 export const fetchFlaggedAccountsService = async (
   params: FetchFlaggedAccountsParams = {},
@@ -68,7 +39,6 @@ export const fetchFlaggedAccountsService = async (
   if (params.status) queryParams.status = params.status;
 
   const res = await hmApi.get("/admin/flagged-accounts", {
-    headers: getAuthHeaders(),
     params: queryParams,
   });
   return res.data;
@@ -80,10 +50,7 @@ export const resolveFlaggedAccountService = async (
   const { id, ...body } = payload;
   const res = await hmApi.post(
     `/admin/flagged-accounts/${id}/resolve`,
-    body,
-    {
-      headers: getAuthHeaders(),
-    },
+    body
   );
   return res.data;
 };

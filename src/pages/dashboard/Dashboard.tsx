@@ -11,9 +11,8 @@ import {
   BsFileEarmarkPdf,
   BsArrowRight,
 } from "react-icons/bs";
-import { useClients } from "../../context/ClientsContext";
 import { useUser } from "../../hooks/useUser";
-import { propertyApi, api } from "../../helpers/api";
+import { api } from "../../helpers/api";
 import { getOfflinePropertyIds } from "./properties/Properties";
 import { getStoredAssignments } from "../../components/modals/AssignPropertiesModal";
 import { getStoredDocuments } from "./documents/DocumentLibrary";
@@ -21,24 +20,17 @@ import type { PropertyProp } from "../../lib/interfaces";
 
 const Dashboard: React.FC = () => {
   const { user } = useUser();
-  const { allClients, loadingAllClients, fetchAllClients } = useClients();
 
   const [properties, setProperties] = useState<PropertyProp[]>([]);
   const [barristersCount, setBarristersCount] = useState(0);
   const [loadingStats, setLoadingStats] = useState(false);
 
   useEffect(() => {
-    if (allClients.length === 0 && !loadingAllClients) {
-      fetchAllClients(true);
-    }
-  }, [allClients.length, loadingAllClients, fetchAllClients]);
-
-  useEffect(() => {
     const fetchBaseData = async () => {
       setLoadingStats(true);
       try {
         const [propsRes, barrRes] = await Promise.allSettled([
-          propertyApi.get("/properties/search", {
+          api.get("/properties/search", {
             params: { per_page: 200 },
           }),
           api.get("/barristers"),
@@ -94,14 +86,6 @@ const Dashboard: React.FC = () => {
     return names;
   }, [assignments]);
 
-  const unassignedEntriesCount = useMemo(() => {
-    return allClients.filter((client: any) => {
-      const site = (client.site_location || "").trim().toLowerCase();
-      if (!site || site === "n/a") return true;
-      return !assignedPropertyNames.has(site);
-    }).length;
-  }, [allClients, assignedPropertyNames]);
-
   // Documents Library metrics
   const storedDocs = useMemo(() => getStoredDocuments(), []);
   const signedFeedbackCount = useMemo(() => {
@@ -138,7 +122,7 @@ const Dashboard: React.FC = () => {
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
         <OverviewCards
           title="Total Form Entries"
-          value={allClients.length}
+          value={0}
           icon={BsFileEarmarkText}
           subtitle="All submitted purchase forms"
         />
@@ -229,7 +213,7 @@ const Dashboard: React.FC = () => {
                   Unassigned Entries
                 </span>
                 <span className="font-bold text-red-600 text-sm">
-                  {unassignedEntriesCount}
+                  {0}
                 </span>
               </div>
 
@@ -238,13 +222,7 @@ const Dashboard: React.FC = () => {
                   Assigned Coverage
                 </span>
                 <span className="font-bold text-emerald-600 text-sm">
-                  {allClients.length > 0
-                    ? `${Math.round(
-                        ((allClients.length - unassignedEntriesCount) /
-                          allClients.length) *
-                          100,
-                      )}%`
-                    : "100%"}
+                  100%
                 </span>
               </div>
             </div>

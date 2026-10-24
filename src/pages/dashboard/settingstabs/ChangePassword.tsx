@@ -73,7 +73,7 @@ const ChangePassword: React.FC = () => {
   });
 
   const inputClass =
-    "mt-1.5 flex items-center h-12 w-full rounded-lg border border-primary/10 bg-secondary px-3.5 focus-within:border-primary transition duration-200";
+    "mt-1.5 flex items-center h-12 w-full rounded-lg border border-primary/10 bg-secondary px-3.5 transition duration-200";
   const inputInnerClass =
     "w-full bg-transparent focus:outline-none text-sm indent-2 text-gray-900";
   const labelClass =
@@ -88,7 +88,7 @@ const ChangePassword: React.FC = () => {
         </p>
       </div>
 
-      <div className="bg-secondary p-6 md:p-8 rounded-xl border border-primary/10 max-w-xl">
+      <div className="md:w-3/4 w-full">
         <form onSubmit={formik.handleSubmit} className="space-y-6">
           <div className="relative">
             <label htmlFor="current_password" className={labelClass}>

@@ -1,91 +1,75 @@
-import React, { useCallback, useEffect, useState } from "react";
-import { HiPlus } from "react-icons/hi2";
+import React, { useState } from "react";
 import { BsHouses } from "react-icons/bs";
-import { toast } from "sonner";
-import AddBarristerModal from "../../../components/modals/AddBarristerModal";
-import AssignPropertiesModal, {
-  getStoredAssignments,
-} from "../../../components/modals/AssignPropertiesModal";
-import ConfirmDialog from "../../../components/modals/ConfirmDialog";
-import ActionButton from "../../../components/ui/ActionButton";
+import AssignPropertiesModal from "../../../components/modals/AssignPropertiesModal";
 import ActionCell from "../../../components/ui/ActionCell";
-import BulkSelectionBar from "../../../components/ui/BulkSelectionBar";
-import { api, getErrorMessage } from "../../../helpers/api";
+import { getErrorMessage } from "../../../helpers/api";
 import type { BarristerProp, TableColumnProps } from "../../../lib/interfaces";
 import ReusableTable from "../../../utilities/ReusableTable";
+import {
+  useBarristers,
+  // useDeleteBarristersBatch,
+} from "../../../hooks/useBarristers";
+// import { HiPlus } from "react-icons/hi2";
+// import { toast } from "sonner";
+// import ConfirmDialog from "../../../components/modals/ConfirmDialog";
+// import BulkSelectionBar from "../../../components/ui/BulkSelectionBar";
 
 const ManageBarristers: React.FC = () => {
-  const [barristers, setBarristers] = useState<BarristerProp[]>([]);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(10);
-  const [totalItems, setTotalItems] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
+  // const [currentPage, setCurrentPage] = useState(1);
+  // const [itemsPerPage, setItemsPerPage] = useState(10);
 
-  const [deleteModal, setDeleteModal] = useState(false);
-  const [createModal, setCreateModal] = useState(false);
+  const {
+    data,
+    isLoading: loadingBarristers,
+    error,
+    refetch,
+  } = useBarristers({
+    // page: currentPage,
+    // per_page: itemsPerPage,
+  });
+
+  const barristers = data?.barristers ?? [];
+  // const totalItems = data?.total ?? 1;
+  // const totalPages = data?.last_page ?? 1;
+
+  // const deleteBatchMutation = useDeleteBarristersBatch();
+  // const deleting = deleteBatchMutation.isPending;
+
+  // const [deleteModal, setDeleteModal] = useState(false);
+
   const [assignModal, setAssignModal] = useState(false);
-  const [loadingBarristers, setLoadingBarristers] = useState(false);
+  const [isEditMode, setIsEditMode] = useState(false);
   const [selectedBarrister, setSelectedBarrister] =
     useState<BarristerProp | null>(null);
-  const [deleting, setDeleting] = useState(false);
   const [selectedBarristerIds, setSelectedBarristerIds] = useState<
     Array<number | string>
   >([]);
-  const [deleteTargetIds, setDeleteTargetIds] = useState<
-    Array<number | string>
-  >([]);
+  // const [deleteTargetIds, setDeleteTargetIds] = useState<
+  //   Array<number | string>
+  // >([]);
 
   // Local assignment tracking trigger to force re-render on save
   const [assignmentVersion, setAssignmentVersion] = useState(0);
 
-  const fetchBarristers = useCallback(async () => {
-    setLoadingBarristers(true);
-    try {
-      const res = await api.get("/barristers");
-      if (res.status === 200) {
-        const responseData = res.data?.data;
-        const barristerData = Array.isArray(responseData)
-          ? responseData
-          : responseData?.data || [];
+  // const handleDeleteBarrister = async () => {
+  //   if (deleteTargetIds.length === 0) return;
 
-        setBarristers(barristerData);
-        setTotalItems(responseData?.total || barristerData.length || 1);
-        setTotalPages(responseData?.last_page || 1);
-      }
-    } catch (error: unknown) {
-      console.error(error);
-      toast.error(getErrorMessage(error, "Failed to fetch barristers"));
-    } finally {
-      setLoadingBarristers(false);
-    }
-  }, []);
+  //   try {
+  //     await deleteBatchMutation.mutateAsync(deleteTargetIds);
 
-  const handleDeleteBarrister = async () => {
-    if (deleteTargetIds.length === 0) return;
-
-    setDeleting(true);
-
-    try {
-      await Promise.all(
-        deleteTargetIds.map((id) => api.delete(`/barristers/${id}`)),
-      );
-
-      toast.success(
-        deleteTargetIds.length > 1
-          ? `${deleteTargetIds.length} barristers deleted successfully`
-          : "Barrister deleted successfully",
-      );
-      setDeleteModal(false);
-      setDeleteTargetIds([]);
-      setSelectedBarristerIds([]);
-      setSelectedBarrister(null);
-      fetchBarristers();
-    } catch (error: unknown) {
-      toast.error(getErrorMessage(error, "Failed to delete barrister"));
-    } finally {
-      setDeleting(false);
-    }
-  };
+  //     toast.success(
+  //       deleteTargetIds.length > 1
+  //         ? `${deleteTargetIds.length} barristers deleted successfully`
+  //         : "Barrister deleted successfully",
+  //     );
+  //     setDeleteModal(false);
+  //     setDeleteTargetIds([]);
+  //     setSelectedBarristerIds([]);
+  //     setSelectedBarrister(null);
+  //   } catch (err: unknown) {
+  //     toast.error(getErrorMessage(err, "Failed to delete barrister"));
+  //   }
+  // };
 
   const handleToggleRowSelection = (id: number | string) => {
     setSelectedBarristerIds((prev) =>
@@ -109,18 +93,12 @@ const ManageBarristers: React.FC = () => {
     });
   };
 
-  const openBulkDeleteConfirm = () => {
-    if (validSelectedBarristerIds.length === 0) return;
-    setSelectedBarrister(null);
-    setDeleteTargetIds(validSelectedBarristerIds);
-    setDeleteModal(true);
-  };
-
-  useEffect(() => {
-    queueMicrotask(() => {
-      void fetchBarristers();
-    });
-  }, [fetchBarristers]);
+  // const openBulkDeleteConfirm = () => {
+  //   if (validSelectedBarristerIds.length === 0) return;
+  //   setSelectedBarrister(null);
+  //   setDeleteTargetIds(validSelectedBarristerIds);
+  //   setDeleteModal(true);
+  // };
 
   const validSelectedBarristerIds = selectedBarristerIds.filter((id) =>
     barristers.some((barrister) => barrister.id === id),
@@ -145,20 +123,11 @@ const ManageBarristers: React.FC = () => {
       label: "Assigned Properties",
       key: "assigned_properties",
       render: (row) => {
-        const stored = getStoredAssignments()[String(row.id ?? "")];
-        const count = stored?.properties?.length || 0;
+        const count = row.properties?.length ?? 0;
         return (
-          <div className="flex items-center gap-2">
-            <span
-              className={`px-2.5 py-1 text-xs font-semibold rounded-md border ${
-                count > 0
-                  ? "bg-secondary text-primary border-primary/20"
-                  : "bg-gray-50 text-gray-400 border-gray-200"
-              }`}
-            >
-              {count} {count === 1 ? "Property" : "Properties"}
-            </span>
-          </div>
+          <span>
+            {count} {count === 1 ? "Property" : "Properties"}
+          </span>
         );
       },
     },
@@ -168,21 +137,27 @@ const ManageBarristers: React.FC = () => {
       render: (item) => (
         <ActionCell
           rowId={Number(item.id)}
+          onEdit={() => {
+            setSelectedBarrister(item);
+            setIsEditMode(true);
+            setAssignModal(true);
+          }}
           otherActions={[
             {
               name: "Assign Properties",
-              icon: <BsHouses className="text-primary size-4" />,
+              icon: <BsHouses className="text-primary size-3" />,
               action: () => {
                 setSelectedBarrister(item);
+                setIsEditMode(false);
                 setAssignModal(true);
               },
             },
           ]}
-          onDelete={() => {
-            setDeleteModal(true);
-            setSelectedBarrister(item);
-            setDeleteTargetIds(item.id ? [item.id] : []);
-          }}
+          // onDelete={() => {
+          //   setDeleteModal(true);
+          //   setSelectedBarrister(item);
+          //   setDeleteTargetIds(item.id ? [item.id] : []);
+          // }}
         />
       ),
     },
@@ -191,41 +166,30 @@ const ManageBarristers: React.FC = () => {
   return (
     <>
       <div className="space-y-6" key={assignmentVersion}>
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-3 md:gap-0">
-          <div>
-            <h2 className="text-lg font-semibold text-gray-900">Barristers</h2>
-            <p className="text-sm text-gray-500">
-              Manage, track, assign properties, and update barrister records
-            </p>
-          </div>
-
-          <ActionButton
-            text="Add Barrister"
-            icon={<HiPlus size={18} />}
-            action={() => setCreateModal(true)}
-          />
+        <div>
+          <h2 className="text-lg font-semibold text-gray-900">Barristers</h2>
+          <p className="text-sm text-gray-500">
+            Manage, track, assign properties, and update barrister records
+          </p>
         </div>
 
         <ReusableTable
           columns={columns}
           data={barristers}
           isLoading={loadingBarristers}
-          error={null}
-          currentPage={currentPage}
-          totalPages={totalPages}
-          totalItems={totalItems}
-          itemsPerPage={itemsPerPage}
-          setCurrentPage={setCurrentPage}
-          setItemsPerPage={setItemsPerPage}
+          error={
+            error ? getErrorMessage(error, "Failed to fetch barristers") : null
+          }
+          hasPagination={false}
           hasSerialNo={true}
-          selectable
+          // selectable
           selectedRowIds={validSelectedBarristerIds}
           onToggleRowSelection={handleToggleRowSelection}
           onToggleAllRows={handleToggleAllRows}
         />
       </div>
 
-      <ConfirmDialog
+      {/* <ConfirmDialog
         isOpen={deleteModal && deleteTargetIds.length > 0}
         isLoading={deleting}
         onCancel={() => {
@@ -251,35 +215,31 @@ const ManageBarristers: React.FC = () => {
             : "Are you sure you want to delete this barrister? This action cannot be undone."
         }
         confirmText="Yes, Delete"
-      />
-
-      {createModal && (
-        <AddBarristerModal
-          onClose={() => setCreateModal(false)}
-          onCreated={fetchBarristers}
-        />
-      )}
+      /> */}
 
       {assignModal && selectedBarrister && (
         <AssignPropertiesModal
           barrister={selectedBarrister}
+          isEdit={isEditMode}
           onClose={() => {
             setAssignModal(false);
             setSelectedBarrister(null);
+            setIsEditMode(false);
           }}
           onSuccess={() => {
             setAssignmentVersion((v) => v + 1);
+            refetch();
           }}
         />
       )}
 
-      <BulkSelectionBar
+      {/* <BulkSelectionBar
         count={validSelectedBarristerIds.length}
         itemLabel="barrister"
         proceedText="Delete selected"
         onProceed={openBulkDeleteConfirm}
         onCancel={() => setSelectedBarristerIds([])}
-      />
+      /> */}
     </>
   );
 };

@@ -5,11 +5,8 @@ import { getErrorMessage } from "../../../../helpers/api";
 import { toast } from "sonner";
 import { IoIosSearch } from "react-icons/io";
 import ReusableTable from "../../../../utilities/ReusableTable";
-import type { TableColumnProps } from "../../../../lib/interfaces";
+import type { HomeUser, TableColumnProps } from "../../../../lib/interfaces";
 import { useUsers } from "../../../../hooks/useUsers";
-import type { UserItem } from "../../../../services/userService";
-
-export type { UserItem };
 
 const ManageUsers: React.FC = () => {
   const navigate = useNavigate();
@@ -74,7 +71,7 @@ const ManageUsers: React.FC = () => {
     is_verified: verifiedFilter,
   });
 
-  const users: UserItem[] = responseData?.data?.data || [];
+  const users: HomeUser[] = responseData?.data?.data || [];
   const totalItems = responseData?.data?.total || 0;
   const totalPages = responseData?.data?.last_page || 1;
 
@@ -84,7 +81,7 @@ const ManageUsers: React.FC = () => {
     }
   }, [error]);
 
-  const columns: TableColumnProps<UserItem>[] = [
+  const columns: TableColumnProps<HomeUser>[] = [
     {
       label: "Name",
       key: "name",
@@ -222,7 +219,7 @@ const ManageUsers: React.FC = () => {
         </div>
       </div>
 
-      <ReusableTable<UserItem>
+      <ReusableTable<HomeUser>
         columns={columns}
         data={users}
         isLoading={isLoading}

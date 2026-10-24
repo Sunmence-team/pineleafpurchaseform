@@ -27,6 +27,8 @@ export interface FormattedNumberInputProps extends Omit<
   onBlur?: (e: any) => void;
   name?: string;
   label?: string;
+  icon?: React.ReactNode;
+  inputContClassName?: string;
   error?: boolean;
   helperText?: string;
 }
@@ -39,6 +41,8 @@ const FormattedNumberInput: React.FC<FormattedNumberInputProps> = ({
   onBlur: manualBlur,
   name: manualName,
   label,
+  icon,
+  inputContClassName,
   error,
   helperText,
   className = "",
@@ -72,25 +76,44 @@ const FormattedNumberInput: React.FC<FormattedNumberInputProps> = ({
     }
   };
 
+  const defaultInputClass =
+    "w-full rounded-md border border-gray-300 py-2 px-3 shadow-sm focus:border-primary focus:outline-none focus:ring-primary md:text-sm";
+
   return (
     <div className="w-full">
       {label && (
-        <label className="block text-sm font-medium text-gray-700 mb-1">
+        <label className="block text-sm md:text-base font-medium text-gray-700 mb-1 md:mb-2">
           {label}
         </label>
       )}
-      <input
-        {...rest}
-        name={name}
-        type="text"
-        value={displayValue}
-        onChange={handleChange}
-        onBlur={onBlur}
-        inputMode="decimal"
-        className={`w-full rounded-md border border-gray-300 py-2 px-3 shadow-sm focus:border-primary focus:outline-none focus:ring-primary md:text-sm ${className}`}
-      />
+      {inputContClassName ? (
+        <div className={inputContClassName}>
+          {icon}
+          <input
+            {...rest}
+            name={name}
+            type="text"
+            value={displayValue}
+            onChange={handleChange}
+            onBlur={onBlur}
+            inputMode="decimal"
+            className={className || defaultInputClass}
+          />
+        </div>
+      ) : (
+        <input
+          {...rest}
+          name={name}
+          type="text"
+          value={displayValue}
+          onChange={handleChange}
+          onBlur={onBlur}
+          inputMode="decimal"
+          className={`${defaultInputClass} ${className}`}
+        />
+      )}
       {error && helperText && (
-        <p className="mt-1 text-sm text-red-600">{helperText}</p>
+        <p className="mt-1 text-xs md:text-sm text-red-500">{helperText}</p>
       )}
     </div>
   );

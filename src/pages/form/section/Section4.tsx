@@ -17,7 +17,7 @@ const Section4: React.FC<SectionProps> = ({
   prevSection,
   onSubmit,
 }) => {
-  console.log("formData", formData);
+  // console.log("formData", formData);
   const navigate = useNavigate();
   const parentClass =
     "mt-1 block w-full rounded-md border border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 h-[50px] px-2 flex items-center bg-white";
@@ -330,8 +330,11 @@ const Section4: React.FC<SectionProps> = ({
             : "",
         );
         formDataToSend.append(
-          "site_location",
-          formData.clientDeclarationSiteLocation || "",
+          "property",
+          formData.clientDeclarationSiteLocation !== undefined &&
+            formData.clientDeclarationSiteLocation !== null
+            ? String(formData.clientDeclarationSiteLocation)
+            : "",
         );
         formDataToSend.append(
           "plot_number",
@@ -340,7 +343,12 @@ const Section4: React.FC<SectionProps> = ({
             ? String(formData.clientDeclarationPlotNumber)
             : "",
         );
-        formDataToSend.append("branches", formData.branches || "");
+        formDataToSend.append(
+          "branch",
+          formData.branches !== undefined && formData.branches !== null
+            ? String(formData.branches)
+            : "",
+        );
 
         const signatureFile = formData.clientDeclarationSignature
           ? base64ToFile(formData.clientDeclarationSignature, "signature.png")
@@ -375,18 +383,16 @@ const Section4: React.FC<SectionProps> = ({
           values.referralMobileNumber || "",
         );
 
-        console.log("FormData being sent to POST /clients:");
+        console.log("FormData being sent to POST /apply:");
         for (let [key, value] of formDataToSend.entries()) {
           console.log(`${key}:`, value instanceof File ? value.name : value);
         }
 
-        const response = await api.post(`${API_URL}/clients`, formDataToSend, {
+        const response = await api.post(`/apply`, formDataToSend, {
           headers: {
             "Content-Type": "multipart/form-data",
           },
         });
-
-        console.log("API Response from POST /clients:", response.data);
 
         if (response.status === 200 || response.status === 201) {
           toast.success("Application submitted successfully!", {

@@ -1,120 +1,46 @@
-import React, { useState, useEffect, useRef } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import React, { useRef } from "react";
+import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { FaDownload, FaArrowLeft } from "react-icons/fa";
-import axios from "axios";
-import { toast } from "sonner";
 import { format } from "date-fns";
 import { useReactToPrint } from "react-to-print";
 import assets from "../../../assets/assets";
 import { formatterUtility } from "../../../helpers/formatterUtility";
-import { api } from "../../../helpers/api";
 import EntryNotesSection from "../../../components/EntryNotesSection";
+import {
+  useEntryDetails,
+  useOldEntryDetails,
+} from "../../../hooks/useClientEntries";
 
-const API_URL = import.meta.env.VITE_API_BASE_URL;
 const STORAGE_URL = "https://forms.pineleafestates.com/back/storage/app/public";
 
-const ViewFormEntry = () => {
-  const { id } = useParams();
+interface ViewFormEntryProps {
+  endpointType?: "applications" | "clients";
+}
+
+const ViewFormEntry: React.FC<ViewFormEntryProps> = ({ endpointType }) => {
+  const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const [client, setClient] = useState(null);
-  const componentRef = useRef(null);
+  const componentRef = useRef<HTMLDivElement | null>(null);
+  const location = useLocation();
 
-  useEffect(() => {
-    const fetchClient = async () => {
-      try {
-        const token = localStorage.getItem("token");
-        if (!token) {
-          toast.error("Please log in to view client details.");
-          navigate("/login");
-          return;
-        }
+  const isOldRecord =
+    endpointType === "clients" ||
+    (!endpointType && location.pathname.includes("/old-records/"));
 
-        const response = await api.post(
-          `${API_URL}/applications/${id}`,
-          {},
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-              "Content-Type": "application/json",
-            },
-          },
-        );
+  const entryQuery = useEntryDetails(!isOldRecord ? id : null);
+  const oldEntryQuery = useOldEntryDetails(isOldRecord ? id : null);
 
-        const application = response.data.data;
-        if (!application) throw new Error("No client data found");
+  const { data: responseData, isLoading, error } = isOldRecord
+    ? oldEntryQuery
+    : entryQuery;
 
-        // console.log("Raw API response:", application);
-
-        const clientData = {
-          id: application.id,
-          purchase_type: application.purchase_type || "individual",
-          club_name: application.club_name || "",
-          club_contact: application.club_contact || "",
-          club_members: application.club_members || [],
-          personal_picture: application.personal_picture
-            ? `${STORAGE_URL}/${application.personal_picture.replace(/^public\//, "")}`
-            : "https://via.placeholder.com/150",
-          client_name: application.client_name || "",
-          first_name: application.first_name || "",
-          middle_name: application.middle_name || "",
-          last_name: application.last_name || "",
-          address: application.address || "",
-          marital_status: application.marital_status || "",
-          gender: application.gender || "",
-          first_name_of_spouse: application.first_name_of_spouse || "",
-          middle_name_of_spouse: application.middle_name_of_spouse || "",
-          last_name_of_spouse: application.last_name_of_spouse || "",
-          state_of_origin: application.state_of_origin || "",
-          lga: application.lga || "",
-          country: application.country || "",
-          email: application.email || "",
-          mobile_number: application.mobile_number || "",
-          next_of_kin_full_name: application.next_of_kin_full_name || "",
-          next_of_kin_relationship: application.next_of_kin_relationship || "",
-          next_of_kin_mobile_number:
-            application.next_of_kin_mobile_number || "",
-          next_of_kin_email: application.next_of_kin_email || "",
-          land_price: application.land_price || "",
-          number_of_plot: application.number_of_plot || "",
-          site_location: application.site_location || "",
-          plot_number: application.plot_number || "",
-          branches: application.branches || "",
-          signature: application.signature
-            ? `${STORAGE_URL}/${application.signature.replace(/^public\//, "")}`
-            : "https://via.placeholder.com/150",
-          declaration_date: application.declaration_date
-            ? new Date(application.declaration_date)
-            : null,
-          declaration_name: application.declaration_name || "",
-          referral_name: application.referral_name || "",
-          referral_number: application.referral_number || "",
-        };
-
-        // console.log("Raw personal_picture:", application.personal_picture);
-        // console.log("Built Profile URL:", clientData.personal_picture);
-        // console.log("Raw signature:", application.signature);
-        // console.log("Built Signature URL:", clientData.signature);
-
-        setClient(clientData);
-      } catch (err) {
-        console.error("Error fetching client:", err);
-        toast.error(
-          "Failed to fetch client details: " + (err.message || "Unknown error"),
-        );
-        if (axios.isAxiosError(err) && err.response?.status === 401) {
-          localStorage.removeItem("token");
-          navigate("/login");
-        }
-      }
-    };
-
-    fetchClient();
-  }, [id, navigate]);
+  const client = responseData?.data;
 
   const handlePrint = useReactToPrint({
     contentRef: componentRef,
-    documentTitle: client ? `${client.client_name}_details` : "Client_Details",
-    // removeAfterPrint: true,
+    documentTitle: client
+      ? `${client.client_name || `${client.first_name || ""} ${client.last_name || ""}`.trim() || "Client"}_details`
+      : "Client_Details",
     preserveAfterPrint: false,
     pageStyle: `
       @page { size: A4; margin: 15mm; }
@@ -149,13 +75,38 @@ const ViewFormEntry = () => {
     `,
   });
 
-  if (!client) {
+  if (isLoading) {
     return (
       <div className="flex justify-center items-center min-h-screen bg-gray-50">
         <div className="animate-spin rounded-full h-12 w-12 md:h-16 md:w-16 border-4 border-t-transparent border-primary"></div>
       </div>
     );
   }
+
+  if (error || !client) {
+    return (
+      <div className="flex flex-col justify-center items-center min-h-screen bg-gray-50 p-4">
+        <p className="text-red-500 font-semibold mb-4">
+          {error
+            ? (error as any)?.response?.data?.message || (error as Error).message || "Failed to load client details"
+            : "No client details found"}
+        </p>
+        <button
+          onClick={() =>
+            navigate(
+              isOldRecord ? "/dashboard/old-records" : "/dashboard/records",
+            )
+          }
+          className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90"
+        >
+          {isOldRecord ? "Back to Old Records" : "Back to Records"}
+        </button>
+      </div>
+    );
+  }
+
+  const isIndividual =
+    !client.purchase_type || client.purchase_type === "individual";
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col p-4 md:p-8">
@@ -164,7 +115,11 @@ const ViewFormEntry = () => {
         <div className="flex flex-col md:flex-row md:justify-between md:items-center border-b border-gray-200 pb-4 md:pb-6 mb-6 md:mb-8 no-print gap-4">
           <div className="flex items-center gap-3 md:gap-4">
             <button
-              onClick={() => navigate("/dashboard/overview")}
+              onClick={() =>
+                navigate(
+                  isOldRecord ? "/dashboard/old-records" : "/dashboard/records",
+                )
+              }
               className="p-2 md:p-3 rounded-full bg-gray-100 hover:bg-gray-200 transition-colors duration-200"
               aria-label="Back to Dashboard"
             >
@@ -195,16 +150,21 @@ const ViewFormEntry = () => {
         >
           {/* Profile */}
           <div className="flex flex-col md:flex-row gap-4 md:gap-8 items-start md:items-center border-b border-gray-200 pb-4 md:pb-6">
-            {client.purchase_type === "individual" ? (
+            {isIndividual ? (
               <>
                 <img
-                  src={client.personal_picture}
+                  src={
+                    client.personal_picture
+                      ? `${STORAGE_URL}/${client.personal_picture.replace(/^public\//, "")}`
+                      : "https://via.placeholder.com/150"
+                  }
                   alt="Client"
                   className="w-24 h-24 md:w-32 md:h-32 rounded-xl object-cover border-2 border-gray-100 shadow-sm"
                 />
                 <div className="space-y-2">
                   <h2 className="text-xl md:text-2xl font-bold text-gray-900">
-                    {client.client_name}
+                    {client.client_name ||
+                      `${client.first_name || ""} ${client.last_name || ""}`.trim()}
                   </h2>
                   <p className="text-sm md:text-base text-gray-600">
                     Email: {client.email}
@@ -220,7 +180,7 @@ const ViewFormEntry = () => {
                   {client.purchase_type}
                 </div>
                 <h2 className="text-2xl md:text-3xl font-bold text-gray-900 capitalize">
-                  {client.client_name}
+                  {client.client_name || client.club_name}
                 </h2>
                 <p className="text-sm md:text-base text-gray-600">
                   Official Contact: {client.club_contact}
@@ -230,7 +190,7 @@ const ViewFormEntry = () => {
           </div>
 
           {/* Personal Information / Club Details dynamic block */}
-          {client.purchase_type === "individual" ? (
+          {isIndividual ? (
             <div>
               <h3 className="text-lg md:text-2xl font-semibold text-primary border-b border-gray-200 py-3 mb-6">
                 Personal Information
@@ -282,7 +242,7 @@ const ViewFormEntry = () => {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
                   <p className="text-sm md:text-base text-gray-700">
                     <span className="font-medium">Name:</span>{" "}
-                    {client.client_name}
+                    {client.client_name || client.club_name}
                   </p>
                   <p className="text-sm md:text-base text-gray-700">
                     <span className="font-medium">Official Contact:</span>{" "}
@@ -321,7 +281,7 @@ const ViewFormEntry = () => {
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-gray-100 bg-white">
-                        {client.club_members.map((member, index) => (
+                        {client.club_members.map((member: any, index: number) => (
                           <tr key={index} className="hover:bg-gray-50/50">
                             <td className="py-3 px-4 text-gray-500 font-medium">
                               {index + 1}
@@ -352,7 +312,7 @@ const ViewFormEntry = () => {
           )}
 
           {/* Spouse Info */}
-          {client.purchase_type === "individual" &&
+          {isIndividual &&
             (client.first_name_of_spouse || client.last_name_of_spouse) && (
               <div>
                 <h3 className="text-lg md:text-2xl font-semibold text-primary border-b border-gray-200 py-3 mb-6">
@@ -376,7 +336,7 @@ const ViewFormEntry = () => {
             )}
 
           {/* Contact Info */}
-          {client.purchase_type === "individual" && (
+          {isIndividual && (
             <div>
               <h3 className="text-lg md:text-2xl font-semibold text-primary border-b border-gray-200 py-3 mb-6">
                 Contact Information
@@ -396,14 +356,14 @@ const ViewFormEntry = () => {
           {/* Next of Kin / Representative Details */}
           <div>
             <h3 className="text-lg md:text-2xl font-semibold text-primary border-b border-gray-200 py-3 mb-6">
-              {client.purchase_type === "individual"
+              {isIndividual
                 ? "Next of Kin"
                 : "Representative / Trustee Details"}
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
               <p className="text-sm md:text-base text-gray-700">
                 <span className="font-medium">
-                  {client.purchase_type === "individual"
+                  {isIndividual
                     ? "Full Name:"
                     : "Representative / Trustee Full Name:"}
                 </span>{" "}
@@ -411,7 +371,7 @@ const ViewFormEntry = () => {
               </p>
               <p className="text-sm md:text-base text-gray-700">
                 <span className="font-medium">
-                  {client.purchase_type === "individual"
+                  {isIndividual
                     ? "Relationship:"
                     : "Role / Designation:"}
                 </span>{" "}
@@ -419,7 +379,7 @@ const ViewFormEntry = () => {
               </p>
               <p className="text-sm md:text-base text-gray-700">
                 <span className="font-medium">
-                  {client.purchase_type === "individual"
+                  {isIndividual
                     ? "Phone:"
                     : "Representative Contact Mobile:"}
                 </span>{" "}
@@ -427,7 +387,7 @@ const ViewFormEntry = () => {
               </p>
               <p className="text-sm md:text-base text-gray-700">
                 <span className="font-medium">
-                  {client.purchase_type === "individual"
+                  {isIndividual
                     ? "Email:"
                     : "Representative Contact Email:"}
                 </span>{" "}
@@ -444,7 +404,7 @@ const ViewFormEntry = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
               <p className="text-sm md:text-base text-gray-700">
                 <span className="font-medium">Price:</span>{" "}
-                {formatterUtility(Number(client.land_price))}
+                {formatterUtility(Number(client.land_price || 0))}
               </p>
               <p className="text-sm md:text-base text-gray-700">
                 <span className="font-medium">Number of Plots:</span>{" "}
@@ -459,7 +419,11 @@ const ViewFormEntry = () => {
                 {client.plot_number}
               </p>
               <p className="text-sm md:text-base text-gray-700">
-                <span className="font-medium">Branch:</span> {client.branches}
+                <span className="font-medium">Branch:</span>{" "}
+                {client.branches ||
+                  (typeof client.branch === "object"
+                    ? client.branch?.name
+                    : client.branch)}
               </p>
             </div>
           </div>
@@ -478,7 +442,7 @@ const ViewFormEntry = () => {
                 <p className="text-sm md:text-base text-gray-700">
                   <span className="font-medium">Date:</span>{" "}
                   {client.declaration_date
-                    ? format(client.declaration_date, "dd/MM/yyyy")
+                    ? format(new Date(client.declaration_date), "dd/MM/yyyy")
                     : "N/A"}
                 </p>
               </div>
@@ -487,7 +451,11 @@ const ViewFormEntry = () => {
                   Signature:
                 </p>
                 <img
-                  src={client.signature}
+                  src={
+                    client.signature
+                      ? `${STORAGE_URL}/${client.signature.replace(/^public\//, "")}`
+                      : "https://via.placeholder.com/150"
+                  }
                   alt="Signature"
                   className="w-40 h-24 md:w-56 md:h-36 object-contain border-2 border-gray-100 rounded-lg shadow-sm"
                 />
@@ -523,10 +491,14 @@ const ViewFormEntry = () => {
         {/* Footer */}
         <div className="border-t border-gray-200 pt-4 md:pt-6 mt-6 md:mt-8 flex justify-end no-print">
           <button
-            onClick={() => navigate("/dashboard/overview")}
+            onClick={() =>
+              navigate(
+                isOldRecord ? "/dashboard/old-records" : "/dashboard/records",
+              )
+            }
             className="px-4 py-2 md:px-5 md:py-3 bg-gray-200 text-gray-800 font-semibold rounded-lg hover:bg-gray-300 transition-colors duration-200 w-full md:w-auto"
           >
-            Back to Dashboard
+            {isOldRecord ? "Back to Old Records" : "Back to Records"}
           </button>
         </div>
       </div>

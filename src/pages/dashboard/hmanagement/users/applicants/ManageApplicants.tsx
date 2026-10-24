@@ -12,8 +12,7 @@ import {
 import ReusableTable from "../../../../../utilities/ReusableTable";
 import StatusCard from "../../../../../components/cards/StatusCard";
 import { useApplicants } from "../../../../../hooks/useApplicant";
-import type { Applicant } from "../../../../../services/applicantService";
-import type { TableColumnProps } from "../../../../../lib/interfaces";
+import type { Application, TableColumnProps } from "../../../../../lib/interfaces";
 
 const ManageApplicants = () => {
   const navigate = useNavigate();
@@ -80,7 +79,7 @@ const ManageApplicants = () => {
     applied_to: appliedTo,
   });
 
-  const applicants: Applicant[] = responseData?.data?.data || [];
+  const applicants: Application[] = responseData?.data?.data || [];
   const totalItems = responseData?.data?.total || 0;
 
   useEffect(() => {
@@ -89,7 +88,7 @@ const ManageApplicants = () => {
     }
   }, [error]);
 
-  const columns: TableColumnProps<Applicant>[] = [
+  const columns: TableColumnProps<Application>[] = [
     {
       label: "Name",
       key: "name",

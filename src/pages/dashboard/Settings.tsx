@@ -3,7 +3,6 @@ import { LuKeyRound } from "react-icons/lu";
 import { BsFillAwardFill, BsBarChartLine } from "react-icons/bs";
 import ChangePassword from "./settingstabs/ChangePassword";
 import ManageBarristers from "./settingstabs/ManageBarristers";
-import BarristersSummary from "./settingstabs/BarristersSummary";
 import { useUser } from "../../hooks/useUser";
 
 interface TabsCategory {
@@ -22,7 +21,6 @@ const Settings: React.FC = () => {
     ...(isAdmin
       ? [
           { label: "Barristers", icon: BsFillAwardFill },
-          { label: "Barristers Summary", icon: BsBarChartLine },
         ]
       : []),
   ];
@@ -33,8 +31,6 @@ const Settings: React.FC = () => {
         return <ChangePassword />;
       case "Barristers":
         return <ManageBarristers />;
-      case "Barristers Summary":
-        return <BarristersSummary />;
       default:
         return null;
     }
@@ -49,7 +45,7 @@ const Settings: React.FC = () => {
         </p>
       </div>
 
-      <div className="flex flex-col md:flex-row min-h-[72vh] md:h-auto gap-4 md:gap-0 md:space-x-4">
+      <div className="flex flex-col items-start md:flex-row min-h-[72vh] md:h-auto gap-4 md:gap-0 md:space-x-4">
         {/* Sidebar Tabs */}
         <div className="flex flex-col border border-primary/20 rounded-xl bg-secondary h-auto w-full md:w-1/4 lg:w-1/5 shrink-0 gap-1 p-3">
           <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-wider px-2 py-1 mb-1">
@@ -66,7 +62,7 @@ const Settings: React.FC = () => {
                   onClick={() => setActiveTab(tab.label)}
                   className={`flex text-xs font-medium items-center gap-2.5 rounded-lg border px-3 h-10 whitespace-nowrap shrink-0 md:shrink transition duration-200 cursor-pointer ${
                     isActive
-                      ? "bg-white border-primary/30 text-primary shadow-xs font-semibold"
+                      ? "bg-white border-primary/20 text-primary shadow-xs font-semibold"
                       : "border-transparent text-gray-700 hover:bg-white/60 hover:text-primary"
                   }`}
                 >

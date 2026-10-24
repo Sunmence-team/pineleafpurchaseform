@@ -9,9 +9,9 @@ import {
   fetchUserService,
   verifyUserService,
   type FetchUsersParams,
-  type VerifyUserPayload,
-  type UserItem,
+  type VerifyUserPayload
 } from "../services/userService";
+import { HomeUser } from "../lib/interfaces";
 
 export const useUsers = (params: FetchUsersParams = {}) => {
   const page = params.page ?? 1;
@@ -39,7 +39,7 @@ export const useUsers = (params: FetchUsersParams = {}) => {
 
 export const useUserDetail = (
   id?: number | string | null,
-  initialData?: UserItem | null,
+  initialData?: HomeUser | null,
 ) => {
   return useQuery({
     queryKey: ["user", id ? String(id) : null],

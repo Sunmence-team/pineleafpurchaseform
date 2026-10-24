@@ -13,11 +13,8 @@ import {
 } from "../../../../helpers/formatterUtility";
 import FormattedNumberInput from "../../../../components/FormattedNumberInput";
 import { useUserDetail, useVerifyUser } from "../../../../hooks/useUsers";
-import type { UserItem } from "../../../../services/userService";
 
 const HM_STORAGE_API_URL = import.meta.env.VITE_HM_STORAGE_BASE_URL;
-
-export type UserDetail = UserItem;
 
 const ViewUser: React.FC = () => {
   const { id } = useParams<{ id: string }>();

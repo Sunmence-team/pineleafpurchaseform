@@ -1,56 +1,7 @@
 import { hmApi } from "../helpers/api";
+import { PurchaseItem, PurchaseTransaction } from "../lib/interfaces";
 
-export interface PurchaseUser {
-  firstname?: string;
-  lastname?: string;
-  email?: string;
-  phone?: string;
-  job_description?: string;
-  country?: string;
-  salary?: number | string;
-  admin_approved_salary?: number | string;
-  [key: string]: any;
-}
-
-export interface PurchaseProperty {
-  id?: number | string;
-  name?: string;
-  estate_name?: string;
-  type?: string;
-  price?: number | string;
-  location?: string;
-  images?: string[];
-  [key: string]: any;
-}
-
-export interface PurchaseTransaction {
-  id: number | string;
-  type?: string;
-  reference?: string;
-  amount?: number | string;
-  status?: string;
-  payment_method?: string;
-  created_at?: string;
-  paid_at?: string;
-  payment_gateway_response?: {
-    proof_of_payment?: string | { url?: string; path?: string };
-    [key: string]: any;
-  };
-  [key: string]: any;
-}
-
-export interface PurchaseItem {
-  id: number;
-  status?: string;
-  agreed_duration_months?: number | string;
-  upfront_paid?: boolean | number;
-  created_at?: string;
-  approved_at?: string;
-  user?: PurchaseUser;
-  property?: PurchaseProperty;
-  transactions?: PurchaseTransaction[];
-  [key: string]: any;
-}
+export type { PurchaseItem, PurchaseTransaction };
 
 export interface FetchPurchasesParams {
   page?: number;
@@ -67,7 +18,6 @@ export interface PurchasesResponse {
     last_page?: number;
     current_page?: number;
     per_page?: number;
-    [key: string]: any;
   };
   message?: string;
 }
@@ -77,11 +27,6 @@ export interface VerifyPurchasePaymentPayload {
   status: "approved" | "rejected" | string;
   note?: string;
 }
-
-const getAuthHeaders = () => {
-  const token = localStorage.getItem("token");
-  return token ? { Authorization: `Bearer ${token}` } : {};
-};
 
 export const fetchPurchasesService = async (
   params: FetchPurchasesParams = {},
@@ -95,7 +40,6 @@ export const fetchPurchasesService = async (
   if (params.status) queryParams.status = params.status;
 
   const res = await hmApi.get("/admin/applications", {
-    headers: getAuthHeaders(),
     params: queryParams,
   });
   return res.data;
@@ -104,9 +48,7 @@ export const fetchPurchasesService = async (
 export const fetchPurchaseService = async (
   id: number | string,
 ): Promise<PurchaseItem> => {
-  const res = await hmApi.get(`/admin/applications/${id}`, {
-    headers: getAuthHeaders(),
-  });
+  const res = await hmApi.get(`/admin/applications/${id}`);
   return res.data?.data || res.data;
 };
 
@@ -115,10 +57,7 @@ export const verifyPurchasePaymentService = async (
 ) => {
   const res = await hmApi.post(
     `/admin/applications/verify/manual`,
-    payload,
-    {
-      headers: getAuthHeaders(),
-    },
+    payload
   );
   return res.data;
 };

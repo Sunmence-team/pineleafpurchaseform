@@ -1,8 +1,7 @@
 import {
   useQuery,
   useMutation,
-  useQueryClient,
-  keepPreviousData,
+  useQueryClient
 } from "@tanstack/react-query";
 import {
   fetchApplicantsService,

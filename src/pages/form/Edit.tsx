@@ -10,6 +10,8 @@ import { toast } from "sonner";
 import { format } from "date-fns";
 import { api } from "../../helpers/api";
 import assets from "../../assets/assets";
+import SearchableInput from "../../components/ui/SearchableInput";
+import { useCountryStates } from "../../hooks/useCountryStates";
 import {
   FaArrowLeft,
   FaUser,
@@ -32,15 +34,18 @@ const API_URL = import.meta.env.VITE_API_BASE_URL;
 const EditClient: React.FC = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const [countries, setCountries] = useState<string[]>([]);
-  const [states, setStates] = useState<string[]>([]);
-  const [loading, setLoading] = useState({
-    countries: false,
-    states: false,
-  });
-  const [error, setError] = useState<string | null>(null);
-  const [countryCodeMap, setCountryCodeMap] = useState<Record<string, any>>({});
   const [formData, setFormData] = useState<any>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  const {
+    countries,
+    states,
+    countryCodeMap,
+    loading,
+    getMobilePlaceholder: getPlaceholder,
+    fetchCountries,
+    fetchStates,
+  } = useCountryStates(formData?.countryOfResidence);
   const [newTitle, setNewTitle] = useState("");
   const [newFirstName, setNewFirstName] = useState("");
   const [newMiddleName, setNewMiddleName] = useState("");
@@ -49,75 +54,6 @@ const EditClient: React.FC = () => {
   const parentClass =
     "mt-1 block w-full rounded-md border border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 h-[50px] px-2 flex items-center bg-white";
   const inputClass = "w-full focus:outline-0 text-sm h-full indent-2";
-
-  // Fetch countries and ISO codes on component mount
-  useEffect(() => {
-    const fetchCountries = async () => {
-      setLoading((prev) => ({ ...prev, countries: true }));
-      setError(null);
-      try {
-        const response = await fetch(
-          "https://countriesnow.space/v0.1/countries",
-        );
-        const result = await response.json();
-        if (result.error) throw new Error(result.msg);
-
-        const countryMap = {};
-        const countryList = result.data
-          .map((c) => ({ name: c.country, isoCode: c.iso2 }))
-          .sort((a, b) => a.name.localeCompare(b.name));
-
-        countryList.forEach((c) => {
-          countryMap[c.name] = c.isoCode;
-        });
-
-        setCountries(countryList.map((c) => c.name));
-        setCountryCodeMap(countryMap);
-      } catch (err) {
-        console.error("Error fetching countries:", err);
-        setError("Failed to load countries. Please try again later.");
-        toast.error("Failed to load countries.");
-      } finally {
-        setLoading((prev) => ({ ...prev, countries: false }));
-      }
-    };
-    fetchCountries();
-  }, []);
-
-  // Fetch states when formData and countryOfResidence are available
-  useEffect(() => {
-    if (formData && formData.countryOfResidence) {
-      const fetchStates = async () => {
-        setLoading((prev) => ({ ...prev, states: true }));
-        setError(null);
-        try {
-          const response = await fetch(
-            "https://countriesnow.space/v0.1/countries/states",
-            {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ country: formData.countryOfResidence }),
-            },
-          );
-          const result = await response.json();
-          if (result.error) throw new Error(result.msg);
-
-          const stateList = result.data?.states?.map((s) => s.name) || [];
-          setStates(stateList.sort());
-        } catch (err) {
-          console.error("Error fetching states:", err);
-          setError("Failed to load states for selected country.");
-          toast.error("Failed to load states. Please select a valid country.");
-          setStates([]);
-        } finally {
-          setLoading((prev) => ({ ...prev, states: false }));
-        }
-      };
-      fetchStates();
-    } else {
-      setStates([]);
-    }
-  }, [formData?.countryOfResidence, formData]);
 
   // Fetch client data
   useEffect(() => {
@@ -252,10 +188,7 @@ const EditClient: React.FC = () => {
 
   // Get dynamic placeholder for phone numbers
   const getMobilePlaceholder = () => {
-    const country = formData?.countryOfResidence;
-    if (!country || !countryCodeMap[country]) return "Enter phone number";
-    const countryCode = getCountryCallingCode(countryCodeMap[country]);
-    return `+${countryCode} XXXXXXXXXX`;
+    return getPlaceholder(formData?.countryOfResidence);
   };
 
   const validationSchema = Yup.object({
@@ -739,7 +672,7 @@ const EditClient: React.FC = () => {
             }
           }}
         >
-          {({ setFieldValue, values, errors, touched }) => (
+          {({ setFieldValue, setFieldTouched, values, errors, touched }) => (
             <Form className="space-y-6 md:space-y-10">
               {error && (
                 <div className="text-red-500 text-sm mb-4">{error}</div>
@@ -1129,112 +1062,134 @@ const EditClient: React.FC = () => {
                     <label className="block text-base font-medium text-gray-700">
                       Country of Residence
                     </label>
-                    <div className={parentClass}>
-                      <FaMap className="text-primary" />
-                      <Field
-                        as="select"
-                        name="countryOfResidence"
-                        className={`${inputClass} ${errors.countryOfResidence && touched.countryOfResidence ? "border-red-500" : ""}`}
-                        onChange={(e) => {
-                          setFieldValue("countryOfResidence", e.target.value);
-                          setFieldValue("stateOfOrigin", "");
-                          setFieldValue("lga", "");
-                          setFieldValue("mobileNumber", "");
-                          setFieldValue("nextOfKinMobileNumber", "");
-                          setFieldValue("referralMobileNumber", "");
-                          setFormData((prev) => ({
-                            ...prev,
-                            countryOfResidence: e.target.value,
-                            stateOfOrigin: "",
-                            lga: "",
-                            mobileNumber: "",
-                            nextOfKinMobileNumber: "",
-                            referralMobileNumber: "",
-                          }));
-                        }}
-                      >
-                        {[
-                          {
-                            value: "",
-                            label: loading.countries
-                              ? "Loading countries..."
-                              : "Select Country",
-                            disabled: true,
-                            key: "country-placeholder",
-                          },
-                          ...countries.map((country) => ({
-                            value: country,
-                            label: country,
-                            disabled: false,
-                            key: country,
-                          })),
-                        ].map(({ key, value, label, disabled }) => (
-                          <option key={key} value={value} disabled={disabled}>
-                            {label}
-                          </option>
-                        ))}
-                      </Field>
-                      <ErrorMessage
-                        name="countryOfResidence"
-                        component="div"
-                        className="text-xs text-red-500 mt-1"
-                      />
-                    </div>
+                    <SearchableInput
+                      fetcher={fetchCountries}
+                      options={countries}
+                      value={values.countryOfResidence}
+                      placeholder={
+                        loading.countries
+                          ? "Loading countries..."
+                          : "Select Country"
+                      }
+                      disabled={loading.countries}
+                      isSelector={true}
+                      clearable={true}
+                      fetchOnEmpty={true}
+                      icon={<FaMap className="text-primary text-base" />}
+                      inputContClassName={`mt-1 w-full rounded-md border ${
+                        errors.countryOfResidence && touched.countryOfResidence
+                          ? "border-red-500"
+                          : "border-gray-300 focus-within:border-indigo-500 focus-within:ring-1 focus-within:ring-indigo-500"
+                      } h-[50px] shadow-sm bg-white px-2`}
+                      onSelect={(item: string) => {
+                        const selectedCountry =
+                          typeof item === "string" ? item : (item as any)?.name || "";
+                        setFieldValue("countryOfResidence", selectedCountry);
+                        setFieldValue("stateOfOrigin", "");
+                        setFieldValue("lga", "");
+                        setFieldValue("mobileNumber", "");
+                        setFieldValue("nextOfKinMobileNumber", "");
+                        setFieldValue("referralMobileNumber", "");
+                        setFormData((prev) => ({
+                          ...prev,
+                          countryOfResidence: selectedCountry,
+                          stateOfOrigin: "",
+                          lga: "",
+                          mobileNumber: "",
+                          nextOfKinMobileNumber: "",
+                          referralMobileNumber: "",
+                        }));
+                        setFieldTouched("countryOfResidence", true);
+                      }}
+                      onClear={() => {
+                        setFieldValue("countryOfResidence", "");
+                        setFieldValue("stateOfOrigin", "");
+                        setFieldValue("lga", "");
+                        setFieldValue("mobileNumber", "");
+                        setFieldValue("nextOfKinMobileNumber", "");
+                        setFieldValue("referralMobileNumber", "");
+                        setFormData((prev) => ({
+                          ...prev,
+                          countryOfResidence: "",
+                          stateOfOrigin: "",
+                          lga: "",
+                          mobileNumber: "",
+                          nextOfKinMobileNumber: "",
+                          referralMobileNumber: "",
+                        }));
+                        setFieldTouched("countryOfResidence", true);
+                      }}
+                      onInputChange={() => {
+                        setFieldTouched("countryOfResidence", true);
+                      }}
+                    />
+                    <ErrorMessage
+                      name="countryOfResidence"
+                      component="div"
+                      className="text-xs text-red-500 mt-1"
+                    />
                   </div>
                   <div className="relative">
                     <label className="block text-base font-medium text-gray-700">
                       State of Origin
                     </label>
-                    <div className={parentClass}>
-                      <FaMapMarkerAlt className="-3 text-primary" />
-                      <Field
-                        as="select"
-                        name="stateOfOrigin"
-                        className={`${inputClass} ${errors.stateOfOrigin && touched.stateOfOrigin ? "border-red-500" : ""}`}
-                        onChange={(e) => {
-                          setFieldValue("stateOfOrigin", e.target.value);
-                          setFieldValue("lga", "");
-                          setFormData((prev) => ({
-                            ...prev,
-                            stateOfOrigin: e.target.value,
-                            lga: "",
-                          }));
-                        }}
-                        disabled={!values.countryOfResidence || loading.states}
-                      >
-                        {[
-                          {
-                            value: "",
-                            label: loading.states
-                              ? "Loading states..."
-                              : !values.countryOfResidence
-                                ? "Select country first"
-                                : states.length === 0
-                                  ? "No states available"
-                                  : "Select State",
-                            disabled: true,
-                            key: "state-placeholder",
-                          },
-                          ...states.map((state) => ({
-                            value: state,
-                            label: state,
-                            disabled: false,
-                            key: state,
-                          })),
-                        ].map(({ key, value, label, disabled }) => (
-                          <option key={key} value={value} disabled={disabled}>
-                            {label}
-                          </option>
-                        ))}
-                      </Field>
-                      <ErrorMessage
-                        name="stateOfOrigin"
-                        component="div"
-                        className="text-xs text-red-500 mt-1"
-                      />
-                    </div>
+                    <SearchableInput
+                      key={values.countryOfResidence || "no-country"}
+                      fetcher={fetchStates}
+                      options={states}
+                      value={values.stateOfOrigin}
+                      placeholder={
+                        loading.states
+                          ? "Loading states..."
+                          : !values.countryOfResidence
+                            ? "Select country first"
+                            : states.length === 0
+                              ? "No states available"
+                              : "Select State"
+                      }
+                      disabled={!values.countryOfResidence || loading.states}
+                      isSelector={true}
+                      clearable={true}
+                      fetchOnEmpty={true}
+                      icon={<FaMapMarkerAlt className="text-primary text-base" />}
+                      inputContClassName={`mt-1 w-full rounded-md border ${
+                        errors.stateOfOrigin && touched.stateOfOrigin
+                          ? "border-red-500"
+                          : "border-gray-300 focus-within:border-indigo-500 focus-within:ring-1 focus-within:ring-indigo-500"
+                      } h-[50px] shadow-sm bg-white px-2`}
+                      onSelect={(item: string) => {
+                        const selectedState =
+                          typeof item === "string" ? item : (item as any)?.name || "";
+                        setFieldValue("stateOfOrigin", selectedState);
+                        setFieldValue("lga", "");
+                        setFormData((prev) => ({
+                          ...prev,
+                          stateOfOrigin: selectedState,
+                          lga: "",
+                        }));
+                        setFieldTouched("stateOfOrigin", true);
+                      }}
+                      onClear={() => {
+                        setFieldValue("stateOfOrigin", "");
+                        setFieldValue("lga", "");
+                        setFormData((prev) => ({
+                          ...prev,
+                          stateOfOrigin: "",
+                          lga: "",
+                        }));
+                        setFieldTouched("stateOfOrigin", true);
+                      }}
+                      onInputChange={() => {
+                        setFieldTouched("stateOfOrigin", true);
+                      }}
+                    />
+                    <ErrorMessage
+                      name="stateOfOrigin"
+                      component="div"
+                      className="text-xs text-red-500 mt-1"
+                    />
                   </div>
-                  <div className="md:col-span-2 relative">
+<div className="md:col-span-2 relative">
                     <label className="block text-base font-medium text-gray-700">
                       Local Government (LGA)
                     </label>
