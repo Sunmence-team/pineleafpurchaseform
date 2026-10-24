@@ -13,7 +13,7 @@ import { useNavigate } from "react-router-dom";
 const API_URL = import.meta.env.VITE_API_BASE_URL;
 
 const Section4 = ({ formData, setFormData, prevSection, onSubmit }) => {
-    console.log("formData", formData)
+    // console.log("formData", formData)
   const navigate = useNavigate();
   const parentClass =
     "mt-1 block w-full rounded-md border border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 h-[50px] px-2 flex items-center bg-white";
@@ -300,7 +300,7 @@ const Section4 = ({ formData, setFormData, prevSection, onSubmit }) => {
           }
 
           const response = await axios.post(
-            `${API_URL}/api/clients`,
+            `${API_URL}/api/apply`,
             formDataToSend,
             {
               headers: {
@@ -309,7 +309,7 @@ const Section4 = ({ formData, setFormData, prevSection, onSubmit }) => {
             },
           );
 
-          console.log("API Response from POST /api/clients:", response.data);
+          console.log("API Response from POST /api/apply:", response.data);
 
           if (response.status === 200 || response.status === 201) {
             toast.success("Application submitted successfully!", {
