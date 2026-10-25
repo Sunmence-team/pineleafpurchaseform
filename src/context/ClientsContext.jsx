@@ -102,10 +102,8 @@ export const ClientsProvider = ({ children }) => {
         let lastPage = 1;
 
         do {
-          const payload = { page, per_page: 200 };
-          const response = await axios.post(
-            `${API_URL}/api/all_clients`,
-            payload,
+          const response = await axios.get(
+            `${API_URL}/api/all_clients?page=page&per_page=200`,
             {
               headers: {
                 Authorization: `Bearer ${token}`,
