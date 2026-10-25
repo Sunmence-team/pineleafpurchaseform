@@ -21,8 +21,8 @@ export const ClientsProvider = ({ children }) => {
     let applications = [];
     let meta = {};
 
-    if (response.data && Array.isArray(response.data.data)) {
-      applications = response.data.data;
+    if (response.data && Array.isArray(response.data.data.data)) {
+      applications = response.data.data.data;
       meta = response.data.meta || {};
     } else if (response.data && Array.isArray(response.data.applications)) {
       applications = response.data.applications;
