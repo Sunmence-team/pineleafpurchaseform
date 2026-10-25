@@ -11,8 +11,6 @@ import {
   useOldEntryDetails,
 } from "../../../hooks/useClientEntries";
 
-const STORAGE_URL = "https://forms.pineleafestates.com/back/storage/app/public";
-
 interface ViewFormEntryProps {
   endpointType?: "applications" | "clients";
 }
@@ -22,17 +20,34 @@ const ViewFormEntry: React.FC<ViewFormEntryProps> = ({ endpointType }) => {
   const navigate = useNavigate();
   const componentRef = useRef<HTMLDivElement | null>(null);
   const location = useLocation();
+  const fromPath = (location.state as { from?: string } | null)?.from;
 
   const isOldRecord =
     endpointType === "clients" ||
     (!endpointType && location.pathname.includes("/old-records/"));
 
+  const handleBack = () => {
+    if (fromPath) {
+      navigate(fromPath);
+    } else {
+      navigate(isOldRecord ? "/dashboard/old-records" : "/dashboard/records");
+    }
+  };
+
+  const backButtonText = fromPath
+    ? "Go Back"
+    : isOldRecord
+      ? "Back to Old Records"
+      : "Back to Records";
+
   const entryQuery = useEntryDetails(!isOldRecord ? id : null);
   const oldEntryQuery = useOldEntryDetails(isOldRecord ? id : null);
 
-  const { data: responseData, isLoading, error } = isOldRecord
-    ? oldEntryQuery
-    : entryQuery;
+  const {
+    data: responseData,
+    isLoading,
+    error,
+  } = isOldRecord ? oldEntryQuery : entryQuery;
 
   const client = responseData?.data;
 
@@ -88,18 +103,16 @@ const ViewFormEntry: React.FC<ViewFormEntryProps> = ({ endpointType }) => {
       <div className="flex flex-col justify-center items-center min-h-screen bg-gray-50 p-4">
         <p className="text-red-500 font-semibold mb-4">
           {error
-            ? (error as any)?.response?.data?.message || (error as Error).message || "Failed to load client details"
+            ? (error as any)?.response?.data?.message ||
+              (error as Error).message ||
+              "Failed to load client details"
             : "No client details found"}
         </p>
         <button
-          onClick={() =>
-            navigate(
-              isOldRecord ? "/dashboard/old-records" : "/dashboard/records",
-            )
-          }
+          onClick={handleBack}
           className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90"
         >
-          {isOldRecord ? "Back to Old Records" : "Back to Records"}
+          {backButtonText}
         </button>
       </div>
     );
@@ -109,19 +122,15 @@ const ViewFormEntry: React.FC<ViewFormEntryProps> = ({ endpointType }) => {
     !client.purchase_type || client.purchase_type === "individual";
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col p-4 md:p-8">
+    <div className="min-h-screen flex flex-col p-4 md:p-8">
       <div className="mx-auto bg-white rounded-2xl shadow-xl p-4 md:p-8 w-full max-w-4xl">
         {/* Header */}
         <div className="flex flex-col md:flex-row md:justify-between md:items-center border-b border-gray-200 pb-4 md:pb-6 mb-6 md:mb-8 no-print gap-4">
           <div className="flex items-center gap-3 md:gap-4">
             <button
-              onClick={() =>
-                navigate(
-                  isOldRecord ? "/dashboard/old-records" : "/dashboard/records",
-                )
-              }
+              onClick={handleBack}
               className="p-2 md:p-3 rounded-full bg-gray-100 hover:bg-gray-200 transition-colors duration-200"
-              aria-label="Back to Dashboard"
+              aria-label="Back"
             >
               <FaArrowLeft className="text-gray-700 text-base md:text-lg" />
             </button>
@@ -154,9 +163,7 @@ const ViewFormEntry: React.FC<ViewFormEntryProps> = ({ endpointType }) => {
               <>
                 <img
                   src={
-                    client.personal_picture
-                      ? `${STORAGE_URL}/${client.personal_picture.replace(/^public\//, "")}`
-                      : "https://via.placeholder.com/150"
+                    client.personal_picture ?? "https://via.placeholder.com/150"
                   }
                   alt="Client"
                   className="w-24 h-24 md:w-32 md:h-32 rounded-xl object-cover border-2 border-gray-100 shadow-sm"
@@ -281,24 +288,26 @@ const ViewFormEntry: React.FC<ViewFormEntryProps> = ({ endpointType }) => {
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-gray-100 bg-white">
-                        {client.club_members.map((member: any, index: number) => (
-                          <tr key={index} className="hover:bg-gray-50/50">
-                            <td className="py-3 px-4 text-gray-500 font-medium">
-                              {index + 1}
-                            </td>
-                            <td className="py-3 px-4 font-semibold text-primary">
-                              {member.title || member.Title || ""}
-                            </td>
-                            <td className="py-3 px-4">
-                              {member.first_name || member.firstName || ""}{" "}
-                              {member.middle_name || member.middleName
-                                ? (member.middle_name || member.middleName) +
-                                  " "
-                                : ""}
-                              {member.last_name || member.lastName || ""}
-                            </td>
-                          </tr>
-                        ))}
+                        {client.club_members.map(
+                          (member: any, index: number) => (
+                            <tr key={index} className="hover:bg-gray-50/50">
+                              <td className="py-3 px-4 text-gray-500 font-medium">
+                                {index + 1}
+                              </td>
+                              <td className="py-3 px-4 font-semibold text-primary">
+                                {member.title || member.Title || ""}
+                              </td>
+                              <td className="py-3 px-4">
+                                {member.first_name || member.firstName || ""}{" "}
+                                {member.middle_name || member.middleName
+                                  ? (member.middle_name || member.middleName) +
+                                    " "
+                                  : ""}
+                                {member.last_name || member.lastName || ""}
+                              </td>
+                            </tr>
+                          ),
+                        )}
                       </tbody>
                     </table>
                   </div>
@@ -371,25 +380,19 @@ const ViewFormEntry: React.FC<ViewFormEntryProps> = ({ endpointType }) => {
               </p>
               <p className="text-sm md:text-base text-gray-700">
                 <span className="font-medium">
-                  {isIndividual
-                    ? "Relationship:"
-                    : "Role / Designation:"}
+                  {isIndividual ? "Relationship:" : "Role / Designation:"}
                 </span>{" "}
                 {client.next_of_kin_relationship}
               </p>
               <p className="text-sm md:text-base text-gray-700">
                 <span className="font-medium">
-                  {isIndividual
-                    ? "Phone:"
-                    : "Representative Contact Mobile:"}
+                  {isIndividual ? "Phone:" : "Representative Contact Mobile:"}
                 </span>{" "}
                 {client.next_of_kin_mobile_number}
               </p>
               <p className="text-sm md:text-base text-gray-700">
                 <span className="font-medium">
-                  {isIndividual
-                    ? "Email:"
-                    : "Representative Contact Email:"}
+                  {isIndividual ? "Email:" : "Representative Contact Email:"}
                 </span>{" "}
                 {client.next_of_kin_email}
               </p>
@@ -403,7 +406,11 @@ const ViewFormEntry: React.FC<ViewFormEntryProps> = ({ endpointType }) => {
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
               <p className="text-sm md:text-base text-gray-700">
-                <span className="font-medium">Price:</span>{" "}
+                <span className="font-medium">Property Name:</span>{" "}
+                {client.properties?.name || client.site_location}
+              </p>
+              <p className="text-sm md:text-base text-gray-700">
+                <span className="font-medium">Price per plot:</span>{" "}
                 {formatterUtility(Number(client.land_price || 0))}
               </p>
               <p className="text-sm md:text-base text-gray-700">
@@ -411,8 +418,8 @@ const ViewFormEntry: React.FC<ViewFormEntryProps> = ({ endpointType }) => {
                 {client.number_of_plot}
               </p>
               <p className="text-sm md:text-base text-gray-700">
-                <span className="font-medium">Site Location:</span>{" "}
-                {client.site_location}
+                <span className="font-medium">Total Amount:</span>{" "}
+                {formatterUtility(Number(client.land_price || 0) * Number(client.number_of_plot || 0))}
               </p>
               <p className="text-sm md:text-base text-gray-700">
                 <span className="font-medium">Plot Number:</span>{" "}
@@ -420,10 +427,7 @@ const ViewFormEntry: React.FC<ViewFormEntryProps> = ({ endpointType }) => {
               </p>
               <p className="text-sm md:text-base text-gray-700">
                 <span className="font-medium">Branch:</span>{" "}
-                {client.branches ||
-                  (typeof client.branch === "object"
-                    ? client.branch?.name
-                    : client.branch)}
+                {client.branch?.name || client.branches}
               </p>
             </div>
           </div>
@@ -451,11 +455,7 @@ const ViewFormEntry: React.FC<ViewFormEntryProps> = ({ endpointType }) => {
                   Signature:
                 </p>
                 <img
-                  src={
-                    client.signature
-                      ? `${STORAGE_URL}/${client.signature.replace(/^public\//, "")}`
-                      : "https://via.placeholder.com/150"
-                  }
+                  src={client.signature ?? "https://via.placeholder.com/150"}
                   alt="Signature"
                   className="w-40 h-24 md:w-56 md:h-36 object-contain border-2 border-gray-100 rounded-lg shadow-sm"
                 />
@@ -491,14 +491,10 @@ const ViewFormEntry: React.FC<ViewFormEntryProps> = ({ endpointType }) => {
         {/* Footer */}
         <div className="border-t border-gray-200 pt-4 md:pt-6 mt-6 md:mt-8 flex justify-end no-print">
           <button
-            onClick={() =>
-              navigate(
-                isOldRecord ? "/dashboard/old-records" : "/dashboard/records",
-              )
-            }
+            onClick={handleBack}
             className="px-4 py-2 md:px-5 md:py-3 bg-gray-200 text-gray-800 font-semibold rounded-lg hover:bg-gray-300 transition-colors duration-200 w-full md:w-auto"
           >
-            {isOldRecord ? "Back to Old Records" : "Back to Records"}
+            {backButtonText}
           </button>
         </div>
       </div>

@@ -1,12 +1,16 @@
-import { branchOptions } from "./branchList";
+import { useLocation } from "react-router-dom";
+import { useBranches } from "../hooks/useBranches";
+import type { BranchItem } from "./interfaces";
 
 export const ROUTE_TITLES: Record<string, string> = {
   "/dashboard/overview": "Dashboard",
   "/dashboard/records": "Form Records",
   "/dashboard/properties": "Properties",
   "/dashboard/documents": "Document Library",
-  "/dashboard/entries/unassigned": "Unassigned Entries",
-  "/dashboard/entries/offline": "Offline Entries",
+  "/dashboard/records/unassigned": "Unassigned Entries",
+  "/dashboard/records/offline": "Offline Entries",
+  "/dashboard/records/downloaded": "Downloaded Entries",
+  "/dashboard/old-records": "Old Records",
   "/dashboard/manage/users": "User Management",
   "/dashboard/manage/applicants": "Applicants",
   "/dashboard/manage/properties": "Property Management",
@@ -19,21 +23,30 @@ export const ROUTE_TITLES: Record<string, string> = {
 };
 
 /**
- * Derives a human-readable page title based on the URL pathname.
+ * Derives a human-readable page title based on the URL pathname and optional branch list.
  */
-export const getPageTitle = (pathname: string): string => {
+export const getPageTitle = (
+  pathname: string,
+  branches: BranchItem[] = [],
+): string => {
   // 1. Direct match in static route map
   if (ROUTE_TITLES[pathname]) {
     return ROUTE_TITLES[pathname];
   }
 
-  // 2. Branch breakdown dynamic route (e.g. /dashboard/branch/LAG_AJAH -> "Lagos Ajah Branch")
+  // 2. Branch breakdown dynamic route (e.g. /dashboard/branch/1 or /dashboard/branch/LAG_AJAH)
   if (pathname.startsWith("/dashboard/branch/")) {
-    const branchKey = pathname.split("/").pop() || "";
-    const branch = branchOptions.find(
-      (b) => b.keyWord.toLowerCase() === branchKey.toLowerCase()
+    const branchKey = decodeURIComponent(pathname.split("/").pop() || "");
+    const branch = branches.find(
+      (b) =>
+        String(b.id).toLowerCase() === branchKey.toLowerCase() ||
+        b.name.toLowerCase() === branchKey.toLowerCase(),
     );
-    return branch ? `${branch.title} Branch` : "Branch Breakdown";
+    return branch
+      ? `${branch.name} Branch`
+      : branchKey
+        ? `${branchKey} Branch`
+        : "Branch Breakdown";
   }
 
   // 3. Specific dynamic action routes
@@ -68,4 +81,13 @@ export const getPageTitle = (pathname: string): string => {
     .split("-")
     .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
     .join(" ");
+};
+
+/**
+ * Hook to derive page title with branches dynamically fetched via React Query
+ */
+export const usePageTitle = (pageName?: string): string => {
+  const location = useLocation();
+  const { data: branches = [] } = useBranches();
+  return pageName || getPageTitle(location.pathname, branches);
 };

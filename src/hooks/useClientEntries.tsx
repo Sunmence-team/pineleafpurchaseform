@@ -1,9 +1,10 @@
-import { useQuery, keepPreviousData } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient, keepPreviousData } from "@tanstack/react-query";
 import {
   fetchApplicationsService,
   fetchOldRecordsService,
   getEntryDetailsService,
   getOldEntryDetailsService,
+  deleteApplicationService,
   type FetchClientsParams,
 } from "../services/clientEntriesService";
 import type { ClientEntry } from "../lib/interfaces";
@@ -14,14 +15,28 @@ export const useClientEntries = (
   const page = params.page ?? 1;
   const per_page = params.per_page ?? 10;
   const search = params.search ?? "";
+  const barrister = params.barrister;
+  const barrister_id = params.barrister_id;
+  const branch_id = params.branch_id;
+  const property_id = params.property_id;
+  const is_online = params.is_online;
 
   return useQuery({
     queryKey: [
       "client-entries",
-      { page, per_page, search },
+      { page, per_page, search, barrister, barrister_id, branch_id, property_id, is_online },
     ],
     queryFn: () =>
-      fetchApplicationsService({ page, per_page, search }),
+      fetchApplicationsService({
+        page,
+        per_page,
+        search,
+        barrister,
+        barrister_id,
+        branch_id,
+        property_id,
+        is_online,
+      }),
     placeholderData: keepPreviousData,
   });
 };
@@ -63,6 +78,17 @@ export const useOldEntryDetails = (id?: number | string | null) => {
       return getOldEntryDetailsService(id);
     },
     enabled: Boolean(id),
+  });
+};
+
+export const useDeleteApplication = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (id: number | string) => deleteApplicationService(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["client-entries"] });
+    },
   });
 };
 

@@ -1,26 +1,17 @@
-import React, { useState, useEffect, useMemo } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import React, { useState, useEffect } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
 import { BiSearch } from "react-icons/bi";
-import {
-  BsShieldExclamation,
-  BsHouseExclamation,
-  BsCheckCircle,
-} from "react-icons/bs";
-import { FaEye, FaEdit, FaTrashAlt } from "react-icons/fa";
 import { toast } from "sonner";
-import OverviewCards from "../../../components/cards/OverviewCards";
-import ConfirmDialog from "../../../components/modals/ConfirmDialog";
 import ActionCell from "../../../components/ui/ActionCell";
-import { getStoredAssignments } from "../../../components/modals/AssignPropertiesModal";
-import { getOfflinePropertyIds } from "../properties/Properties";
 import { formatISODateToCustom } from "../../../helpers/formatterUtility";
 import type { ClientEntry, TableColumnProps } from "../../../lib/interfaces";
 import ReusableTable from "../../../utilities/ReusableTable";
-import { api, getErrorMessage } from "../../../helpers/api";
-import { useOldClientEntries } from "../../../hooks/useClientEntries";
+import { getErrorMessage } from "../../../helpers/api";
+import { useClientEntries } from "../../../hooks/useClientEntries";
 
 const UnassignedEntries: React.FC = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const [searchQuery, setSearchQuery] = useState("");
   const [debouncedSearchQuery, setDebouncedSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
@@ -39,10 +30,11 @@ const UnassignedEntries: React.FC = () => {
     data: responseData,
     isLoading,
     error,
-  } = useOldClientEntries({
+  } = useClientEntries({
     page: currentPage,
     per_page: itemsPerPage,
     search: debouncedSearchQuery,
+    barrister: false
   });
 
   const clientEntries: ClientEntry[] = responseData?.data?.data || [];
@@ -118,9 +110,12 @@ const UnassignedEntries: React.FC = () => {
         <ActionCell
           rowId={item.id}
           canView
-          onView={(id) => navigate(`/dashboard/records/view/${id}`)}
+          onView={(id) =>
+            navigate(`/dashboard/records/view/${id}`, {
+              state: { from: location.pathname },
+            })
+          }
           onEdit={(id) => navigate(`/dashboard/records/edit/${id}`)}
-          // onDelete={handleDelete}
         />
       ),
     },
@@ -137,28 +132,6 @@ const UnassignedEntries: React.FC = () => {
           Purchase entries containing properties that currently do not have an
           assigned barrister
         </p>
-      </div>
-
-      {/* Overview Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        <OverviewCards
-          title="Unassigned Entries"
-          value={0}
-          icon={BsShieldExclamation}
-          subtitle="Entries without barrister property assignment"
-        />
-        <OverviewCards
-          title="Total Form Entries"
-          value={0}
-          icon={BsHouseExclamation}
-          subtitle="All submitted purchase forms"
-        />
-        <OverviewCards
-          title="Assignment Coverage"
-          value={0}
-          icon={BsCheckCircle}
-          subtitle="Entries assigned to barristers"
-        />
       </div>
 
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -193,20 +166,6 @@ const UnassignedEntries: React.FC = () => {
         setItemsPerPage={setItemsPerPage}
         getRowId={(item) => item.id}
       />
-
-      {/* Delete Confirmation */}
-      {/* <ConfirmDialog
-        isOpen={deleteModalOpen}
-        isLoading={isDeleting}
-        title="Delete Purchase Entry?"
-        message="Are you sure you want to delete this purchase entry? This action cannot be undone."
-        confirmText="Yes, Delete"
-        onCancel={() => {
-          setDeleteModalOpen(false);
-          setTargetId(null);
-        }}
-        onConfirm={handleDelete}
-      /> */}
     </div>
   );
 };

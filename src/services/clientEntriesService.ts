@@ -5,6 +5,11 @@ export interface FetchClientsParams {
   page?: number;
   per_page?: number;
   search?: string;
+  barrister?: boolean;
+  barrister_id?: number | string;
+  branch_id?: number | string;
+  property_id?: number | string;
+  is_online?: number;
   signal?: AbortSignal;
 }
 
@@ -24,8 +29,31 @@ export const fetchApplicationsService = async (
   const queryParams: Record<string, any> = {};
   if (params.page !== undefined) queryParams.page = params.page;
   if (params.per_page !== undefined) queryParams.per_page = params.per_page;
-  if (params.search && params.search.trim() !== "") queryParams.search = params.search;
-  queryParams.barrister = true;
+  if (params.search && params.search.trim() !== "")
+    queryParams.search = params.search;
+  if (params.barrister !== undefined) queryParams.barrister = params.barrister;
+  if (
+    params.barrister_id !== undefined &&
+    params.barrister_id !== null &&
+    params.barrister_id !== ""
+  ) {
+    queryParams.barrister_id = params.barrister_id;
+  }
+  if (
+    params.branch_id !== undefined &&
+    params.branch_id !== null &&
+    params.branch_id !== ""
+  ) {
+    queryParams.branch_id = params.branch_id;
+  }
+  if (
+    params.property_id !== undefined &&
+    params.property_id !== null &&
+    params.property_id !== ""
+  ) {
+    queryParams.property_id = params.property_id;
+  }
+  if (params.is_online !== undefined) queryParams.is_online = params.is_online;
 
   const response = await api.get("/applications", {
     params: queryParams,
@@ -44,7 +72,8 @@ export const fetchOldRecordsService = async (
   const queryParams: Record<string, any> = {};
   if (params.page !== undefined) queryParams.page = params.page;
   if (params.per_page !== undefined) queryParams.per_page = params.per_page;
-  if (params.search && params.search.trim() !== "") queryParams.search = params.search;
+  if (params.search && params.search.trim() !== "")
+    queryParams.search = params.search;
 
   const response = await api.get("/all_clients", {
     params: queryParams,
@@ -73,3 +102,15 @@ export const getOldEntryDetailsService = async (
   const response = await api.get(`/clients/${id}`);
   return response.data;
 };
+
+/**
+ * Delete application entry (DELETE /applications/:id)
+ */
+export const deleteApplicationService = async (
+  id: number | string,
+): Promise<{ status?: string; message?: string }> => {
+  const response = await api.delete(`/applications/${id}`);
+  return response.data;
+};
+
+

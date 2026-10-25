@@ -42,6 +42,7 @@ import Properties from "./pages/dashboard/properties/Properties";
 import DocumentLibrary from "./pages/dashboard/documents/DocumentLibrary";
 
 import Settings from "./pages/dashboard/Settings";
+import DownloadedEntries from "./pages/dashboard/entries/DownloadedEntries";
 
 function App() {
   useEffect(() => {
@@ -77,6 +78,7 @@ function App() {
             <Route path="records/edit/:id" element={<EditClient />} />
             <Route path="records/unassigned" element={<UnassignedEntries />} />
             <Route path="records/offline" element={<OfflineEntries />} />
+            <Route path="records/downloaded" element={<DownloadedEntries />} />
 
             <Route path="properties" element={<Properties />} />
             <Route path="documents" element={<DocumentLibrary />} />

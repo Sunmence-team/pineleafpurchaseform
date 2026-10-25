@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { FaSearch } from "react-icons/fa";
 import "react-datepicker/dist/react-datepicker.css";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import ReusableTable from "../../../utilities/ReusableTable";
 import ActionCell from "../../../components/ui/ActionCell";
 import type { ClientEntry, TableColumnProps } from "../../../lib/interfaces";
@@ -14,6 +14,7 @@ import { getErrorMessage } from "../../../helpers/api";
 
 const OldRecords: React.FC = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const [searchQuery, setSearchQuery] = useState("");
   const [debouncedSearchQuery, setDebouncedSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
@@ -169,7 +170,11 @@ const OldRecords: React.FC = () => {
         <ActionCell
           rowId={item.id}
           canView
-          onView={(id) => navigate(`/dashboard/old-records/view/${id}`)}
+          onView={(id) =>
+            navigate(`/dashboard/old-records/view/${id}`, {
+              state: { from: location.pathname },
+            })
+          }
           onEdit={(id) => navigate(`/dashboard/records/edit/${id}`)}
           // onDelete={handleDelete}
         />

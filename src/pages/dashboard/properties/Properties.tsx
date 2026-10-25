@@ -1,48 +1,28 @@
-import React, { useState, useEffect, useCallback, useMemo } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { BiSearch } from "react-icons/bi";
 import { BsBuildings, BsCloudCheck, BsCloudSlash } from "react-icons/bs";
-import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import OverviewCards from "../../../components/cards/OverviewCards";
 import ConfirmDialog from "../../../components/modals/ConfirmDialog";
+import PropertyEntriesModal from "../../../components/modals/PropertyEntriesModal";
 import ActionCell from "../../../components/ui/ActionCell";
 import { getErrorMessage } from "../../../helpers/api";
 import {
   formatterUtility,
   formatUnderScores,
 } from "../../../helpers/formatterUtility";
-import { useProperty } from "../../../hooks/useProperty";
-import { updatePropertyStatus } from "../../../services/propertyService";
+import {
+  useProperty,
+  useUpdatePropertyStatus,
+} from "../../../hooks/useProperty";
 import type {
   PropertyProp,
-  propertyStatus,
   TableColumnProps,
 } from "../../../lib/interfaces";
 import ReusableTable from "../../../utilities/ReusableTable";
 import StatusCard from "../../../components/cards/StatusCard";
 
-const OFFLINE_STORAGE_KEY = "pineleaf_properties_offline_overrides";
-
-export const getOfflinePropertyIds = (): (string | number)[] => {
-  try {
-    const raw = localStorage.getItem(OFFLINE_STORAGE_KEY);
-    return raw ? JSON.parse(raw) : [];
-  } catch {
-    return [];
-  }
-};
-
-export const setOfflinePropertyIds = (ids: (string | number)[]) => {
-  try {
-    localStorage.setItem(OFFLINE_STORAGE_KEY, JSON.stringify(ids));
-  } catch (e) {
-    console.error("Failed to save offline property ids:", e);
-  }
-};
-
 const Properties: React.FC = () => {
-  const queryClient = useQueryClient();
-
   const [searchTerm, setSearchTerm] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
@@ -53,20 +33,14 @@ const Properties: React.FC = () => {
   const [targetProperty, setTargetProperty] = useState<PropertyProp | null>(
     null,
   );
-  const [isTogglingStatus, setIsTogglingStatus] = useState(false);
 
-  // Filter tab: "all" | "online" | "offline"
-  const [statusFilter, setStatusFilter] = useState<"all" | propertyStatus>(
-    "all",
-  );
+  const [onlineFilter, setOnlineFilter] = useState<string>("all");
+  const [entriesModalOpen, setEntriesModalOpen] = useState(false);
+  const [selectedPropertyForEntries, setSelectedPropertyForEntries] = useState<PropertyProp | null>(null);
 
-  // Track offline IDs in state
-  const [offlineIds, setOfflineIdsState] = useState<(string | number)[]>(() =>
-    getOfflinePropertyIds(),
-  );
+  const { mutateAsync: updateStatus, isPending: isTogglingStatus } = useUpdatePropertyStatus();
 
-  // Debounce search input
-  useEffect(() => {
+    useEffect(() => {
     const timer = setTimeout(() => {
       setDebouncedSearch(searchTerm);
       setCurrentPage(1);
@@ -74,7 +48,6 @@ const Properties: React.FC = () => {
     return () => clearTimeout(timer);
   }, [searchTerm]);
 
-  // Fetch properties via TanStack Query hook
   const {
     data: propertiesResponse,
     isLoading,
@@ -84,26 +57,14 @@ const Properties: React.FC = () => {
     page: currentPage,
     per_page: itemsPerPage,
     sort_direction: "desc",
-    status: statusFilter,
+    is_online: onlineFilter,
   });
 
-  // Extract properties, total items and total pages
-  const { properties, totalItems, totalPages } = useMemo(() => {
-    const payload = propertiesResponse?.data;
-    const rawProperties: PropertyProp[] = Array.isArray(payload)
-      ? payload
-      : payload?.data || [];
-
-    const total =
-      payload?.total ?? propertiesResponse?.total ?? rawProperties.length;
-    const lastPage = payload?.last_page ?? propertiesResponse?.last_page ?? 1;
-
-    return {
-      properties: rawProperties,
-      totalItems: total,
-      totalPages: lastPage,
-    };
-  }, [propertiesResponse]);
+  const properties: PropertyProp[] = propertiesResponse?.data?.data ?? [];
+  const propertiesMeta = propertiesResponse?.data ?? [];
+  const totalItems = propertiesMeta?.total ?? 1;
+  const totalPages = propertiesMeta?.last_page ?? 1;
+  const stats = propertiesResponse?.stats;
 
   // Handle fetch error notification
   useEffect(() => {
@@ -111,35 +72,6 @@ const Properties: React.FC = () => {
       toast.error(getErrorMessage(error, "Failed to fetch properties"));
     }
   }, [error]);
-
-  // Determine if a property is offline based on local storage or API status
-  const isPropertyOffline = useCallback(
-    (property: PropertyProp) => {
-      const propId = property.id;
-      if (
-        propId !== undefined &&
-        offlineIds.some((id) => String(id) === String(propId))
-      ) {
-        return true;
-      }
-      return (
-        property.is_offline === true ||
-        property.is_offline === 1 ||
-        property.status === "offline"
-      );
-    },
-    [offlineIds],
-  );
-
-  // Compute metrics for overview cards
-  const onlineCount = useMemo(
-    () => properties.filter((p) => !isPropertyOffline(p)).length,
-    [properties, isPropertyOffline],
-  );
-  const offlineCount = useMemo(
-    () => properties.filter((p) => isPropertyOffline(p)).length,
-    [properties, isPropertyOffline],
-  );
 
   const handleToggleStatusClick = (property: PropertyProp) => {
     setTargetProperty(property);
@@ -149,47 +81,23 @@ const Properties: React.FC = () => {
   const handleConfirmToggleStatus = async () => {
     if (!targetProperty || targetProperty.id === undefined) return;
 
-    setIsTogglingStatus(true);
-    const propId = targetProperty.id;
-    const currentlyOffline = isPropertyOffline(targetProperty);
-    const newStatusIsOffline = !currentlyOffline;
+    const newIsOnline = !targetProperty.is_online;
 
     try {
-      // 1. Try updating remote backend if supported
-      try {
-        await updatePropertyStatus(propId, {
-          is_offline: newStatusIsOffline ? 1 : 0,
-          status: newStatusIsOffline ? "offline" : "online",
-        });
-      } catch (e) {
-        // Backend might not yet have this field or route; fallback safely to local override
-        console.warn("Backend property update returned:", e);
-      }
-
-      // 2. Persist locally to guarantee persistence
-      let updatedIds: (string | number)[];
-      if (newStatusIsOffline) {
-        updatedIds = Array.from(new Set([...offlineIds, propId]));
-      } else {
-        updatedIds = offlineIds.filter((id) => String(id) !== String(propId));
-      }
-      setOfflinePropertyIds(updatedIds);
-      setOfflineIdsState(updatedIds);
-
-      // 3. Invalidate TanStack query cache to refetch fresh data
-      queryClient.invalidateQueries({ queryKey: ["properties"] });
+      await updateStatus({
+        id: targetProperty.id,
+        is_online: newIsOnline,
+      });
 
       toast.success(
         `Property "${targetProperty.name}" marked as ${
-          newStatusIsOffline ? "Offline" : "Online"
+          newIsOnline ? "Online" : "Offline"
         }`,
       );
       setStatusModalOpen(false);
       setTargetProperty(null);
     } catch (err) {
       toast.error(getErrorMessage(err, "Failed to update property status"));
-    } finally {
-      setIsTogglingStatus(false);
     }
   };
 
@@ -224,25 +132,11 @@ const Properties: React.FC = () => {
       label: "Status",
       key: "status",
       render: (row) => {
-        const offline = isPropertyOffline(row);
+        const isOnline = Boolean(row.is_online);
         return (
-          // <span
-          //   className={`px-3 py-1 text-xs font-semibold rounded-full flex items-center gap-1.5 w-max ${
-          //     offline
-          //       ? "bg-amber-50 text-amber-700 border border-amber-200"
-          //       : "bg-emerald-50 text-emerald-700 border border-emerald-200"
-          //   }`}
-          // >
-          //   <span
-          //     className={`w-2 h-2 rounded-full ${
-          //       offline ? "bg-amber-500" : "bg-emerald-500"
-          //     }`}
-          //   />
-          //   {offline ? "Offline" : "Online"}
-          // </span>
           <StatusCard
-            type={offline ? "failed" : "success"}
-            statusText={row.status ?? "Online"}
+            type={isOnline ? "success" : "failed"}
+            statusText={isOnline ? "Online" : "Offline"}
           />
         );
       },
@@ -250,20 +144,28 @@ const Properties: React.FC = () => {
     {
       label: "Action",
       key: "action",
-      render: (item) => {
-        const offline = isPropertyOffline(item);
+      render: (row) => {
+        const isOnline = Boolean(row.is_online);
         return (
           <ActionCell
-            rowId={Number(item.id)}
+            rowId={Number(row.id)}
             otherActions={[
               {
-                name: offline ? "Mark as Online" : "Mark as Offline",
-                icon: offline ? (
-                  <BsCloudCheck className="text-emerald-600 size-4" />
-                ) : (
+                name: "View Entries",
+                icon: <BsBuildings className="text-primary size-4" />,
+                action: () => {
+                  setSelectedPropertyForEntries(row);
+                  setEntriesModalOpen(true);
+                },
+              },
+              {
+                name: isOnline ? "Mark as Offline" : "Mark as Online",
+                icon: isOnline ? (
                   <BsCloudSlash className="text-amber-600 size-4" />
+                ) : (
+                  <BsCloudCheck className="text-emerald-600 size-4" />
                 ),
-                action: () => handleToggleStatusClick(item),
+                action: () => handleToggleStatusClick(row),
               },
             ]}
           />
@@ -273,37 +175,39 @@ const Properties: React.FC = () => {
   ];
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-xl font-bold text-gray-900">Properties</h1>
-        <p className="text-sm text-gray-500">
-          View, search, and manage online / offline status of all properties
-        </p>
+    <div className="flex flex-col gap-6">
+      <div className="flex justify-between items-center">
+        <div>
+          <h2 className="text-xl font-bold text-gray-900">Properties</h2>
+          <p className="text-sm text-gray-500">
+            Manage properties, search inventory and toggle availability.
+          </p>
+        </div>
       </div>
 
-      {/* Overview Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      {/* Top Overview Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <OverviewCards
           title="Total Properties"
-          value={totalItems || properties.length}
+          value={totalItems}
           icon={BsBuildings}
           subtitle="All estate properties"
         />
         <OverviewCards
           title="Online Properties"
-          value={onlineCount}
+          value={stats?.no_of_online}
           icon={BsCloudCheck}
           subtitle="Currently active online"
         />
         <OverviewCards
           title="Offline Properties"
-          value={offlineCount}
+          value={stats?.no_of_offline}
           icon={BsCloudSlash}
           subtitle="Worked on / marked offline"
         />
       </div>
 
-      {/* Search Bar */}
+      {/* Search Bar & Filter */}
       <div className="flex md:flex-row flex-col gap-4">
         <div className="max-w-md w-full bg-secondary border border-primary/10 rounded-lg relative flex gap-2 items-center h-12 px-4">
           <BiSearch className="w-4 h-4 md:w-5 md:h-5 opacity-50" />
@@ -316,14 +220,20 @@ const Properties: React.FC = () => {
           />
         </div>
         <select
-          onClick={(e) =>
-            setStatusFilter(e.currentTarget.value as propertyStatus)
-          }
+          value={onlineFilter}
+          onChange={(e) => {
+            setOnlineFilter(e.target.value);
+            setCurrentPage(1);
+          }}
           className="bg-secondary border border-primary/10 rounded-lg h-12 px-4 outline-0"
         >
-          {["all", "online", "offline"].map((tab) => (
-            <option key={tab} value={tab}>
-              {formatUnderScores(tab, true)}
+          {[
+            { label: "All", value: "all" },
+            { label: "Online", value: "1" },
+            { label: "Offline", value: "0" },
+          ].map((tab) => (
+            <option key={tab.value} value={tab.value}>
+              {formatUnderScores(tab.label, true)}
             </option>
           ))}
         </select>
@@ -342,6 +252,7 @@ const Properties: React.FC = () => {
         setCurrentPage={setCurrentPage}
         setItemsPerPage={setItemsPerPage}
         hasSerialNo={true}
+        getRowId={(row) => row.id}
       />
 
       {/* Confirm Status Toggle Dialog */}
@@ -351,28 +262,41 @@ const Properties: React.FC = () => {
         title={
           targetProperty
             ? `Mark "${targetProperty.name}" as ${
-                isPropertyOffline(targetProperty) ? "Online" : "Offline"
+                targetProperty.is_online ? "Offline" : "Online"
               }?`
             : "Confirm Status Change"
         }
         message={
           targetProperty
             ? `Are you sure you want to change the status of this property to ${
-                isPropertyOffline(targetProperty) ? "Online" : "Offline"
+                targetProperty.is_online ? "Offline" : "Online"
               }? This status indicates whether the property is worked on online or offline.`
             : ""
         }
         confirmText={
-          targetProperty && isPropertyOffline(targetProperty)
-            ? "Yes, Mark Online"
-            : "Yes, Mark Offline"
+          targetProperty && targetProperty.is_online
+            ? "Yes, Mark Offline"
+            : "Yes, Mark Online"
         }
         onCancel={() => {
-          setStatusModalOpen(false);
-          setTargetProperty(null);
+          if (!isTogglingStatus) {
+            setStatusModalOpen(false);
+            setTargetProperty(null);
+          }
         }}
         onConfirm={handleConfirmToggleStatus}
       />
+
+      {/* Property Entries Modal */}
+      {entriesModalOpen && selectedPropertyForEntries && (
+        <PropertyEntriesModal
+          property={selectedPropertyForEntries}
+          onClose={() => {
+            setEntriesModalOpen(false);
+            setSelectedPropertyForEntries(null);
+          }}
+        />
+      )}
     </div>
   );
 };

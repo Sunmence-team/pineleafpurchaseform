@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import ActionCell from "../../../../components/ui/ActionCell";
 import { getErrorMessage } from "../../../../helpers/api";
 import { toast } from "sonner";
@@ -16,6 +16,7 @@ export type PropertyItem = HouseItem;
 
 const ManageProperties: React.FC = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const [searchQuery, setSearchQuery] = useState("");
   const [debouncedSearchQuery, setDebouncedSearchQuery] = useState("");
   const [propertyToDelete, setPropertyToDelete] = useState<number | null>(null);
@@ -98,7 +99,9 @@ const ManageProperties: React.FC = () => {
         <ActionCell
           rowId={item.id}
           onView={() =>
-            navigate(`/dashboard/manage/properties/${item.id}/view`)
+            navigate(`/dashboard/manage/properties/${item.id}/view`, {
+              state: { from: location.pathname },
+            })
           }
           onEdit={() =>
             navigate(`/dashboard/manage/properties/${item.id}/edit`)

@@ -152,6 +152,7 @@ const ManageApplicants = () => {
           onView={() =>
             navigate(`/dashboard/manage/applicants/${item.id}/view`, {
               state: {
+                from: location.pathname,
                 ...item,
                 listState: {
                   searchQuery,

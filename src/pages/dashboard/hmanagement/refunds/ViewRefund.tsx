@@ -22,6 +22,9 @@ const ViewRefund: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const location = useLocation();
+  const fromPath =
+    (location.state as { from?: string } | null)?.from ||
+    "/dashboard/manage/refunds";
   const [adminNote, setAdminNote] = useState("");
 
   // TanStack Query for single refund details
@@ -72,7 +75,13 @@ const ViewRefund: React.FC = () => {
           Refund request not found
         </p>
         <button
-          onClick={() => navigate("/dashboard/manage/refunds")}
+          onClick={() =>
+            navigate(fromPath, {
+              state: location.state?.listState
+                ? { listState: location.state.listState }
+                : undefined,
+            })
+          }
           className="px-6 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 cursor-pointer"
         >
           Back to Refunds
@@ -119,7 +128,7 @@ const ViewRefund: React.FC = () => {
         <div className="flex items-center gap-4">
           <button
             onClick={() =>
-              navigate("/dashboard/manage/refunds", {
+              navigate(fromPath, {
                 state: location.state?.listState
                   ? { listState: location.state.listState }
                   : undefined,

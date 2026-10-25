@@ -34,6 +34,9 @@ const ViewPurchase: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const location = useLocation();
+  const fromPath =
+    (location.state as { from?: string } | null)?.from ||
+    "/dashboard/manage/purchases";
 
   // TanStack Query for purchase details
   const {
@@ -113,7 +116,13 @@ const ViewPurchase: React.FC = () => {
           Application not found
         </p>
         <button
-          onClick={() => navigate("/dashboard/manage/purchases")}
+          onClick={() =>
+            navigate(fromPath, {
+              state: location.state?.listState
+                ? { listState: location.state.listState }
+                : undefined,
+            })
+          }
           className="px-6 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 cursor-pointer"
         >
           Back to Purchases
@@ -160,7 +169,7 @@ const ViewPurchase: React.FC = () => {
         <div className="flex items-center gap-4">
           <button
             onClick={() =>
-              navigate("/dashboard/manage/purchases", {
+              navigate(fromPath, {
                 state: location.state?.listState
                   ? { listState: location.state.listState }
                   : undefined,

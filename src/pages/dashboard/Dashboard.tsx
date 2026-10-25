@@ -13,7 +13,6 @@ import {
 } from "react-icons/bs";
 import { useUser } from "../../hooks/useUser";
 import { api } from "../../helpers/api";
-import { getOfflinePropertyIds } from "./properties/Properties";
 import { getStoredAssignments } from "../../components/modals/AssignPropertiesModal";
 import { getStoredDocuments } from "./documents/DocumentLibrary";
 import type { PropertyProp } from "../../lib/interfaces";
@@ -58,19 +57,9 @@ const Dashboard: React.FC = () => {
   }, []);
 
   // Offline vs Online calculations
-  const offlineIds = useMemo(
-    () => new Set(getOfflinePropertyIds().map(String)),
-    [],
-  );
   const offlinePropertiesCount = useMemo(() => {
-    return properties.filter(
-      (p) =>
-        offlineIds.has(String(p.id)) ||
-        p.is_offline === true ||
-        p.is_offline === 1 ||
-        p.status === "offline",
-    ).length;
-  }, [properties, offlineIds]);
+    return properties.filter((p) => !p.is_online).length;
+  }, [properties]);
 
   const onlinePropertiesCount = properties.length - offlinePropertiesCount;
 

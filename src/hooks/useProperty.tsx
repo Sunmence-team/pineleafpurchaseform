@@ -1,35 +1,37 @@
-import { useQuery, keepPreviousData } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   fetchPropertiesService,
   getPropertyDetails,
+  updatePropertyStatus,
   type FetchPropertiesParams,
+  type UpdatePropertyStatusData,
 } from "../services/propertyService";
-import { propertyStatus } from "../lib/interfaces";
 
 export const useProperty = (params: FetchPropertiesParams = {}) => {
-  const searchQuery = params.name ?? "";
-  const statusFilter = (params.status !== "all" ? params.status : "") as propertyStatus;
-  const currentPage = params.page ?? 1;
-  const itemsPerPage = params.per_page ?? 10;
-  const sortDirection = params.sort_direction ?? "desc";
+  const queryParams: FetchPropertiesParams = {};
+
+  if (params.name && params.name.trim() !== "") {
+    queryParams.name = params.name.trim();
+  }
+  if (params.is_online && params.is_online !== "all") {
+    queryParams.is_online = params.is_online;
+  }
+  if (params.page !== undefined && params.page !== null) {
+    queryParams.page = params.page;
+  }
+  if (params.per_page !== undefined && params.per_page !== null) {
+    queryParams.per_page = params.per_page;
+  }
+  if (params.sort_direction && params.sort_direction.trim() !== "") {
+    queryParams.sort_direction = params.sort_direction.trim();
+  }
 
   const query = useQuery({
     queryKey: [
       "properties",
-      searchQuery,
-      statusFilter,
-      currentPage,
-      itemsPerPage,
-      sortDirection,
+      queryParams,
     ],
-    queryFn: () => fetchPropertiesService({
-        name: searchQuery,
-        status: statusFilter,
-        page: currentPage,
-        per_page: itemsPerPage,
-        sort_direction: sortDirection,
-    }),
-    // placeholderData: keepPreviousData,
+    queryFn: () => fetchPropertiesService(queryParams),
   });
 
   return query;
@@ -47,3 +49,16 @@ export const usePropertyDetails = (id?: number | string | null) => {
 
   return query;
 };
+
+export const useUpdatePropertyStatus = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (data: UpdatePropertyStatusData) => updatePropertyStatus(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["properties"] });
+    },
+  });
+};
+
+export const useUpdateProprtyStatus = useUpdatePropertyStatus;

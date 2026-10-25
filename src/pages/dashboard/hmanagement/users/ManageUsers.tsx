@@ -138,6 +138,7 @@ const ManageUsers: React.FC = () => {
           onView={(id) =>
             navigate(`/dashboard/manage/users/${id}/view`, {
               state: {
+                from: location.pathname,
                 ...item,
                 listState: {
                   searchQuery,

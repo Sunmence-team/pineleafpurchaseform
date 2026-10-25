@@ -145,6 +145,7 @@ const ManageRefunds: React.FC = () => {
           onView={(id) =>
             navigate(`/dashboard/manage/refunds/${id}/view`, {
               state: {
+                from: location.pathname,
                 refund: item,
                 listState: {
                   searchQuery,

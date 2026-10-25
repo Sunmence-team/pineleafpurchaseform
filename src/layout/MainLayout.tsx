@@ -6,7 +6,7 @@ import TopNav from "../components/navs/TopNav";
 import { HiBars3 } from "react-icons/hi2";
 import { FaXmark } from "react-icons/fa6";
 import Sidebar from "../components/navs/Sidebar";
-import { getPageTitle } from "../lib/routeTitles";
+import { usePageTitle } from "../lib/routeTitles";
 
 type LayoutProps = {
   children?: React.ReactNode;
@@ -15,7 +15,7 @@ type LayoutProps = {
 
 const MainLayout = ({ children, pageName }: LayoutProps) => {
   const location = useLocation();
-  const currentTitle = pageName || getPageTitle(location.pathname);
+  const currentTitle = usePageTitle(pageName);
 
   useEffect(() => {
     document.title = "Pineleaf Forms - " + currentTitle;

@@ -1,6 +1,8 @@
 import React, { useState } from "react";
 import { BsHouses } from "react-icons/bs";
+import { FaEye } from "react-icons/fa";
 import AssignPropertiesModal from "../../../components/modals/AssignPropertiesModal";
+import BarristerEntriesModal from "../../../components/modals/BarristerEntriesModal";
 import ActionCell from "../../../components/ui/ActionCell";
 import { getErrorMessage } from "../../../helpers/api";
 import type { BarristerProp, TableColumnProps } from "../../../lib/interfaces";
@@ -38,8 +40,11 @@ const ManageBarristers: React.FC = () => {
   // const [deleteModal, setDeleteModal] = useState(false);
 
   const [assignModal, setAssignModal] = useState(false);
+  const [entriesModal, setEntriesModal] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
   const [selectedBarrister, setSelectedBarrister] =
+    useState<BarristerProp | null>(null);
+  const [selectedBarristerForEntries, setSelectedBarristerForEntries] =
     useState<BarristerProp | null>(null);
   const [selectedBarristerIds, setSelectedBarristerIds] = useState<
     Array<number | string>
@@ -144,6 +149,14 @@ const ManageBarristers: React.FC = () => {
           }}
           otherActions={[
             {
+              name: "View Entries",
+              icon: <FaEye className="text-primary size-3" />,
+              action: () => {
+                setSelectedBarristerForEntries(item);
+                setEntriesModal(true);
+              },
+            },
+            {
               name: "Assign Properties",
               icon: <BsHouses className="text-primary size-3" />,
               action: () => {
@@ -153,11 +166,6 @@ const ManageBarristers: React.FC = () => {
               },
             },
           ]}
-          // onDelete={() => {
-          //   setDeleteModal(true);
-          //   setSelectedBarrister(item);
-          //   setDeleteTargetIds(item.id ? [item.id] : []);
-          // }}
         />
       ),
     },
@@ -229,6 +237,16 @@ const ManageBarristers: React.FC = () => {
           onSuccess={() => {
             setAssignmentVersion((v) => v + 1);
             refetch();
+          }}
+        />
+      )}
+
+      {entriesModal && selectedBarristerForEntries && (
+        <BarristerEntriesModal
+          barrister={selectedBarristerForEntries}
+          onClose={() => {
+            setEntriesModal(false);
+            setSelectedBarristerForEntries(null);
           }}
         />
       )}

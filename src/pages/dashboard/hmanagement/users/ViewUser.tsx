@@ -4,7 +4,6 @@ import { FaArrowLeft } from "react-icons/fa";
 import { toast } from "sonner";
 import { getErrorMessage } from "../../../../helpers/api";
 import { FaDownload } from "react-icons/fa6";
-import Modal from "../../../../components/modals/Modal";
 import { useFormik } from "formik";
 import * as Yup from "yup";
 import {
@@ -13,6 +12,7 @@ import {
 } from "../../../../helpers/formatterUtility";
 import FormattedNumberInput from "../../../../components/FormattedNumberInput";
 import { useUserDetail, useVerifyUser } from "../../../../hooks/useUsers";
+import Modal from "../../../../components/modals/Modal";
 
 const HM_STORAGE_API_URL = import.meta.env.VITE_HM_STORAGE_BASE_URL;
 
@@ -20,6 +20,9 @@ const ViewUser: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const location = useLocation();
+  const fromPath =
+    (location.state as { from?: string } | null)?.from ||
+    "/dashboard/manage/users";
   const [openVerificationModal, setOpenVerificationModal] = useState(false);
 
   // TanStack Query for user details
@@ -121,7 +124,7 @@ const ViewUser: React.FC = () => {
         <div className="flex items-center gap-4">
           <button
             onClick={() =>
-              navigate("/dashboard/manage/users", {
+              navigate(fromPath, {
                 state: location.state?.listState
                   ? { listState: location.state.listState }
                   : undefined,
@@ -164,7 +167,7 @@ const ViewUser: React.FC = () => {
           <h3 className="text-lg font-bold text-gray-900 border-l-4 border-primary pl-3 mb-6">
             Personal Information
           </h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 md:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <DetailItem label="First Name" value={user.firstname} />
             <DetailItem label="Last Name" value={user.lastname} />
             <DetailItem label="Email" value={user.email} />
@@ -186,7 +189,7 @@ const ViewUser: React.FC = () => {
           <h3 className="text-lg font-bold text-gray-900 border-l-4 border-primary pl-3 mb-6">
             Address Details
           </h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 md:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <DetailItem label="Address" value={user.address} />
             <DetailItem label="Address 2" value={user.address2} />
             <DetailItem label="Country" value={user.country} />
@@ -201,7 +204,7 @@ const ViewUser: React.FC = () => {
           <h3 className="text-lg font-bold text-gray-900 border-l-4 border-primary pl-3 mb-6">
             Next of Kin
           </h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 md:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <DetailItem label="Name" value={user.next_of_kin_name} />
             <DetailItem label="Phone" value={user.next_of_kin_phone} />
             <DetailItem label="Email" value={user.next_of_kin_email} />
@@ -218,7 +221,7 @@ const ViewUser: React.FC = () => {
           <h3 className="text-lg font-bold text-gray-900 border-l-4 border-primary pl-3 mb-6">
             Professional Information
           </h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 md:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <DetailItem label="Job Type" value={user.job_type} />
             <DetailItem
               label="Declared Monthly Revenue"

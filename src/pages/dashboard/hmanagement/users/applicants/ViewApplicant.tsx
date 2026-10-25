@@ -22,6 +22,9 @@ const ViewApplicant: React.FC = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
+  const fromPath =
+    (location.state as { from?: string } | null)?.from ||
+    "/dashboard/manage/applicants";
   const [paymentActionNote, setPaymentActionNote] = useState("");
 
   const {
@@ -47,7 +50,7 @@ const ViewApplicant: React.FC = () => {
         </p>
         <button
           onClick={() =>
-            navigate("/dashboard/manage/applicants", {
+            navigate(fromPath, {
               state: location.state?.listState
                 ? { listState: location.state.listState }
                 : undefined,
@@ -123,7 +126,7 @@ const ViewApplicant: React.FC = () => {
         <div className="flex items-center gap-4">
           <button
             onClick={() =>
-              navigate("/dashboard/manage/applicants", {
+              navigate(fromPath, {
                 state: location.state?.listState
                   ? { listState: location.state.listState }
                   : undefined,

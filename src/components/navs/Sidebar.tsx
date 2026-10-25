@@ -3,7 +3,7 @@ import { NavLink } from "react-router-dom";
 import { useLocation } from "react-router-dom";
 import { FiChevronDown, FiLogOut } from "react-icons/fi";
 import { MdSettings } from "react-icons/md";
-import { navItems } from "../../lib/navItems";
+import { useNavItems } from "../../lib/navItems";
 import Modal from "../modals/Modal";
 import { useUser } from "../../hooks/useUser";
 import assets from "../../assets/assets";
@@ -17,6 +17,7 @@ const Sidebar = ({
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({});
   const { role, logout } = useUser();
   const location = useLocation();
+  const navItems = useNavItems();
 
   const canAccess = (roles: string[]) =>
     roles.map((r) => r.toLowerCase()).includes(role?.toLowerCase() ?? "");

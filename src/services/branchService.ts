@@ -14,7 +14,7 @@ export const fetchBranchesService = async (
     queryParams.search = params.search.trim();
   }
 
-  const response = await api.get("/branches/all", {
+  const response = await api.get("/branches", {
     params: queryParams,
     signal: params?.signal,
   });

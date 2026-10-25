@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import type { IconType } from "react-icons";
 import { RxDashboard } from "react-icons/rx";
 import {
@@ -9,8 +10,10 @@ import {
   BsFileEarmarkPdf,
   BsJournalText,
   BsJournalMedical,
+  BsJournalCheck,
 } from "react-icons/bs";
-import { branchOptions } from "./branchList";
+import { useBranches } from "../hooks/useBranches";
+import type { BranchItem } from "./interfaces";
 
 export interface NavItem {
   name: string;
@@ -20,7 +23,7 @@ export interface NavItem {
   children?: NavItem[];
 }
 
-export const navItems: NavItem[] = [
+export const getNavItems = (branches: BranchItem[] = []): NavItem[] => [
   {
     name: "Dashboard",
     icon: RxDashboard,
@@ -40,21 +43,27 @@ export const navItems: NavItem[] = [
     role: ["admin", "user"],
   },
   {
-    name: "Document Library",
-    icon: BsFileEarmarkPdf,
-    path: "/dashboard/documents",
-    role: ["admin", "user"],
-  },
-  {
     name: "Unassigned Entries",
     icon: BsShieldExclamation,
-    path: "/dashboard/entries/unassigned",
+    path: "/dashboard/records/unassigned",
     role: ["admin", "user"],
   },
   {
     name: "Offline Entries",
     icon: BsCloudSlash,
-    path: "/dashboard/entries/offline",
+    path: "/dashboard/records/offline",
+    role: ["admin", "user"],
+  },
+  {
+    name: "Downloaded Records",
+    icon: BsJournalCheck,
+    path: "/dashboard/records/downloaded",
+    role: ["admin", "user"],
+  },
+  {
+    name: "Document Library",
+    icon: BsFileEarmarkPdf,
+    path: "/dashboard/documents",
     role: ["admin", "user"],
   },
   {
@@ -67,9 +76,9 @@ export const navItems: NavItem[] = [
     name: "Branches",
     icon: BsBuildings,
     role: ["admin", "user"],
-    children: branchOptions.map((branch) => ({
-      name: branch.title,
-      path: `/dashboard/branch/${branch.keyWord}`,
+    children: branches.map((branch) => ({
+      name: branch.name,
+      path: `/dashboard/branch/${branch.id}`,
       role: ["admin", "user"],
     })),
   },
@@ -116,3 +125,10 @@ export const navItems: NavItem[] = [
     ],
   },
 ];
+
+export const useNavItems = (): NavItem[] => {
+  const { data: branches = [] } = useBranches();
+  return useMemo(() => getNavItems(branches), [branches]);
+};
+
+export const navItems: NavItem[] = getNavItems([]);

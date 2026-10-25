@@ -165,8 +165,7 @@ export interface PropertyProp {
   description?: string;
   size?: string;
   created_at?: string;
-  status?: propertyStatus;
-  is_offline?: boolean | number;
+  is_online: boolean;
   barrister_id?: number | string;
   barrister?: BarristerProp;
 }

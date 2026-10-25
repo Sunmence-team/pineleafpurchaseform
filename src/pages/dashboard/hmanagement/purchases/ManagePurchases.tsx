@@ -138,6 +138,7 @@ const ManagePurchases: React.FC = () => {
           onView={(id) =>
             navigate(`/dashboard/manage/purchases/${id}/view`, {
               state: {
+                from: location.pathname,
                 ...item,
                 listState: {
                   searchQuery,

@@ -1,5 +1,5 @@
 import React, { useEffect } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { FaArrowLeft } from "react-icons/fa6";
 import { toast } from "sonner";
 import { getErrorMessage } from "../../../../helpers/api";
@@ -13,6 +13,9 @@ export type PropertyDetail = HouseItem;
 const ViewProperty: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const location = useLocation();
+
+  const fromPath = (location.state as { from?: string } | null)?.from || "/dashboard/manage/properties";
 
   // TanStack Query hook for single house property
   const { data: property, isLoading, error } = useHouse(id);
@@ -39,7 +42,7 @@ const ViewProperty: React.FC = () => {
           Property not found
         </p>
         <button
-          onClick={() => navigate("/dashboard/manage/properties")}
+          onClick={() => navigate(fromPath)}
           className="px-6 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 cursor-pointer"
         >
           Back to Properties
@@ -65,7 +68,7 @@ const ViewProperty: React.FC = () => {
       <div className="flex md:flex-row flex-col items-center justify-between pb-6 mb-8 border-b border-gray-200">
         <div className="flex items-center gap-4">
           <button
-            onClick={() => navigate("/dashboard/manage/properties")}
+            onClick={() => navigate(fromPath)}
             className="p-2 rounded-full bg-gray-50 hover:bg-gray-100 transition-colors cursor-pointer"
           >
             <FaArrowLeft className="text-gray-600" />

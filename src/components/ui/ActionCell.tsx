@@ -100,7 +100,7 @@ const ActionCell: React.FC<ActionCellProps> = ({
         <FloatingPortal>
           <div
             ref={setFloatingRef}
-            style={{ ...floatingStyles, zIndex: 9999 }}
+            style={{ ...floatingStyles, zIndex: 999 }}
             className="flex flex-col bg-white rounded-lg shadow-xl border border-primary/10 min-w-28 text-[10px]"
           >
             {(canView || onView) && (

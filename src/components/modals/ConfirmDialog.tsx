@@ -1,7 +1,18 @@
 import React from "react";
 import Modal from "./Modal";
 
-const ConfirmDialog = ({
+export interface ConfirmDialogProps {
+  isOpen: boolean;
+  title?: string;
+  message?: React.ReactNode;
+  confirmText?: string;
+  cancelText?: string;
+  onCancel: () => void;
+  onConfirm: () => void;
+  isLoading?: boolean;
+}
+
+const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
   isOpen,
   title = "Are you sure?",
   message = "This action cannot be undone.",
