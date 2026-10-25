@@ -28,7 +28,7 @@ const ViewClient = () => {
         }
 
         const response = await axios.get(
-          `${API_URL}/api/client/${id}`,
+          `${API_URL}/api/clients/${id}`,
           {
             headers: {
               Authorization: `Bearer ${token}`,
