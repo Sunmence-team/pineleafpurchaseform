@@ -1,19 +1,22 @@
 import React, { useEffect, useState } from "react";
-import { FaSearch } from "react-icons/fa";
+import { FaSearch, FaDownload } from "react-icons/fa";
 import "react-datepicker/dist/react-datepicker.css";
 import { useNavigate, useLocation, useParams } from "react-router-dom";
 import ReusableTable from "../../utilities/ReusableTable";
 import ActionCell from "../../components/ui/ActionCell";
+import ActionButton from "../../components/ui/ActionButton";
 import type { ClientEntry, TableColumnProps } from "../../lib/interfaces";
 import { formatISODateToCustom } from "../../helpers/formatterUtility";
-import { TfiReload } from "react-icons/tfi";
-import { FaBars, FaX } from "react-icons/fa6";
 import { useClientEntries } from "../../hooks/useClientEntries";
 import { useBranches } from "../../hooks/useBranches";
+import { useExportDownload } from "../../hooks/useDownload";
+import DownloadFormatModal, {
+  type DownloadFormat,
+} from "../../components/modals/DownloadFormatModal";
 import { toast } from "sonner";
 import { getErrorMessage } from "../../helpers/api";
 import { HiOutlineUsers } from "react-icons/hi2";
-import { BsClockHistory } from "react-icons/bs";
+import { BsClockHistory, BsJournalCheck } from "react-icons/bs";
 import { LuBuilding2 } from "react-icons/lu";
 import OverviewCards from "../../components/cards/OverviewCards";
 
@@ -28,6 +31,15 @@ const BranchBreakDown: React.FC = () => {
   const [debouncedSearchQuery, setDebouncedSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
+
+  // Download states
+  const [downloadModalOpen, setDownloadModalOpen] = useState(false);
+  const [selectedScope, setSelectedScope] = useState<"last_memory" | "all" | null>(
+    null,
+  );
+
+  const { mutate: exportDownload, isPending: isDownloading } =
+    useExportDownload();
 
   useEffect(() => {
     const handler = setTimeout(() => {
@@ -52,6 +64,38 @@ const BranchBreakDown: React.FC = () => {
   const clientEntries: ClientEntry[] = responseData?.data?.data || [];
   const totalItems = responseData?.data?.total || 0;
   const totalPages = responseData?.data?.last_page || 1;
+
+  const handleDownloadScopeSelect = (scope: "last_memory" | "all") => {
+    setSelectedScope(scope);
+    setDownloadModalOpen(true);
+  };
+
+  const handleExecuteDownload = (format: DownloadFormat) => {
+    if (!branch || !selectedScope) return;
+
+    exportDownload(
+      {
+        type: "by_branch",
+        branch,
+        scope: selectedScope,
+        format,
+      },
+      {
+        onSuccess: (data) => {
+          toast.success(
+            `Export initiated (${format.toUpperCase()})${
+              data?.records_count !== undefined ? `: ${data.records_count} records` : ""
+            }`,
+          );
+          setDownloadModalOpen(false);
+          setSelectedScope(null);
+        },
+        onError: (err) => {
+          toast.error(getErrorMessage(err, "Failed to download export."));
+        },
+      },
+    );
+  };
 
   useEffect(() => {
     if (error) {
@@ -145,11 +189,26 @@ const BranchBreakDown: React.FC = () => {
             Manage and check all applications submitted under this branch.
           </p>
         </div>
-        {/* <ActionButton
-          text="Check new records"
-          icon={<FaPlus />}
-          action={() => navigate("/dashboar/")}
-        /> */}
+        <div>
+          <ActionButton
+            text="Download"
+            icon={<FaDownload className="size-3.5" />}
+            loading={isDownloading}
+            loadingText="Exporting..."
+            items={[
+              {
+                label: "Continue from last download",
+                icon: <BsClockHistory className="size-3.5 text-primary" />,
+                action: () => handleDownloadScopeSelect("last_memory"),
+              },
+              {
+                label: "Download from all time",
+                icon: <BsJournalCheck className="size-3.5 text-primary" />,
+                action: () => handleDownloadScopeSelect("all"),
+              },
+            ]}
+          />
+        </div>
       </div>
 
       {/* Top Stat Overview Cards */}
@@ -200,6 +259,29 @@ const BranchBreakDown: React.FC = () => {
         setCurrentPage={setCurrentPage}
         setItemsPerPage={setItemsPerPage}
         getRowId={(item) => item.id}
+      />
+
+      {/* Format Selection Modal (CSV or PDF) */}
+      <DownloadFormatModal
+        isOpen={downloadModalOpen}
+        title={
+          selectedScope === "last_memory"
+            ? `Continue from Last Download (${currentBranch?.name || "Branch"})`
+            : `Download From All Time (${currentBranch?.name || "Branch"})`
+        }
+        subtitle={
+          selectedScope === "last_memory"
+            ? "Export only new records submitted for this branch since your previous download."
+            : "Export all historical entries submitted for this branch."
+        }
+        isLoading={isDownloading}
+        onClose={() => {
+          if (!isDownloading) {
+            setDownloadModalOpen(false);
+            setSelectedScope(null);
+          }
+        }}
+        onSelectFormat={handleExecuteDownload}
       />
     </div>
   );

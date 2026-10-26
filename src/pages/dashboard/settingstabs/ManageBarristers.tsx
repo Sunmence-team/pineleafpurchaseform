@@ -119,11 +119,11 @@ const ManageBarristers: React.FC = () => {
         </span>
       ),
     },
-    {
-      label: "Phone Number",
-      key: "phone_number",
-      render: (row) => <span>{row.phone_number || row.phone || "-"}</span>,
-    },
+    // {
+    //   label: "Phone Number",
+    //   key: "phone_number",
+    //   render: (row) => <span>{row.phone_number || row.phone || "-"}</span>,
+    // },
     {
       label: "Assigned Properties",
       key: "assigned_properties",

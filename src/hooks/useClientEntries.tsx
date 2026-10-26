@@ -6,6 +6,7 @@ import {
   getOldEntryDetailsService,
   deleteApplicationService,
   type FetchClientsParams,
+  fetchDownloadedApplicationsService,
 } from "../services/clientEntriesService";
 import type { ClientEntry } from "../lib/interfaces";
 
@@ -37,6 +38,31 @@ export const useClientEntries = (
         property_id,
         is_online,
       }),
+    placeholderData: keepPreviousData,
+  });
+};
+
+export const useDownloadedClientEntries = (
+  params: FetchClientsParams = {},
+) => {
+  const page = params.page ?? 1;
+  const per_page = params.per_page ?? 10;
+  const search = params.search ?? "";
+  const branch_id = params.branch_id;
+  const property_id = params.property_id;
+
+  return useQuery({
+    queryKey: [
+      "downloaded-client-entries",
+      { page, per_page, search, branch_id, property_id },
+    ],
+    queryFn: () => fetchDownloadedApplicationsService({
+      page,
+      per_page,
+      search,
+      branch_id,
+      property_id,
+    }),
     placeholderData: keepPreviousData,
   });
 };

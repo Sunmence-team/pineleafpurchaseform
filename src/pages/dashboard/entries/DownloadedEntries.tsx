@@ -5,10 +5,14 @@ import { useNavigate, useLocation } from "react-router-dom";
 import ReusableTable from "../../../utilities/ReusableTable";
 import ActionCell from "../../../components/ui/ActionCell";
 import type { ClientEntry, TableColumnProps } from "../../../lib/interfaces";
-import { formatISODateToCustom } from "../../../helpers/formatterUtility";
-import { useClientEntries } from "../../../hooks/useClientEntries";
+import {
+  formatISODateToCustom,
+  formatterUtility,
+} from "../../../helpers/formatterUtility";
+import { useDownloadedClientEntries } from "../../../hooks/useClientEntries";
 import { toast } from "sonner";
 import { getErrorMessage } from "../../../helpers/api";
+import OverviewCards from "../../../components/cards/OverviewCards";
 
 const DownloadedEntries: React.FC = () => {
   const navigate = useNavigate();
@@ -31,16 +35,37 @@ const DownloadedEntries: React.FC = () => {
     data: responseData,
     isLoading,
     error,
-  } = useClientEntries({
+  } = useDownloadedClientEntries({
     page: currentPage,
     per_page: itemsPerPage,
     search: debouncedSearchQuery,
-    barrister: true,
   });
 
   const clientEntries: ClientEntry[] = responseData?.data?.data || [];
   const totalItems = responseData?.data?.total || 0;
   const totalPages = responseData?.data?.last_page || 1;
+  const stats = responseData.summary;
+
+  const downloadStats = [
+    {
+      title: "Total Records Downloaded",
+      value: formatterUtility(Number(stats.total_records_downloaded), true),
+      icon: null,
+      subtitle: "",
+    },
+    {
+      title: "Total Download Count",
+      value: formatterUtility(Number(stats.total_downloads), true),
+      icon: null,
+      subtitle: "",
+    },
+    {
+      title: "Last Download",
+      value: stats.last_download ? formatISODateToCustom(stats.last_download ?? "") : "-",
+      icon: null,
+      subtitle: "",
+    },
+  ];
 
   useEffect(() => {
     if (error) {
@@ -123,14 +148,26 @@ const DownloadedEntries: React.FC = () => {
   ];
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col">
       <div>
         <h2 className="text-lg font-semibold">Downloaded Form Entries</h2>
         <p className="text-sm text-tableHeading">
           View all downloaded form entries here.
         </p>
       </div>
-      <div className="max-w-md w-full bg-secondary border border-primary/10 rounded-lg relative flex gap-2 items-center h-[45px] px-4">
+
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        {downloadStats.map((stat) => (
+          <OverviewCards
+            title={stat.title}
+            value={stat.value}
+            icon={stat.icon}
+            subtitle={stat.subtitle}
+          />
+        ))}
+      </div>
+
+      <div className="my-6 max-w-md w-full bg-secondary border border-primary/10 rounded-lg relative flex gap-2 items-center h-[45px] px-4">
         <FaSearch className="w-4 h-4 md:w-5 md:h-5 opacity-50" />
         <input
           type="text"

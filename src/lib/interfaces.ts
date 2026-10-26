@@ -148,8 +148,6 @@ export interface BulkSelectionBarProps {
   onCancel: () => void;
 }
 
-export type propertyStatus = "online" | "offline" | "all";
-
 export interface PropertyProp {
   id?: string | number;
   name: string;
@@ -168,6 +166,10 @@ export interface PropertyProp {
   is_online: boolean;
   barrister_id?: number | string;
   barrister?: BarristerProp;
+  stats: {
+    no_of_online: number;
+    no_of_offline: number;
+  };
 }
 
 export interface ApplicantUser {

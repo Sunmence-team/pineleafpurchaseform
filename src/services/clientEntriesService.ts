@@ -23,6 +23,14 @@ export interface ClientsResponse {
   };
 }
 
+export interface DownloadedEntriesResponse extends ClientsResponse {
+  summary: {
+    total_downloads: number;
+    total_records_downloaded: number;
+    last_download: null;
+  };
+}
+
 export const fetchApplicationsService = async (
   params: FetchClientsParams = {},
 ): Promise<ClientsResponse> => {
@@ -56,6 +64,37 @@ export const fetchApplicationsService = async (
   if (params.is_online !== undefined) queryParams.is_online = params.is_online;
 
   const response = await api.get("/applications", {
+    params: queryParams,
+    signal: params.signal,
+  });
+
+  return response.data;
+};
+
+export const fetchDownloadedApplicationsService = async (
+  params: FetchClientsParams = {},
+): Promise<DownloadedEntriesResponse> => {
+  const queryParams: Record<string, any> = {};
+  if (params.page !== undefined) queryParams.page = params.page;
+  if (params.per_page !== undefined) queryParams.per_page = params.per_page;
+  if (params.search && params.search.trim() !== "")
+    queryParams.search = params.search;
+  if (
+    params.branch_id !== undefined &&
+    params.branch_id !== null &&
+    params.branch_id !== ""
+  ) {
+    queryParams.branch_id = params.branch_id;
+  }
+  if (
+    params.property_id !== undefined &&
+    params.property_id !== null &&
+    params.property_id !== ""
+  ) {
+    queryParams.property_id = params.property_id;
+  }
+
+  const response = await api.get("/downloads/history", {
     params: queryParams,
     signal: params.signal,
   });
@@ -112,5 +151,3 @@ export const deleteApplicationService = async (
   const response = await api.delete(`/applications/${id}`);
   return response.data;
 };
-
-

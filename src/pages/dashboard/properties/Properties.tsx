@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect } from "react";
 import { BiSearch } from "react-icons/bi";
 import { BsBuildings, BsCloudCheck, BsCloudSlash } from "react-icons/bs";
 import { toast } from "sonner";
@@ -15,12 +15,10 @@ import {
   useProperty,
   useUpdatePropertyStatus,
 } from "../../../hooks/useProperty";
-import type {
-  PropertyProp,
-  TableColumnProps,
-} from "../../../lib/interfaces";
+import type { PropertyProp, TableColumnProps } from "../../../lib/interfaces";
 import ReusableTable from "../../../utilities/ReusableTable";
 import StatusCard from "../../../components/cards/StatusCard";
+import { FaEye } from "react-icons/fa6";
 
 const Properties: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -36,11 +34,13 @@ const Properties: React.FC = () => {
 
   const [onlineFilter, setOnlineFilter] = useState<string>("all");
   const [entriesModalOpen, setEntriesModalOpen] = useState(false);
-  const [selectedPropertyForEntries, setSelectedPropertyForEntries] = useState<PropertyProp | null>(null);
+  const [selectedPropertyForEntries, setSelectedPropertyForEntries] =
+    useState<PropertyProp | null>(null);
 
-  const { mutateAsync: updateStatus, isPending: isTogglingStatus } = useUpdatePropertyStatus();
+  const { mutateAsync: updateStatus, isPending: isTogglingStatus } =
+    useUpdatePropertyStatus();
 
-    useEffect(() => {
+  useEffect(() => {
     const timer = setTimeout(() => {
       setDebouncedSearch(searchTerm);
       setCurrentPage(1);
@@ -129,6 +129,19 @@ const Properties: React.FC = () => {
       ),
     },
     {
+      label: "Record Count",
+      key: "stats.online+stats.offline",
+      render: (row) => {
+        const count =
+          Number(row.stats.no_of_online) + Number(row.stats.no_of_offline);
+        return (
+          <span className="font-medium text-gray-900">
+            {formatterUtility(count, true)} Record{count > 1 ? "s" : ""}
+          </span>
+        );
+      },
+    },
+    {
       label: "Status",
       key: "status",
       render: (row) => {
@@ -152,7 +165,7 @@ const Properties: React.FC = () => {
             otherActions={[
               {
                 name: "View Entries",
-                icon: <BsBuildings className="text-primary size-4" />,
+                icon: <FaEye className="text-primary size-4" />,
                 action: () => {
                   setSelectedPropertyForEntries(row);
                   setEntriesModalOpen(true);

@@ -1,15 +1,20 @@
-import React, { useRef } from "react";
+import React from "react";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { FaDownload, FaArrowLeft } from "react-icons/fa";
-import { format } from "date-fns";
-import { useReactToPrint } from "react-to-print";
 import assets from "../../../assets/assets";
-import { formatterUtility } from "../../../helpers/formatterUtility";
+import {
+  formatISODateToCustom,
+  formatISODateToYYYYMMDD,
+  formatterUtility,
+} from "../../../helpers/formatterUtility";
 import EntryNotesSection from "../../../components/EntryNotesSection";
 import {
   useEntryDetails,
   useOldEntryDetails,
 } from "../../../hooks/useClientEntries";
+import { useExportDownload } from "../../../hooks/useDownload";
+import { toast } from "sonner";
+import { getErrorMessage } from "../../../helpers/api";
 
 interface ViewFormEntryProps {
   endpointType?: "applications" | "clients";
@@ -18,7 +23,6 @@ interface ViewFormEntryProps {
 const ViewFormEntry: React.FC<ViewFormEntryProps> = ({ endpointType }) => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const componentRef = useRef<HTMLDivElement | null>(null);
   const location = useLocation();
   const fromPath = (location.state as { from?: string } | null)?.from;
 
@@ -42,6 +46,26 @@ const ViewFormEntry: React.FC<ViewFormEntryProps> = ({ endpointType }) => {
 
   const entryQuery = useEntryDetails(!isOldRecord ? id : null);
   const oldEntryQuery = useOldEntryDetails(isOldRecord ? id : null);
+  const { mutate: exportDownload, isPending: isDownloading } =
+    useExportDownload();
+
+  const handleDownload = () => {
+    if (!id) return;
+    exportDownload(
+      {
+        type: "single",
+        application_id: id,
+      },
+      {
+        onSuccess: () => {
+          toast.success("Entry exported successfully!");
+        },
+        onError: (err) => {
+          toast.error(getErrorMessage(err, "Failed to export entry."));
+        },
+      },
+    );
+  };
 
   const {
     data: responseData,
@@ -50,45 +74,6 @@ const ViewFormEntry: React.FC<ViewFormEntryProps> = ({ endpointType }) => {
   } = isOldRecord ? oldEntryQuery : entryQuery;
 
   const client = responseData?.data;
-
-  const handlePrint = useReactToPrint({
-    contentRef: componentRef,
-    documentTitle: client
-      ? `${client.client_name || `${client.first_name || ""} ${client.last_name || ""}`.trim() || "Client"}_details`
-      : "Client_Details",
-    preserveAfterPrint: false,
-    pageStyle: `
-      @page { size: A4; margin: 15mm; }
-      @media print {
-        body {
-          -webkit-print-color-adjust: exact;
-          print-color-adjust: exact;
-          font-family: 'Inter', sans-serif;
-        }
-        .no-print { display: none !important; }
-        .print-section { 
-          padding: 16px; 
-          background: #fff; 
-          border: 1px solid #e5e7eb; 
-        }
-        .print-section h3 {
-          color: #1f2937;
-          font-size: 16px;
-          font-weight: 600;
-          margin-bottom: 10px;
-        }
-        .print-section p {
-          font-size: 12px;
-          color: #374151;
-          line-height: 1.5;
-        }
-        .print-section img {
-          max-width: 100px;
-          height: auto;
-        }
-      }
-    `,
-  });
 
   if (isLoading) {
     return (
@@ -144,19 +129,17 @@ const ViewFormEntry: React.FC<ViewFormEntryProps> = ({ endpointType }) => {
             </h1>
           </div>
           <button
-            onClick={handlePrint}
-            className="flex items-center justify-center px-4 py-2 md:px-5 md:py-3 bg-primary text-white font-semibold rounded-lg hover:bg-primary transition-colors duration-200 w-full md:w-auto"
+            onClick={handleDownload}
+            disabled={isDownloading}
+            className="flex items-center justify-center px-4 py-2 md:px-5 md:py-3 bg-primary text-white font-semibold rounded-lg hover:bg-primary/90 transition-colors duration-200 w-full md:w-auto disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
           >
             <FaDownload className="mr-2 text-sm md:text-base" />
-            Download PDF
+            {isDownloading ? "Downloading..." : "Download PDF"}
           </button>
         </div>
 
         {/* All Client Info */}
-        <div
-          ref={componentRef}
-          className="space-y-6 md:space-y-10 print-section"
-        >
+        <div className="space-y-6 md:space-y-10 print-section">
           {/* Profile */}
           <div className="flex flex-col md:flex-row gap-4 md:gap-8 items-start md:items-center border-b border-gray-200 pb-4 md:pb-6">
             {isIndividual ? (
@@ -169,7 +152,7 @@ const ViewFormEntry: React.FC<ViewFormEntryProps> = ({ endpointType }) => {
                   className="w-24 h-24 md:w-32 md:h-32 rounded-xl object-cover border-2 border-gray-100 shadow-sm"
                 />
                 <div className="space-y-2">
-                  <h2 className="text-xl md:text-2xl font-bold text-gray-900">
+                  <h2 className="text-xl capitalize md:text-2xl font-bold text-gray-900">
                     {client.client_name ||
                       `${client.first_name || ""} ${client.last_name || ""}`.trim()}
                   </h2>
@@ -419,7 +402,10 @@ const ViewFormEntry: React.FC<ViewFormEntryProps> = ({ endpointType }) => {
               </p>
               <p className="text-sm md:text-base text-gray-700">
                 <span className="font-medium">Total Amount:</span>{" "}
-                {formatterUtility(Number(client.land_price || 0) * Number(client.number_of_plot || 0))}
+                {formatterUtility(
+                  Number(client.land_price || 0) *
+                    Number(client.number_of_plot || 0),
+                )}
               </p>
               <p className="text-sm md:text-base text-gray-700">
                 <span className="font-medium">Plot Number:</span>{" "}
@@ -446,7 +432,7 @@ const ViewFormEntry: React.FC<ViewFormEntryProps> = ({ endpointType }) => {
                 <p className="text-sm md:text-base text-gray-700">
                   <span className="font-medium">Date:</span>{" "}
                   {client.declaration_date
-                    ? format(new Date(client.declaration_date), "dd/MM/yyyy")
+                    ? formatISODateToYYYYMMDD(client.declaration_date)
                     : "N/A"}
                 </p>
               </div>
