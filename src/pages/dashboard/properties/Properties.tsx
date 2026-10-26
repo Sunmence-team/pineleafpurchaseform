@@ -223,13 +223,13 @@ const Properties: React.FC = () => {
       {/* Search Bar & Filter */}
       <div className="flex md:flex-row flex-col gap-4">
         <div className="max-w-md w-full bg-secondary border border-primary/10 rounded-lg relative flex gap-2 items-center h-12 px-4">
-          <BiSearch className="w-4 h-4 md:w-5 md:h-5 opacity-50" />
+          <BiSearch className="w-4 h-4 opacity-50" />
           <input
             type="text"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             placeholder="Search properties by name..."
-            className="w-full h-full focus:outline-none text-sm"
+            className="w-full h-full focus:outline-none text-xs"
           />
         </div>
         <select
@@ -238,7 +238,7 @@ const Properties: React.FC = () => {
             setOnlineFilter(e.target.value);
             setCurrentPage(1);
           }}
-          className="bg-secondary border border-primary/10 rounded-lg h-12 px-4 outline-0"
+          className="bg-secondary border text-xs border-primary/10 rounded-lg h-12 px-4 outline-0"
         >
           {[
             { label: "All", value: "all" },

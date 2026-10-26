@@ -64,6 +64,7 @@ export interface StatusCardProps {
   type: "success" | "pending" | "failed" | string;
   statusText: string | number;
   icon?: IconType;
+  optStyles?: string;
 }
 
 export interface UserProps {
@@ -122,6 +123,7 @@ export interface ActionButtonProps {
   disabled?: boolean;
   buttonStyle?: string;
   overideBg?: boolean;
+  type?: "button" | "submit";
 }
 
 export interface BarristerProp {
@@ -389,4 +391,75 @@ export interface ClientEntry {
   occupation?: string;
   referral_date?: string;
   referral_email?: string;
+  notes?: string[];
+}
+
+export type ExportScope = "last_memory" | "all";
+
+export type ExportFormats = "pdf" | "zip" | "excel" | "csv";
+
+export type ExportDownloadType =
+  | "single"
+  | "by_property"
+  | "by_branch"
+  | "by_barrister";
+
+export interface DocumentLibraryFiltersApplied {
+  type?: string;
+  application_id?: string;
+  branch?: string | number;
+  property?: string | number;
+  barrister_id?: string | number;
+}
+
+export interface DocumentLibraryDownloadedAt {
+  datetime?: string;
+  date?: string;
+  time?: string;
+  human?: string;
+}
+
+export interface DocumentLibrarySummary {
+  total_documents: number;
+  total_records_represented: number;
+  format_breakdown: {
+    pdf?: number;
+    zip?: number;
+    excel?: number;
+    csv?: number;
+  };
+  feedback_summary: {
+    filled_count: number;
+    pending_count: number;
+    total_worked_on: number;
+    total_not_worked_on: number;
+  };
+}
+
+export interface DocumentItemFeedback {
+  is_filled: boolean;
+  barrister?: string | null;
+  worked_on_count: number;
+  not_worked_on_count: number;
+  reason?: string | null;
+  total_count: number;
+  submitted_at?: string | null;
+  submitted_by?: string | null;
+}
+
+export interface LibraryDocumentItem {
+  id: number;
+  title: string;
+  file_name: string;
+  download_url: string;
+  file_type: ExportFormats;
+  file_exists?: boolean;
+  records_count: number;
+  download_type?: string;
+  scope?: ExportScope;
+  filters_applied?: DocumentLibraryFiltersApplied;
+  downloaded_by: string;
+  downloaded_at: DocumentLibraryDownloadedAt;
+  is_feedback_filled: boolean;
+  feedback: DocumentItemFeedback;
 }

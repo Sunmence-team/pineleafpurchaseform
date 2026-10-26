@@ -151,3 +151,18 @@ export const deleteApplicationService = async (
   const response = await api.delete(`/applications/${id}`);
   return response.data;
 };
+
+export interface AddApplicationNotePayload {
+  note: string;
+}
+
+/**
+ * Add note to an application (POST /applications/:id/note)
+ */
+export const addApplicationNoteService = async (
+  applicationId: number | string,
+  payload: AddApplicationNotePayload,
+): Promise<{ success?: boolean; message?: string; data?: any }> => {
+  const response = await api.post(`/applications/${applicationId}/note`, payload);
+  return response.data;
+};

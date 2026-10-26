@@ -96,6 +96,9 @@ const SearchableInput = <T extends object | string = any>({
     [displayKey, getDisplayLabel],
   );
 
+  const getItemDisplayTextRef = useRef(getItemDisplayText);
+  getItemDisplayTextRef.current = getItemDisplayText;
+
   // Sync initialValue when it changes
   if (initialValue !== prevInitialValue) {
     setPrevInitialValue(initialValue);
@@ -163,7 +166,9 @@ const SearchableInput = <T extends object | string = any>({
           const data = await fetcherRef.current(query, controller.signal);
           if (!controller.signal.aborted) {
             setResults(Array.isArray(data) ? data : []);
-            setShowDropdown(true);
+            if (isFocusedRef.current) {
+              setShowDropdown(true);
+            }
           }
         } catch (err: unknown) {
           if (
@@ -191,11 +196,13 @@ const SearchableInput = <T extends object | string = any>({
         } else {
           const q = trimmedQuery.toLowerCase();
           const filtered = options.filter((item) =>
-            getItemDisplayText(item).toLowerCase().includes(q),
+            getItemDisplayTextRef.current(item).toLowerCase().includes(q),
           );
           setResults(filtered);
         }
-        setShowDropdown(true);
+        if (isFocusedRef.current) {
+          setShowDropdown(true);
+        }
         return;
       }
 
@@ -241,7 +248,9 @@ const SearchableInput = <T extends object | string = any>({
 
           if (Array.isArray(data)) {
             setResults(data as T[]);
-            setShowDropdown(true);
+            if (isFocusedRef.current) {
+              setShowDropdown(true);
+            }
           } else {
             setResults([]);
             console.warn("SearchableInput: API response is not an array", data);
@@ -281,7 +290,6 @@ const SearchableInput = <T extends object | string = any>({
     debounceMs,
     disabled,
     readOnly,
-    getItemDisplayText,
   ]);
 
   // Keep highlighted item in view during keyboard navigation
@@ -386,12 +394,16 @@ const SearchableInput = <T extends object | string = any>({
             setShowDropdown(true);
           }}
           onFocus={() => {
+            isFocusedRef.current = true;
             if (!disabled && !readOnly) {
               if (options && fetchOnEmpty && results.length === 0) {
                 setResults(options);
               }
               setShowDropdown(true);
             }
+          }}
+          onBlur={() => {
+            isFocusedRef.current = false;
           }}
           onKeyDown={handleKeyDown}
         />

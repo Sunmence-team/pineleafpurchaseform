@@ -5,6 +5,7 @@ import {
   getEntryDetailsService,
   getOldEntryDetailsService,
   deleteApplicationService,
+  addApplicationNoteService,
   type FetchClientsParams,
   fetchDownloadedApplicationsService,
 } from "../services/clientEntriesService";
@@ -114,6 +115,28 @@ export const useDeleteApplication = () => {
     mutationFn: (id: number | string) => deleteApplicationService(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["client-entries"] });
+    },
+  });
+};
+
+export const useAddApplicationNote = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      applicationId,
+      note,
+    }: {
+      applicationId: number | string;
+      note: string;
+    }) => addApplicationNoteService(applicationId, { note }),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({
+        queryKey: ["entry-details", String(variables.applicationId)],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["old-entry-details", String(variables.applicationId)],
+      });
     },
   });
 };

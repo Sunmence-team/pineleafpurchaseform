@@ -9,7 +9,6 @@ import {
   BsCloudSlash,
   BsArrowRight,
   BsBuildings,
-  BsClockHistory,
   BsDownload,
   BsPerson,
   BsPeople,
@@ -26,14 +25,14 @@ const Dashboard: React.FC = () => {
   const stats = statsResponse?.data;
 
   return (
-    <div className="space-y-6">
+    <div>
       {/* Welcome Banner */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-2 border-b border-primary/10">
         <div>
-          <h1 className="text-xl md:text-2xl font-bold text-gray-900">
+          <h1 className="text-lg md:text-xl font-bold text-gray-900">
             Welcome back, {user?.first_name || user?.username || "Admin"}
           </h1>
-          <p className="text-sm text-gray-500">
+          <p className="text-xs text-gray-500">
             Here is your live administrative summary across properties,
             applications, branches, and downloads.
           </p>
@@ -41,7 +40,7 @@ const Dashboard: React.FC = () => {
 
         <Link
           to="/dashboard/records"
-          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg bg-primary text-white text-xs font-semibold hover:bg-primary/90 transition shadow-2xs w-max cursor-pointer"
+          className="action-btn inline-flex items-center gap-2 px-4 py-2.5 rounded-lg text-white text-xs font-semibold hover:bg-primary/90 transition shadow-2xs w-max cursor-pointer"
         >
           <span>View All Applications</span>
           <BsArrowRight size={14} />
@@ -55,7 +54,7 @@ const Dashboard: React.FC = () => {
       )}
 
       {/* Top Stats Overview Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-3 gap-3">
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-3 gap-4 my-4">
         <OverviewCards
           title="Total Applications"
           value={isLoading ? "..." : (stats?.applications?.total ?? 0)}

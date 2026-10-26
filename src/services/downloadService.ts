@@ -1,14 +1,5 @@
 import { api } from "../helpers/api";
-
-export type ExportScope = "last_memory" | "all";
-
-export type ExportFormats = "csv" | "pdf";
-
-export type ExportDownloadType =
-  | "single"
-  | "by_property"
-  | "by_branch"
-  | "by_barrister";
+import { ExportFormats, ExportScope } from "../lib/interfaces";
 
 /**
  * Payload definitions according to backend specifications:

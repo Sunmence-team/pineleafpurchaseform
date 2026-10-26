@@ -3,8 +3,9 @@ import { BiSearch } from "react-icons/bi";
 import {
   BsDownload,
   BsFileEarmarkText,
-  BsArchive,
   BsClockHistory,
+  BsCheckCircle,
+  BsChatSquareText,
 } from "react-icons/bs";
 import {
   FaFilePdf,
@@ -17,42 +18,44 @@ import { toast } from "sonner";
 import OverviewCards from "../../../components/cards/OverviewCards";
 import PaginationControls from "../../../utilities/PaginationControls";
 import ConfirmDialog from "../../../components/modals/ConfirmDialog";
+import SubmitFeedbackModal from "../../../components/modals/SubmitFeedbackModal";
 import {
   useDocumentLibrary,
   useDeleteLibraryDocument,
 } from "../../../hooks/useDocumentLibrary";
-import type { LibraryDocumentItem } from "../../../services/documentLibraryService";
 import { getErrorMessage } from "../../../helpers/api";
+import { useUser } from "../../../hooks/useUser";
+import { LibraryDocumentItem } from "../../../lib/interfaces";
+import { formatUnderScores } from "../../../helpers/formatterUtility";
+import ActionButton from "../../../components/ui/ActionButton";
+import StatusCard from "../../../components/cards/StatusCard";
 
+// Backwards compatibility types for legacy modal references
 export interface BatchFeedbackRecord {
-  document_id: string | number;
+  document_id: number | string;
   barrister_name: string;
   total_sent: number;
   signed_count: number;
   unsigned_count: number;
   date_returned: string;
   remarks?: string;
-  updated_at: string;
+  updated_at?: string;
 }
 
 export interface DownloadBatchDocument {
-  id: string | number;
+  id: number | string;
   title: string;
-  filename: string;
-  download_type: string;
-  site_location?: string;
-  branch?: string;
-  total_entries: number;
-  created_at: string;
-  download_url?: string;
+  file_name?: string;
+  total_entries?: number;
   feedback?: BatchFeedbackRecord;
 }
 
-export const getStoredDocuments = (): DownloadBatchDocument[] => [];
 export const saveStoredBatchFeedback = (
-  _docId: string | number,
-  _record: BatchFeedbackRecord,
-) => {};
+  _docId: number | string,
+  _feedback: BatchFeedbackRecord,
+) => {
+  // Legacy stub maintained for compatibility
+};
 
 const getFileFormatVisuals = (fileType: string) => {
   const type = fileType ? fileType.toLowerCase() : "";
@@ -94,14 +97,20 @@ const getFileFormatVisuals = (fileType: string) => {
 };
 
 const DocumentLibrary: React.FC = () => {
+  const { role } = useUser();
   const [searchTerm, setSearchTerm] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [fileTypeFilter, setFileTypeFilter] = useState("all");
   const [downloadTypeFilter, setDownloadTypeFilter] = useState("all");
+  const [feedbackFilter, setFeedbackFilter] = useState("all");
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(12);
   const [documentToDelete, setDocumentToDelete] =
     useState<LibraryDocumentItem | null>(null);
+  const [feedbackModalConfig, setFeedbackModalConfig] = useState<{
+    document: LibraryDocumentItem;
+    mode: "submit" | "view";
+  } | null>(null);
 
   const deleteMutation = useDeleteLibraryDocument();
 
@@ -122,12 +131,17 @@ const DocumentLibrary: React.FC = () => {
     search: debouncedSearch,
     file_type: fileTypeFilter !== "all" ? fileTypeFilter : undefined,
     type: downloadTypeFilter !== "all" ? downloadTypeFilter : undefined,
+    is_feedback_filled: feedbackFilter !== "all" ? feedbackFilter : undefined,
     page: currentPage,
     per_page: itemsPerPage,
   });
 
   const handleConfirmDelete = () => {
     if (!documentToDelete) return;
+    if (role !== "admin") {
+      toast.info("Only admin has access to document deletion");
+      return;
+    }
 
     deleteMutation.mutate(documentToDelete.id, {
       onSuccess: () => {
@@ -146,11 +160,8 @@ const DocumentLibrary: React.FC = () => {
 
   const totalDocuments = summary?.total_documents ?? pagination?.total ?? 0;
   const totalRecordsRepresented = summary?.total_records_represented ?? 0;
-  const pdfCount = summary?.format_breakdown?.pdf ?? 0;
-  const zipCount = summary?.format_breakdown?.zip ?? 0;
-  const excelCount = summary?.format_breakdown?.excel ?? 0;
-  const csvCount = summary?.format_breakdown?.csv ?? 0;
-  const otherFormatsCount = zipCount + excelCount + csvCount;
+  const feedbackFilledCount = summary?.feedback_summary?.filled_count ?? 0;
+  const feedbackPendingCount = summary?.feedback_summary?.pending_count ?? 0;
 
   return (
     <div className="space-y-6 pb-6">
@@ -160,7 +171,8 @@ const DocumentLibrary: React.FC = () => {
           Downloaded Documents Library
         </h1>
         <p className="text-sm text-gray-500">
-          Browse, filter, and retrieve all generated PDF, ZIP, and tabular export files.
+          Browse, filter, and retrieve all generated PDF, ZIP, and tabular
+          export files.
         </p>
       </div>
 
@@ -177,14 +189,14 @@ const DocumentLibrary: React.FC = () => {
           icon={BsDownload}
         />
         <OverviewCards
-          title="PDF Documents"
-          value={isLoading ? "..." : pdfCount}
-          icon={FaFilePdf}
+          title="Feedback Recorded"
+          value={isLoading ? "..." : feedbackFilledCount}
+          icon={BsCheckCircle}
         />
         <OverviewCards
-          title="Archives & Sheets"
-          value={isLoading ? "..." : otherFormatsCount}
-          icon={BsArchive}
+          title="Pending Feedback"
+          value={isLoading ? "..." : feedbackPendingCount}
+          icon={BsClockHistory}
         />
       </div>
 
@@ -246,6 +258,25 @@ const DocumentLibrary: React.FC = () => {
               <option value="by_barrister">By Barrister</option>
             </select>
           </div>
+
+          {/* Feedback Filter */}
+          <div className="flex items-center gap-2">
+            <label className="text-xs text-gray-500 whitespace-nowrap">
+              Feedback:
+            </label>
+            <select
+              value={feedbackFilter}
+              onChange={(e) => {
+                setFeedbackFilter(e.target.value);
+                setCurrentPage(1);
+              }}
+              className="bg-secondary border border-primary/10 rounded-lg h-[45px] px-3 text-xs outline-0 cursor-pointer"
+            >
+              <option value="all">All Feedback</option>
+              <option value="true">Feedback Recorded</option>
+              <option value="false">Pending Feedback</option>
+            </select>
+          </div>
         </div>
       </div>
 
@@ -273,7 +304,10 @@ const DocumentLibrary: React.FC = () => {
             No library documents found
           </h4>
           <p className="text-xs text-gray-400 mt-1">
-            {debouncedSearch || fileTypeFilter !== "all" || downloadTypeFilter !== "all"
+            {debouncedSearch ||
+            fileTypeFilter !== "all" ||
+            downloadTypeFilter !== "all" ||
+            feedbackFilter !== "all"
               ? "Try adjusting your search criteria or filters."
               : "Exported application and batch files will be listed here automatically."}
           </p>
@@ -289,26 +323,37 @@ const DocumentLibrary: React.FC = () => {
               >
                 <div>
                   {/* Card Header */}
-                  <div className="flex items-center gap-3 mb-3 min-w-0">
-                    <div
-                      className={`p-2.5 rounded-lg shrink-0 ${visuals.containerClass}`}
-                    >
-                      {visuals.icon}
-                    </div>
-                    <div className="min-w-0">
-                      <h3
-                        className="font-semibold text-gray-900 text-sm leading-snug truncate"
-                        title={doc.title}
+                  <div className="flex items-center justify-between gap-2 mb-3">
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div
+                        className={`p-2.5 rounded-lg shrink-0 ${visuals.containerClass}`}
                       >
-                        {doc.title}
-                      </h3>
-                      <p
-                        className="text-[11px] text-gray-400 font-mono truncate"
-                        title={doc.file_name}
-                      >
-                        {doc.file_name}
-                      </p>
+                        {visuals.icon}
+                      </div>
+                      <div className="min-w-0">
+                        <h3
+                          className="font-semibold text-gray-900 text-sm leading-snug truncate"
+                          title={doc.title}
+                        >
+                          {doc.title}
+                        </h3>
+                        <p
+                          className="text-[11px] text-gray-400 font-mono truncate"
+                          title={doc.file_name}
+                        >
+                          {doc.file_name}
+                        </p>
+                      </div>
                     </div>
+                    <StatusCard
+                      type={doc.is_feedback_filled ? "success" : "pending"}
+                      statusText={
+                        doc.is_feedback_filled
+                          ? "Feedback Recorded"
+                          : "Pending Feedback"
+                      }
+                      optStyles={"rounded-full! pb-1! border"}
+                    />
                   </div>
 
                   {/* Details Box */}
@@ -319,8 +364,8 @@ const DocumentLibrary: React.FC = () => {
                       </span>
                       <span className="font-semibold text-gray-800 capitalize truncate max-w-[150px]">
                         {doc.download_type
-                          ? doc.download_type.replace(/_/g, " ")
-                          : doc.filter_type || "Export"}
+                          ? formatUnderScores(doc.download_type, true)
+                          : "Export"}
                       </span>
                     </div>
 
@@ -360,26 +405,46 @@ const DocumentLibrary: React.FC = () => {
                 </div>
 
                 {/* Card Actions */}
-                <div className="flex items-center gap-2">
-                  <a
-                    href={doc.download_url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    download={doc.file_name}
-                    className="flex-1 py-2.5 px-3 rounded-lg font-semibold text-xs transition cursor-pointer flex items-center justify-center gap-2 bg-primary text-white hover:bg-primary/90 shadow-2xs"
-                  >
-                    <BsDownload size={13} />
-                    <span>Download {doc.file_type.toUpperCase()}</span>
-                  </a>
+                <div className="space-y-2 pt-2">
+                  <ActionButton
+                    text={
+                      doc.is_feedback_filled
+                        ? "View Feedback"
+                        : "Submit Feedback"
+                    }
+                    onClick={() =>
+                      setFeedbackModalConfig({
+                        document: doc,
+                        mode: doc.is_feedback_filled ? "view" : "submit",
+                      })
+                    }
+                    icon={<BsChatSquareText size={13} />}
+                    buttonStyle="w-full"
+                  />
 
-                  <button
-                    type="button"
-                    title="Delete document"
-                    onClick={() => setDocumentToDelete(doc)}
-                    className="p-2.5 rounded-lg border border-red-200 text-red-600 hover:bg-red-50 hover:border-red-300 transition cursor-pointer flex items-center justify-center shrink-0"
-                  >
-                    <FiTrash2 size={14} />
-                  </button>
+                  <div className="flex items-center gap-2">
+                    <a
+                      href={doc.download_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      download={doc.file_name}
+                      className={`flex-1 h-10 px-3 rounded-lg font-semibold text-xs transition cursor-pointer flex items-center justify-center gap-2 bg-secondary border border-primary/20`}
+                    >
+                      <BsDownload size={13} />
+                      <span>Download {doc.file_type.toUpperCase()}</span>
+                    </a>
+
+                    {role === "admin" && (
+                      <button
+                        type="button"
+                        title="Delete document"
+                        onClick={() => setDocumentToDelete(doc)}
+                        className="h-10 px-2.5 rounded-lg border border-red-200 text-red-600 hover:bg-red-50 hover:border-red-300 transition cursor-pointer flex items-center justify-center shrink-0"
+                      >
+                        <FiTrash2 size={14} />
+                      </button>
+                    )}
+                  </div>
                 </div>
               </div>
             );
@@ -401,6 +466,15 @@ const DocumentLibrary: React.FC = () => {
         </div>
       )}
 
+      {/* Submit / View Feedback Modal */}
+      {feedbackModalConfig && (
+        <SubmitFeedbackModal
+          document={feedbackModalConfig.document}
+          initialMode={feedbackModalConfig.mode}
+          onClose={() => setFeedbackModalConfig(null)}
+        />
+      )}
+
       {/* Delete Confirmation Dialog */}
       <ConfirmDialog
         isOpen={Boolean(documentToDelete)}
@@ -413,7 +487,7 @@ const DocumentLibrary: React.FC = () => {
               <strong className="text-gray-900">
                 "{documentToDelete.title || documentToDelete.file_name}"
               </strong>
-              ? This file will be removed from your download library.
+              ? This file will be removed from the system's download library.
             </span>
           ) : (
             "This action cannot be undone."

@@ -44,24 +44,24 @@ const DownloadedEntries: React.FC = () => {
   const clientEntries: ClientEntry[] = responseData?.data?.data || [];
   const totalItems = responseData?.data?.total || 0;
   const totalPages = responseData?.data?.last_page || 1;
-  const stats = responseData.summary;
+  const stats = responseData?.summary;
 
   const downloadStats = [
     {
       title: "Total Records Downloaded",
-      value: formatterUtility(Number(stats.total_records_downloaded), true),
+      value: formatterUtility(Number(stats?.total_records_downloaded), true),
       icon: null,
       subtitle: "",
     },
     {
       title: "Total Download Count",
-      value: formatterUtility(Number(stats.total_downloads), true),
+      value: formatterUtility(Number(stats?.total_downloads), true),
       icon: null,
       subtitle: "",
     },
     {
       title: "Last Download",
-      value: stats.last_download ? formatISODateToCustom(stats.last_download ?? "") : "-",
+      value: stats?.last_download ? formatISODateToCustom(stats?.last_download ?? "") : "-",
       icon: null,
       subtitle: "",
     },

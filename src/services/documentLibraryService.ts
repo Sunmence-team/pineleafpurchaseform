@@ -1,52 +1,5 @@
 import { api } from "../helpers/api";
-
-export interface DocumentLibraryFiltersApplied {
-  type?: string;
-  application_id?: string;
-  branch?: string | number;
-  property?: string | number;
-  barrister_id?: string | number;
-  [key: string]: any;
-}
-
-export interface DocumentLibraryDownloadedAt {
-  datetime?: string;
-  date?: string;
-  time?: string;
-  human?: string;
-}
-
-export interface LibraryDocumentItem {
-  id: number;
-  title: string;
-  file_name: string;
-  download_url: string;
-  file_type: "pdf" | "zip" | "excel" | "csv" | string;
-  file_size_bytes?: number;
-  file_size_formatted?: string;
-  file_exists?: boolean;
-  records_count: number;
-  download_type?: string;
-  filter_type?: string;
-  filter_value?: string;
-  scope?: string;
-  filters_applied?: DocumentLibraryFiltersApplied;
-  downloaded_by?: string;
-  downloaded_at?: DocumentLibraryDownloadedAt;
-}
-
-export interface DocumentLibrarySummary {
-  total_documents: number;
-  total_records_represented: number;
-  format_breakdown: {
-    pdf?: number;
-    zip?: number;
-    excel?: number;
-    csv?: number;
-    [key: string]: number | undefined;
-  };
-}
-
+import { DocumentLibrarySummary, LibraryDocumentItem } from "../lib/interfaces";
 export interface DocumentLibraryPagination {
   current_page: number;
   last_page: number;
@@ -66,6 +19,7 @@ export interface FetchDocumentLibraryParams {
   search?: string;
   file_type?: string;
   type?: string;
+  is_feedback_filled?: boolean | string;
   page?: number;
   per_page?: number;
   signal?: AbortSignal;
@@ -88,6 +42,14 @@ export const fetchDocumentLibraryService = async (
   }
   if (params.type && params.type !== "all") {
     queryParams.type = params.type;
+  }
+  if (
+    params.is_feedback_filled !== undefined &&
+    params.is_feedback_filled !== null &&
+    params.is_feedback_filled !== "all" &&
+    params.is_feedback_filled !== ""
+  ) {
+    queryParams.is_feedback_filled = params.is_feedback_filled;
   }
   if (params.page !== undefined && params.page !== null) {
     queryParams.page = params.page;
@@ -114,5 +76,24 @@ export const deleteLibraryDocumentService = async (
   const response = await api.delete<{ success: boolean; message?: string }>(
     `/documents/${id}`,
   );
+  return response.data;
+};
+
+export interface SubmitDocumentFeedbackPayload {
+  barrister: string;
+  worked_on_count: number;
+  not_worked_on_count: number;
+  reason?: string | null;
+}
+
+/**
+ * Submit feedback for a document
+ * POST /api/documents/{id}/feedback
+ */
+export const submitDocumentFeedbackService = async (
+  documentId: number | string,
+  payload: SubmitDocumentFeedbackPayload,
+): Promise<{ success: boolean; message?: string; data?: any }> => {
+  const response = await api.post(`/documents/${documentId}/feedback`, payload);
   return response.data;
 };

@@ -5,7 +5,7 @@ import type { ActionButtonProps } from "../../lib/interfaces";
 export interface DropdownActionItem {
   label: string;
   action?: () => void;
-  onClick?: () => void;
+  onClick?: (e?:React.FormEvent<Element>) => void;
   icon?: React.ReactNode;
   disabled?: boolean;
 }
@@ -24,6 +24,7 @@ const ActionButton: React.FC<ActionDropdownButtonProps> = ({
   action,
   onClick,
   disabled,
+  type="button",
   buttonStyle = "",
   overideBg = false,
   items,
@@ -74,7 +75,7 @@ const ActionButton: React.FC<ActionDropdownButtonProps> = ({
   const buttonElement = (
     <button
       className={`${overideBg ? "" : `action-btn`} text-white h-10 px-4 min-w-25 rounded-md text-sm flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer ${buttonStyle}`}
-      type="button"
+      type={type}
       onClick={handleMainClick}
       disabled={disabled || loading}
       aria-expanded={hasDropdown ? isOpen : undefined}

@@ -2,8 +2,10 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   fetchDocumentLibraryService,
   deleteLibraryDocumentService,
+  submitDocumentFeedbackService,
   type FetchDocumentLibraryParams,
   type DocumentLibraryResponse,
+  type SubmitDocumentFeedbackPayload,
 } from "../services/documentLibraryService";
 
 export const useDocumentLibrary = (params: FetchDocumentLibraryParams = {}) => {
@@ -20,6 +22,24 @@ export const useDeleteLibraryDocument = () => {
 
   return useMutation({
     mutationFn: (id: number | string) => deleteLibraryDocumentService(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["document-library"] });
+      queryClient.invalidateQueries({ queryKey: ["admin-stats"] });
+    },
+  });
+};
+
+export const useSubmitDocumentFeedback = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      documentId,
+      payload,
+    }: {
+      documentId: number | string;
+      payload: SubmitDocumentFeedbackPayload;
+    }) => submitDocumentFeedbackService(documentId, payload),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["document-library"] });
       queryClient.invalidateQueries({ queryKey: ["admin-stats"] });

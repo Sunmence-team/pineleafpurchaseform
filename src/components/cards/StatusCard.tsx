@@ -1,7 +1,7 @@
 import React from 'react'
 import { StatusCardProps } from '../../lib/interfaces'
 
-const StatusCard: React.FC<StatusCardProps> = ({ type, statusText, icon: Icon }) => {
+const StatusCard: React.FC<StatusCardProps> = ({ type, statusText, icon: Icon, optStyles }) => {
   return (
     <div
         className={`${
@@ -13,7 +13,7 @@ const StatusCard: React.FC<StatusCardProps> = ({ type, statusText, icon: Icon })
                     ? "bg-[#F7ECE8] text-[#AB1414]"
                     : "bg-[#F1F1F1] text-[#828282]"
                 
-        } capitalize text-xs px-2 py-0.5 w-max rounded-lg flex items-center gap-1`}
+        } capitalize text-xs px-2 py-0.5 shrink-0 w-max rounded-lg flex items-center gap-1 ${optStyles}`}
     >{Icon && <Icon />}{statusText}</div>
   )
 }
