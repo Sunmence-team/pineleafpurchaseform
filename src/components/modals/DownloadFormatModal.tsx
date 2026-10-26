@@ -25,7 +25,7 @@ const DownloadFormatModal: React.FC<DownloadFormatModalProps> = ({
 
   return (
     <Modal onClose={onClose}>
-      <div className="p-2 md:p-4 text-center">
+      <div className="text-center">
         <h4 className="text-xl font-bold text-gray-900 mb-1">{title}</h4>
         <p className="text-sm text-gray-500 mb-6">{subtitle}</p>
 
@@ -43,9 +43,6 @@ const DownloadFormatModal: React.FC<DownloadFormatModalProps> = ({
               <span className="font-semibold text-gray-900 block text-base group-hover:text-primary transition-colors">
                 Download PDF
               </span>
-              <span className="text-xs text-gray-500 block mt-0.5">
-                Formatted document (.pdf)
-              </span>
             </div>
           </button>
 
@@ -61,9 +58,6 @@ const DownloadFormatModal: React.FC<DownloadFormatModalProps> = ({
             <div className="text-center">
               <span className="font-semibold text-gray-900 block text-base group-hover:text-primary transition-colors">
                 Download CSV
-              </span>
-              <span className="text-xs text-gray-500 block mt-0.5">
-                Spreadsheet tabular data (.csv)
               </span>
             </div>
           </button>

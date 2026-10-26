@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo } from "react";
+import React from "react";
 import { Link } from "react-router-dom";
 import OverviewCards from "../../components/cards/OverviewCards";
 import {
@@ -7,85 +7,26 @@ import {
   BsFileEarmarkText,
   BsCloudCheck,
   BsCloudSlash,
-  BsShieldExclamation,
-  BsFileEarmarkPdf,
   BsArrowRight,
+  BsBuildings,
+  BsClockHistory,
+  BsDownload,
+  BsPerson,
+  BsPeople,
+  BsTag,
 } from "react-icons/bs";
 import { useUser } from "../../hooks/useUser";
-import { api } from "../../helpers/api";
-import { getStoredAssignments } from "../../components/modals/AssignPropertiesModal";
-import { getStoredDocuments } from "./documents/DocumentLibrary";
-import type { PropertyProp } from "../../lib/interfaces";
+import { useAdminStats } from "../../hooks/useAdminStats";
+import { getErrorMessage } from "../../helpers/api";
 
 const Dashboard: React.FC = () => {
   const { user } = useUser();
+  const { data: statsResponse, isLoading, error } = useAdminStats();
 
-  const [properties, setProperties] = useState<PropertyProp[]>([]);
-  const [barristersCount, setBarristersCount] = useState(0);
-  const [loadingStats, setLoadingStats] = useState(false);
-
-  useEffect(() => {
-    const fetchBaseData = async () => {
-      setLoadingStats(true);
-      try {
-        const [propsRes, barrRes] = await Promise.allSettled([
-          api.get("/properties/search", {
-            params: { per_page: 200 },
-          }),
-          api.get("/barristers"),
-        ]);
-
-        if (propsRes.status === "fulfilled") {
-          const list =
-            propsRes.value.data?.data?.data || propsRes.value.data?.data || [];
-          setProperties(Array.isArray(list) ? list : []);
-        }
-
-        if (barrRes.status === "fulfilled") {
-          const list = barrRes.value.data?.data;
-          const data = Array.isArray(list) ? list : list?.data || [];
-          setBarristersCount(data.length);
-        }
-      } catch (e) {
-        console.error("Dashboard overview stats fetch error:", e);
-      } finally {
-        setLoadingStats(false);
-      }
-    };
-
-    fetchBaseData();
-  }, []);
-
-  // Offline vs Online calculations
-  const offlinePropertiesCount = useMemo(() => {
-    return properties.filter((p) => !p.is_online).length;
-  }, [properties]);
-
-  const onlinePropertiesCount = properties.length - offlinePropertiesCount;
-
-  // Assignments & Unassigned calculations
-  const assignments = useMemo(() => getStoredAssignments(), []);
-  const assignedPropertyNames = useMemo(() => {
-    const names = new Set<string>();
-    for (const record of Object.values(assignments)) {
-      for (const p of record.properties || []) {
-        if (p?.name) names.add(p.name.trim().toLowerCase());
-      }
-    }
-    return names;
-  }, [assignments]);
-
-  // Documents Library metrics
-  const storedDocs = useMemo(() => getStoredDocuments(), []);
-  const signedFeedbackCount = useMemo(() => {
-    return storedDocs.reduce(
-      (sum, d) => sum + (d.feedback?.signed_count || 0),
-      0,
-    );
-  }, [storedDocs]);
+  const stats = statsResponse?.data;
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       {/* Welcome Banner */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-2 border-b border-primary/10">
         <div>
@@ -93,8 +34,8 @@ const Dashboard: React.FC = () => {
             Welcome back, {user?.first_name || user?.username || "Admin"}
           </h1>
           <p className="text-sm text-gray-500">
-            Here is your operational snapshot across properties, entries, and
-            legal workflows
+            Here is your live administrative summary across properties,
+            applications, branches, and downloads.
           </p>
         </div>
 
@@ -102,73 +43,105 @@ const Dashboard: React.FC = () => {
           to="/dashboard/records"
           className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg bg-primary text-white text-xs font-semibold hover:bg-primary/90 transition shadow-2xs w-max cursor-pointer"
         >
-          <span>View All Form Records</span>
+          <span>View All Applications</span>
           <BsArrowRight size={14} />
         </Link>
       </div>
 
+      {error && (
+        <div className="p-4 rounded-lg bg-red-50 border border-red-200 text-red-700 text-sm">
+          {getErrorMessage(error, "Failed to load dashboard statistics.")}
+        </div>
+      )}
+
       {/* Top Stats Overview Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-3 gap-3">
         <OverviewCards
-          title="Total Form Entries"
-          value={0}
+          title="Total Applications"
+          value={isLoading ? "..." : (stats?.applications?.total ?? 0)}
           icon={BsFileEarmarkText}
-          subtitle="All submitted purchase forms"
         />
         <OverviewCards
           title="Total Properties"
-          value={properties.length}
+          value={
+            isLoading
+              ? "..."
+              : (stats?.properties?.total ?? stats?.total_no_of_property ?? 0)
+          }
           icon={BsHouses}
-          subtitle="All managed estate properties"
+        />
+        <OverviewCards
+          title="Branches"
+          value={isLoading ? "..." : (stats?.branches?.total ?? 0)}
+          icon={BsBuildings}
         />
         <OverviewCards
           title="Active Barristers"
-          value={barristersCount}
+          value={
+            isLoading
+              ? "..."
+              : `${stats?.barristers?.active ?? 0} / ${stats?.barristers?.total ?? 0}`
+          }
           icon={BsFillAwardFill}
-          subtitle="Registered legal partners"
         />
         <OverviewCards
-          title="Batch Documents"
-          value={storedDocs.length}
-          icon={BsFileEarmarkPdf}
-          subtitle="Downloaded document library"
+          title="Total Downloads"
+          value={isLoading ? "..." : (stats?.downloads?.total_downloads ?? 0)}
+          icon={BsDownload}
         />
       </div>
 
       {/* Operational Breakdown Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {/* Card 1: Property Online / Offline Status */}
+        {/* Card 1: Property Inventory Breakdown */}
         <div className="bg-secondary rounded-xl border border-primary/10 p-5 flex flex-col justify-between">
           <div>
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="font-bold text-gray-900 text-sm">
-                Property Online / Offline Status
-              </h3>
-              <BsHouses className="text-primary size-5" />
-            </div>
+            <h3 className="font-bold text-gray-900 text-sm">
+              Property Inventory
+            </h3>
             <p className="text-xs text-gray-500 mb-4">
-              Properties currently flagged as online or marked for offline
-              processing.
+              Availability and catalog breakdown of all registered estate
+              properties.
             </p>
 
-            <div className="space-y-3">
-              <div className="flex items-center justify-between p-3 rounded-lg bg-white border border-gray-200">
-                <div className="flex items-center gap-2 text-xs font-medium text-emerald-700">
+            <div className="space-y-2.5 mt-4">
+              <div className="flex items-center justify-between pb-3 border-b border-gray-200">
+                <div className="flex items-center gap-2 text-xs font-medium">
                   <BsCloudCheck size={16} />
                   <span>Online Properties</span>
                 </div>
                 <span className="font-bold text-gray-900 text-sm">
-                  {onlinePropertiesCount}
+                  {isLoading ? "..." : (stats?.properties?.online ?? 0)}
                 </span>
               </div>
 
-              <div className="flex items-center justify-between p-3 rounded-lg bg-white border border-gray-200">
-                <div className="flex items-center gap-2 text-xs font-medium text-amber-700">
+              <div className="flex items-center justify-between pb-3 border-b border-gray-200">
+                <div className="flex items-center gap-2 text-xs font-medium">
                   <BsCloudSlash size={16} />
                   <span>Offline Properties</span>
                 </div>
                 <span className="font-bold text-gray-900 text-sm">
-                  {offlinePropertiesCount}
+                  {isLoading ? "..." : (stats?.properties?.offline ?? 0)}
+                </span>
+              </div>
+
+              <div className="flex items-center justify-between pb-3 border-b border-gray-200">
+                <div className="flex items-center gap-2 text-xs font-medium">
+                  <BsHouses size={16} />
+                  <span>Regular Properties</span>
+                </div>
+                <span className="font-bold text-gray-900 text-sm">
+                  {isLoading ? "..." : (stats?.properties?.regular ?? 0)}
+                </span>
+              </div>
+
+              <div className="flex items-center justify-between pb-3 border-b border-gray-200">
+                <div className="flex items-center gap-2 text-xs font-medium">
+                  <BsTag size={16} />
+                  <span>Promo Properties</span>
+                </div>
+                <span className="font-bold text-gray-900 text-sm">
+                  {isLoading ? "..." : (stats?.properties?.promo ?? 0)}
                 </span>
               </div>
             </div>
@@ -178,93 +151,153 @@ const Dashboard: React.FC = () => {
             to="/dashboard/properties"
             className="mt-5 text-xs font-semibold text-primary hover:underline flex items-center gap-1.5"
           >
-            <span>Manage Properties Status</span>
+            <span>Manage Properties</span>
             <BsArrowRight size={12} />
           </Link>
         </div>
 
-        {/* Card 2: Legal Assignment Health */}
+        {/* Card 2: Applications & Submissions Breakdown */}
         <div className="bg-secondary rounded-xl border border-primary/10 p-5 flex flex-col justify-between">
           <div>
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="font-bold text-gray-900 text-sm">
-                Legal Assignment Coverage
-              </h3>
-              <BsShieldExclamation className="text-primary size-5" />
-            </div>
+            <h3 className="font-bold text-gray-900 text-sm">
+              Applications Breakdown
+            </h3>
             <p className="text-xs text-gray-500 mb-4">
-              Purchase entries awaiting property barrister assignment.
+              Purchase applications segmented by processing channel and
+              applicant type.
             </p>
 
-            <div className="space-y-3">
-              <div className="flex items-center justify-between p-3 rounded-lg bg-white border border-gray-200">
-                <span className="text-xs font-medium text-red-600">
-                  Unassigned Entries
-                </span>
-                <span className="font-bold text-red-600 text-sm">
-                  {0}
+            <div className="space-y-2.5 mt-4">
+              <div className="flex items-center justify-between pb-3 border-b border-gray-200">
+                <div className="flex items-center gap-2 text-xs font-medium">
+                  <BsCloudCheck size={16} />
+                  <span>Online Submissions</span>
+                </div>
+                <span className="font-bold text-gray-900 text-sm">
+                  {isLoading ? "..." : (stats?.applications?.online ?? 0)}
                 </span>
               </div>
 
-              <div className="flex items-center justify-between p-3 rounded-lg bg-white border border-gray-200">
-                <span className="text-xs font-medium text-gray-700">
-                  Assigned Coverage
+              <div className="flex items-center justify-between pb-3 border-b border-gray-200">
+                <div className="flex items-center gap-2 text-xs font-medium">
+                  <BsCloudSlash size={16} />
+                  <span>Offline Entries</span>
+                </div>
+                <span className="font-bold text-gray-900 text-sm">
+                  {isLoading ? "..." : (stats?.applications?.offline ?? 0)}
                 </span>
-                <span className="font-bold text-emerald-600 text-sm">
-                  100%
+              </div>
+
+              <div className="flex items-center justify-between pb-3 border-b border-gray-200">
+                <div className="flex items-center gap-2 text-xs font-medium">
+                  <BsPerson size={16} />
+                  <span>Individual Applicants</span>
+                </div>
+                <span className="font-bold text-gray-900 text-sm">
+                  {isLoading ? "..." : (stats?.applications?.individual ?? 0)}
+                </span>
+              </div>
+
+              <div className="flex items-center justify-between pb-3 border-b border-gray-200">
+                <div className="flex items-center gap-2 text-xs font-medium">
+                  <BsPeople size={16} />
+                  <span>Club / Association</span>
+                </div>
+                <span className="font-bold text-gray-900 text-sm">
+                  {isLoading
+                    ? "..."
+                    : (stats?.applications?.club_or_association ?? 0)}
                 </span>
               </div>
             </div>
           </div>
 
           <Link
-            to="/dashboard/entries/unassigned"
+            to="/dashboard/records"
             className="mt-5 text-xs font-semibold text-primary hover:underline flex items-center gap-1.5"
           >
-            <span>View Unassigned Entries</span>
+            <span>Manage Application Records</span>
             <BsArrowRight size={12} />
           </Link>
         </div>
 
-        {/* Card 3: Document Feedback Tracking */}
+        {/* Card 3: Download & Export Activity */}
         <div className="bg-secondary rounded-xl border border-primary/10 p-5 flex flex-col justify-between">
           <div>
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="font-bold text-gray-900 text-sm">
-                Document Feedback Tracking
-              </h3>
-              <BsFileEarmarkPdf className="text-primary size-5" />
-            </div>
+            <h3 className="font-bold text-gray-900 text-sm">
+              Download & Export Activity
+            </h3>
             <p className="text-xs text-gray-500 mb-4">
-              Return status and signed documents across downloaded batches.
+              Summary of all generated data exports and last recorded download.
             </p>
 
-            <div className="space-y-3">
-              <div className="flex items-center justify-between p-3 rounded-lg bg-white border border-gray-200">
+            <div className="space-y-2.5 mt-4">
+              <div className="flex items-center justify-between pb-3 border-b border-gray-200">
                 <span className="text-xs font-medium text-gray-700">
                   Total Download Batches
                 </span>
                 <span className="font-bold text-gray-900 text-sm">
-                  {storedDocs.length}
+                  {isLoading ? "..." : (stats?.downloads?.total_downloads ?? 0)}
                 </span>
               </div>
 
-              <div className="flex items-center justify-between p-3 rounded-lg bg-white border border-gray-200">
-                <span className="text-xs font-medium text-emerald-700">
-                  Signed Entries Returned
+              <div className="flex items-center justify-between pb-3 border-b border-gray-200">
+                <span className="text-xs font-medium text-gray-700">
+                  Total Records Downloaded
                 </span>
                 <span className="font-bold text-emerald-700 text-sm">
-                  {signedFeedbackCount}
+                  {isLoading
+                    ? "..."
+                    : (stats?.downloads?.total_records_downloaded ?? 0)}
                 </span>
+              </div>
+
+              <div className="pb-3 border-b border-gray-200">
+                <div className="flex items-center justify-between mb-1.5">
+                  <span className="text-xs font-medium text-gray-500">
+                    Last Export
+                  </span>
+                  <span className="text-[11px] font-semibold text-primary">
+                    {stats?.downloads?.last_download?.human ||
+                      stats?.downloads?.last_download?.date ||
+                      "N/A"}
+                  </span>
+                </div>
+                {stats?.downloads?.last_download ? (
+                  <div className="space-y-1">
+                    <p
+                      className="text-xs font-semibold text-gray-900 truncate"
+                      title={stats.downloads.last_download.file_name}
+                    >
+                      {stats.downloads.last_download.file_name}
+                    </p>
+                    <p className="text-[11px] text-gray-500">
+                      {stats.downloads.last_download.records_count} records •{" "}
+                      <span className="capitalize">
+                        {stats.downloads.last_download.download_type.replace(
+                          /_/g,
+                          " ",
+                        )}
+                      </span>
+                      {stats.downloads.last_download.user_name
+                        ? ` by ${stats.downloads.last_download.user_name}`
+                        : ""}
+                    </p>
+                  </div>
+                ) : (
+                  <p className="text-xs text-gray-400">
+                    {isLoading ? "Loading..." : "No downloads recorded yet"}
+                  </p>
+                )}
               </div>
             </div>
           </div>
 
           <Link
-            to="/dashboard/documents"
+            to="/dashboard/records/downloaded"
             className="mt-5 text-xs font-semibold text-primary hover:underline flex items-center gap-1.5"
           >
-            <span>Open Document Library</span>
+            <span>View Download History</span>
             <BsArrowRight size={12} />
           </Link>
         </div>

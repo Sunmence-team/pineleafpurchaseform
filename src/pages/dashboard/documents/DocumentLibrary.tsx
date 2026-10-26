@@ -1,20 +1,28 @@
-import React, { useState, useEffect, useMemo, useCallback } from "react";
+import React, { useState, useEffect } from "react";
 import { BiSearch } from "react-icons/bi";
 import {
-  BsFileEarmarkPdf,
   BsDownload,
-  BsCheckCircle,
-  BsXCircle,
+  BsFileEarmarkText,
+  BsArchive,
   BsClockHistory,
-  BsChatSquareText,
 } from "react-icons/bs";
-import { FaFilePdf } from "react-icons/fa6";
+import {
+  FaFilePdf,
+  FaFileZipper,
+  FaFileExcel,
+  FaFileCsv,
+} from "react-icons/fa6";
+import { FiTrash2 } from "react-icons/fi";
 import { toast } from "sonner";
 import OverviewCards from "../../../components/cards/OverviewCards";
-import ActionButton from "../../../components/ui/ActionButton";
-import SubmitFeedbackModal from "../../../components/modals/SubmitFeedbackModal";
-import { formatISODateToCustom } from "../../../helpers/formatterUtility";
-import { api } from "../../../helpers/api";
+import PaginationControls from "../../../utilities/PaginationControls";
+import ConfirmDialog from "../../../components/modals/ConfirmDialog";
+import {
+  useDocumentLibrary,
+  useDeleteLibraryDocument,
+} from "../../../hooks/useDocumentLibrary";
+import type { LibraryDocumentItem } from "../../../services/documentLibraryService";
+import { getErrorMessage } from "../../../helpers/api";
 
 export interface BatchFeedbackRecord {
   document_id: string | number;
@@ -31,7 +39,7 @@ export interface DownloadBatchDocument {
   id: string | number;
   title: string;
   filename: string;
-  download_type: "last_download" | "all_times" | "site_specific" | "branch";
+  download_type: string;
   site_location?: string;
   branch?: string;
   total_entries: number;
@@ -40,386 +48,337 @@ export interface DownloadBatchDocument {
   feedback?: BatchFeedbackRecord;
 }
 
-const STORAGE_DOCS_KEY = "pineleaf_downloaded_documents_library";
-const STORAGE_FEEDBACK_KEY = "pineleaf_document_feedback_records";
-
-export const getStoredDocuments = (): DownloadBatchDocument[] => {
-  try {
-    const raw = localStorage.getItem(STORAGE_DOCS_KEY);
-    return raw ? JSON.parse(raw) : [];
-  } catch {
-    return [];
-  }
-};
-
-export const saveStoredDocuments = (docs: DownloadBatchDocument[]) => {
-  try {
-    localStorage.setItem(STORAGE_DOCS_KEY, JSON.stringify(docs));
-  } catch (e) {
-    console.error("Failed to save documents library:", e);
-  }
-};
-
-export const getStoredBatchFeedback = (
-  docId: string | number,
-): BatchFeedbackRecord | undefined => {
-  try {
-    const raw = localStorage.getItem(STORAGE_FEEDBACK_KEY);
-    const map = raw ? JSON.parse(raw) : {};
-    return map[String(docId)];
-  } catch {
-    return undefined;
-  }
-};
-
+export const getStoredDocuments = (): DownloadBatchDocument[] => [];
 export const saveStoredBatchFeedback = (
-  docId: string | number,
-  record: BatchFeedbackRecord,
-) => {
-  try {
-    const raw = localStorage.getItem(STORAGE_FEEDBACK_KEY);
-    const map = raw ? JSON.parse(raw) : {};
-    map[String(docId)] = record;
-    localStorage.setItem(STORAGE_FEEDBACK_KEY, JSON.stringify(map));
-  } catch (e) {
-    console.error("Failed to save batch feedback:", e);
+  _docId: string | number,
+  _record: BatchFeedbackRecord,
+) => {};
+
+const getFileFormatVisuals = (fileType: string) => {
+  const type = fileType ? fileType.toLowerCase() : "";
+  switch (type) {
+    case "pdf":
+      return {
+        icon: <FaFilePdf className="size-5" />,
+        containerClass: "bg-red-50 text-red-600 border border-red-100",
+        badgeClass: "bg-red-50 text-red-700 border border-red-200",
+      };
+    case "zip":
+      return {
+        icon: <FaFileZipper className="size-5" />,
+        containerClass: "bg-amber-50 text-amber-600 border border-amber-100",
+        badgeClass: "bg-amber-50 text-amber-700 border border-amber-200",
+      };
+    case "excel":
+    case "xlsx":
+    case "xls":
+      return {
+        icon: <FaFileExcel className="size-5" />,
+        containerClass:
+          "bg-emerald-50 text-emerald-600 border border-emerald-100",
+        badgeClass: "bg-emerald-50 text-emerald-700 border border-emerald-200",
+      };
+    case "csv":
+      return {
+        icon: <FaFileCsv className="size-5" />,
+        containerClass: "bg-blue-50 text-blue-600 border border-blue-100",
+        badgeClass: "bg-blue-50 text-blue-700 border border-blue-200",
+      };
+    default:
+      return {
+        icon: <BsFileEarmarkText className="size-5" />,
+        containerClass: "bg-gray-50 text-gray-600 border border-gray-100",
+        badgeClass: "bg-gray-50 text-gray-700 border border-gray-200",
+      };
   }
 };
-
-// Seed initial mock/demo documents if empty so user has realistic PDFs right away
-const SEED_DOCUMENTS: DownloadBatchDocument[] = [
-  {
-    id: "batch-101",
-    title: "Batch Download - Awka Sites",
-    filename: "Client_Records_Awka_20261015.pdf",
-    download_type: "site_specific",
-    site_location: "Obodo-Oma Pineleaf Estate Awka",
-    branch: "Awka",
-    total_entries: 14,
-    created_at: "2026-10-15T11:20:00Z",
-    feedback: {
-      document_id: "batch-101",
-      barrister_name: "Barr. Chukwuemeka Eze",
-      total_sent: 14,
-      signed_count: 12,
-      unsigned_count: 2,
-      date_returned: "2026-10-19",
-      remarks:
-        "2 entries unsigned due to missing signature specimen on Section 4",
-      updated_at: "2026-10-19T14:30:00Z",
-    },
-  },
-  {
-    id: "batch-102",
-    title: "Batch Download - Lekki Sites",
-    filename: "Client_Records_Lekki_20261018.pdf",
-    download_type: "site_specific",
-    site_location: "Pineleaf Palms Lekki Phase 1",
-    branch: "Lagos Ajah",
-    total_entries: 8,
-    created_at: "2026-10-18T09:45:00Z",
-  },
-  {
-    id: "batch-103",
-    title: "All Times Client Records Export",
-    filename: "All_Client_Records_20261020.pdf",
-    download_type: "all_times",
-    branch: "All Branches",
-    total_entries: 26,
-    created_at: "2026-10-20T16:10:00Z",
-  },
-];
 
 const DocumentLibrary: React.FC = () => {
-  const [documents, setDocuments] = useState<DownloadBatchDocument[]>(() => {
-    const existing = getStoredDocuments();
-    if (existing.length === 0) {
-      saveStoredDocuments(SEED_DOCUMENTS);
-      return SEED_DOCUMENTS;
-    }
-    return existing;
-  });
-
   const [searchTerm, setSearchTerm] = useState("");
-  const [activeFeedbackModalDoc, setActiveFeedbackModalDoc] =
-    useState<DownloadBatchDocument | null>(null);
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+  const [fileTypeFilter, setFileTypeFilter] = useState("all");
+  const [downloadTypeFilter, setDownloadTypeFilter] = useState("all");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(12);
+  const [documentToDelete, setDocumentToDelete] =
+    useState<LibraryDocumentItem | null>(null);
 
-  // Sync feedback into state
-  const refreshDocumentsWithFeedback = useCallback(() => {
-    setDocuments((prev) =>
-      prev.map((doc) => {
-        const fb = getStoredBatchFeedback(doc.id);
-        return fb ? { ...doc, feedback: fb } : doc;
-      }),
-    );
-  }, []);
+  const deleteMutation = useDeleteLibraryDocument();
 
   useEffect(() => {
-    refreshDocumentsWithFeedback();
-  }, [refreshDocumentsWithFeedback]);
+    const handler = setTimeout(() => {
+      setDebouncedSearch(searchTerm);
+      setCurrentPage(1);
+    }, 400);
 
-  // Search filter
-  const filteredDocuments = useMemo(() => {
-    if (!searchTerm.trim()) return documents;
-    const lower = searchTerm.toLowerCase();
-    return documents.filter(
-      (doc) =>
-        doc.title.toLowerCase().includes(lower) ||
-        doc.filename.toLowerCase().includes(lower) ||
-        (doc.site_location &&
-          doc.site_location.toLowerCase().includes(lower)) ||
-        (doc.feedback?.barrister_name &&
-          doc.feedback.barrister_name.toLowerCase().includes(lower)),
-    );
-  }, [documents, searchTerm]);
+    return () => clearTimeout(handler);
+  }, [searchTerm]);
 
-  // Overall metric totals
-  const totalSent = useMemo(
-    () =>
-      documents.reduce(
-        (sum, doc) =>
-          sum + (doc.feedback?.total_sent || doc.total_entries || 0),
-        0,
-      ),
-    [documents],
-  );
-  const totalSigned = useMemo(
-    () =>
-      documents.reduce(
-        (sum, doc) => sum + (doc.feedback?.signed_count || 0),
-        0,
-      ),
-    [documents],
-  );
-  const totalUnsigned = useMemo(
-    () =>
-      documents.reduce(
-        (sum, doc) => sum + (doc.feedback?.unsigned_count || 0),
-        0,
-      ),
-    [documents],
-  );
+  const {
+    data: libraryResponse,
+    isLoading,
+    error,
+  } = useDocumentLibrary({
+    search: debouncedSearch,
+    file_type: fileTypeFilter !== "all" ? fileTypeFilter : undefined,
+    type: downloadTypeFilter !== "all" ? downloadTypeFilter : undefined,
+    page: currentPage,
+    per_page: itemsPerPage,
+  });
 
-  const handleFeedbackSaved = (savedFeedback: BatchFeedbackRecord) => {
-    setDocuments((prev) => {
-      const updated = prev.map((doc) =>
-        String(doc.id) === String(savedFeedback.document_id)
-          ? { ...doc, feedback: savedFeedback }
-          : doc,
-      );
-      saveStoredDocuments(updated);
-      return updated;
+  const handleConfirmDelete = () => {
+    if (!documentToDelete) return;
+
+    deleteMutation.mutate(documentToDelete.id, {
+      onSuccess: () => {
+        toast.success("Document deleted from library successfully");
+        setDocumentToDelete(null);
+      },
+      onError: (err) => {
+        toast.error(getErrorMessage(err, "Failed to delete document"));
+      },
     });
   };
 
+  const summary = libraryResponse?.summary;
+  const pagination = libraryResponse?.pagination;
+  const documents: LibraryDocumentItem[] = libraryResponse?.documents || [];
+
+  const totalDocuments = summary?.total_documents ?? pagination?.total ?? 0;
+  const totalRecordsRepresented = summary?.total_records_represented ?? 0;
+  const pdfCount = summary?.format_breakdown?.pdf ?? 0;
+  const zipCount = summary?.format_breakdown?.zip ?? 0;
+  const excelCount = summary?.format_breakdown?.excel ?? 0;
+  const csvCount = summary?.format_breakdown?.csv ?? 0;
+  const otherFormatsCount = zipCount + excelCount + csvCount;
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 pb-6">
+      {/* Header */}
       <div>
         <h1 className="text-xl font-bold text-gray-900">
           Downloaded Documents Library
         </h1>
         <p className="text-sm text-gray-500">
-          Manage exported PDF batches and track barrister return feedback
+          Browse, filter, and retrieve all generated PDF, ZIP, and tabular export files.
         </p>
       </div>
 
-      {/* Overview Metrics */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      {/* Summary Overview Cards */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <OverviewCards
-          title="Downloaded Batches"
-          value={documents.length}
-          icon={BsFileEarmarkPdf}
-          subtitle="Document library records"
+          title="Total Documents"
+          value={isLoading ? "..." : totalDocuments}
+          icon={BsFileEarmarkText}
         />
         <OverviewCards
-          title="Total Entries Sent"
-          value={totalSent}
+          title="Records Represented"
+          value={isLoading ? "..." : totalRecordsRepresented}
           icon={BsDownload}
-          subtitle="Dispatched for legal signing"
         />
         <OverviewCards
-          title="Total Signed / Approved"
-          value={totalSigned}
-          icon={BsCheckCircle}
-          subtitle="Returned signed by barristers"
+          title="PDF Documents"
+          value={isLoading ? "..." : pdfCount}
+          icon={FaFilePdf}
         />
         <OverviewCards
-          title="Total Unsigned / Rejected"
-          value={totalUnsigned}
-          icon={BsXCircle}
-          subtitle="Returned unsigned or queried"
+          title="Archives & Sheets"
+          value={isLoading ? "..." : otherFormatsCount}
+          icon={BsArchive}
         />
       </div>
 
-      {/* Search */}
-      <div className="max-w-md w-full bg-secondary border border-primary/10 rounded-lg relative flex gap-2 items-center h-[45px] px-4">
-        <BiSearch className="w-4 h-4 md:w-5 md:h-5 opacity-50" />
-        <input
-          type="text"
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          placeholder="Search batches by title, barrister, or site..."
-          className="w-full h-full focus:outline-none text-sm"
-        />
+      {/* Filter and Search Bar */}
+      <div className="flex flex-col lg:flex-row gap-3 items-stretch lg:items-center justify-between">
+        {/* Search */}
+        <div className="max-w-md w-full bg-secondary border border-primary/10 rounded-lg relative flex gap-2 items-center h-[45px] px-4">
+          <BiSearch className="w-4 h-4 md:w-5 md:h-5 opacity-50 shrink-0" />
+          <input
+            type="text"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            placeholder="Search by filename, user, or memory key..."
+            className="w-full h-full focus:outline-none text-sm bg-transparent"
+          />
+        </div>
+
+        {/* Filters */}
+        <div className="flex flex-wrap sm:flex-nowrap gap-3 items-center">
+          {/* Format Filter */}
+          <div className="flex items-center gap-2">
+            <label className="text-xs text-gray-500 whitespace-nowrap">
+              Format:
+            </label>
+            <select
+              value={fileTypeFilter}
+              onChange={(e) => {
+                setFileTypeFilter(e.target.value);
+                setCurrentPage(1);
+              }}
+              className="bg-secondary border border-primary/10 rounded-lg h-[45px] px-3 text-xs outline-0 cursor-pointer"
+            >
+              <option value="all">All Formats</option>
+              <option value="pdf">PDF (.pdf)</option>
+              <option value="zip">ZIP Archive (.zip)</option>
+              <option value="excel">Excel (.xlsx)</option>
+              <option value="csv">CSV (.csv)</option>
+            </select>
+          </div>
+
+          {/* Type Filter */}
+          <div className="flex items-center gap-2">
+            <label className="text-xs text-gray-500 whitespace-nowrap">
+              Export Type:
+            </label>
+            <select
+              value={downloadTypeFilter}
+              onChange={(e) => {
+                setDownloadTypeFilter(e.target.value);
+                setCurrentPage(1);
+              }}
+              className="bg-secondary border border-primary/10 rounded-lg h-[45px] px-3 text-xs outline-0 cursor-pointer"
+            >
+              <option value="all">All Types</option>
+              <option value="single">Single Application</option>
+              <option value="all">All Records</option>
+              <option value="by_branch">By Branch</option>
+              <option value="by_property">By Property</option>
+              <option value="by_barrister">By Barrister</option>
+            </select>
+          </div>
+        </div>
       </div>
 
-      {/* Grid of PDF Documents */}
-      {filteredDocuments.length === 0 ? (
+      {/* Error state */}
+      {error && (
+        <div className="p-4 rounded-lg bg-red-50 border border-red-200 text-red-700 text-sm">
+          {getErrorMessage(error, "Failed to load document library.")}
+        </div>
+      )}
+
+      {/* Grid of Documents */}
+      {isLoading && documents.length === 0 ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+          {Array.from({ length: 6 }).map((_, index) => (
+            <div
+              key={index}
+              className="h-64 bg-secondary/50 rounded-xl border border-primary/10 animate-pulse"
+            />
+          ))}
+        </div>
+      ) : documents.length === 0 ? (
         <div className="p-12 text-center rounded-xl border border-dashed border-gray-200 bg-secondary">
           <FaFilePdf className="mx-auto text-gray-300 size-12 mb-3" />
           <h4 className="text-base font-semibold text-gray-700">
-            No downloaded batch documents found
+            No library documents found
           </h4>
           <p className="text-xs text-gray-400 mt-1">
-            Documents exported from the dashboard will be automatically tracked
-            in this library.
+            {debouncedSearch || fileTypeFilter !== "all" || downloadTypeFilter !== "all"
+              ? "Try adjusting your search criteria or filters."
+              : "Exported application and batch files will be listed here automatically."}
           </p>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-          {filteredDocuments.map((doc) => {
-            const hasFeedback = Boolean(doc.feedback);
+          {documents.map((doc) => {
+            const visuals = getFileFormatVisuals(doc.file_type);
             return (
               <div
                 key={doc.id}
-                className="flex flex-col bg-white rounded-xl border border-gray-200 shadow-2xs hover:shadow-md hover:border-primary/30 transition duration-200 p-5 justify-between"
+                className="flex flex-col bg-white rounded-xl border border-primary/10 transition duration-200 p-5 justify-between"
               >
                 <div>
-                  {/* Top Header Card */}
-                  <div className="flex items-start justify-between gap-3 mb-3">
-                    <div className="flex items-center gap-3">
-                      <div className="p-2.5 rounded-lg bg-red-50 text-red-600 border border-red-100 shrink-0">
-                        <FaFilePdf className="size-6" />
-                      </div>
-                      <div>
-                        <h3 className="font-semibold text-gray-900 text-sm leading-snug">
-                          {doc.title}
-                        </h3>
-                        <p className="text-[11px] text-gray-400 font-mono truncate max-w-[200px]">
-                          {doc.filename}
-                        </p>
-                      </div>
-                    </div>
-
-                    <span
-                      className={`px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider rounded-full shrink-0 ${
-                        hasFeedback
-                          ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
-                          : "bg-amber-50 text-amber-700 border border-amber-200"
-                      }`}
+                  {/* Card Header */}
+                  <div className="flex items-center gap-3 mb-3 min-w-0">
+                    <div
+                      className={`p-2.5 rounded-lg shrink-0 ${visuals.containerClass}`}
                     >
-                      {hasFeedback ? "Feedback Recorded" : "Awaiting Return"}
-                    </span>
+                      {visuals.icon}
+                    </div>
+                    <div className="min-w-0">
+                      <h3
+                        className="font-semibold text-gray-900 text-sm leading-snug truncate"
+                        title={doc.title}
+                      >
+                        {doc.title}
+                      </h3>
+                      <p
+                        className="text-[11px] text-gray-400 font-mono truncate"
+                        title={doc.file_name}
+                      >
+                        {doc.file_name}
+                      </p>
+                    </div>
                   </div>
 
-                  {/* Batch Details */}
+                  {/* Details Box */}
                   <div className="bg-secondary p-3 rounded-lg border border-primary/10 text-xs space-y-1.5 mb-4">
                     <div className="flex justify-between">
                       <span className="text-gray-500 font-medium">
                         Export Type:
                       </span>
-                      <span className="font-semibold text-gray-800 capitalize">
-                        {doc.download_type.replace(/_/g, " ")}
+                      <span className="font-semibold text-gray-800 capitalize truncate max-w-[150px]">
+                        {doc.download_type
+                          ? doc.download_type.replace(/_/g, " ")
+                          : doc.filter_type || "Export"}
                       </span>
                     </div>
-                    {doc.site_location && (
-                      <div className="flex justify-between">
-                        <span className="text-gray-500 font-medium">
-                          Site / Estate:
-                        </span>
-                        <span className="font-semibold text-gray-800 truncate max-w-[150px]">
-                          {doc.site_location}
-                        </span>
-                      </div>
-                    )}
+
                     <div className="flex justify-between">
                       <span className="text-gray-500 font-medium">
-                        Total Entries:
+                        Records Included:
                       </span>
                       <span className="font-semibold text-primary">
-                        {doc.total_entries}{" "}
-                        {doc.total_entries === 1 ? "entry" : "entries"}
+                        {doc.records_count}{" "}
+                        {doc.records_count === 1 ? "record" : "records"}
                       </span>
                     </div>
+
                     <div className="flex justify-between">
                       <span className="text-gray-500 font-medium">
-                        Export Date:
+                        Downloaded By:
                       </span>
-                      <span className="text-gray-700">
-                        {formatISODateToCustom(doc.created_at)}
+                      <span className="font-medium text-gray-700">
+                        {doc.downloaded_by || "Admin"}
+                      </span>
+                    </div>
+
+                    <div className="flex justify-between">
+                      <span className="text-gray-500 font-medium">
+                        Date Generated:
+                      </span>
+                      <span
+                        className="text-gray-700 truncate max-w-[140px]"
+                        title={doc.downloaded_at?.datetime}
+                      >
+                        {doc.downloaded_at?.human ||
+                          doc.downloaded_at?.date ||
+                          "Recently"}
                       </span>
                     </div>
                   </div>
-
-                  {/* Feedback Details (if recorded) */}
-                  {hasFeedback && doc.feedback && (
-                    <div className="p-3.5 rounded-lg border border-gray-100 bg-gray-50/70 mb-4 space-y-2 text-xs">
-                      <div className="flex items-center gap-1.5 text-gray-800 font-semibold border-b border-gray-200 pb-1.5">
-                        <BsChatSquareText className="text-primary size-3.5" />
-                        <span>Barrister Feedback Record</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-gray-500">Returned by:</span>
-                        <span className="font-medium text-gray-900">
-                          {doc.feedback.barrister_name}
-                        </span>
-                      </div>
-                      <div className="grid grid-cols-3 gap-1 pt-1 text-center">
-                        <div className="bg-white p-1.5 rounded border border-gray-200">
-                          <p className="text-[10px] text-gray-400 uppercase">
-                            Sent
-                          </p>
-                          <p className="font-bold text-gray-800">
-                            {doc.feedback.total_sent}
-                          </p>
-                        </div>
-                        <div className="bg-emerald-50/60 p-1.5 rounded border border-emerald-200">
-                          <p className="text-[10px] text-emerald-600 uppercase">
-                            Signed
-                          </p>
-                          <p className="font-bold text-emerald-700">
-                            {doc.feedback.signed_count}
-                          </p>
-                        </div>
-                        <div className="bg-red-50/60 p-1.5 rounded border border-red-200">
-                          <p className="text-[10px] text-red-600 uppercase">
-                            Unsigned
-                          </p>
-                          <p className="font-bold text-red-700">
-                            {doc.feedback.unsigned_count}
-                          </p>
-                        </div>
-                      </div>
-                      <div className="flex justify-between pt-1">
-                        <span className="text-gray-400">Date Returned:</span>
-                        <span className="text-gray-700">
-                          {doc.feedback.date_returned}
-                        </span>
-                      </div>
-                      {doc.feedback.remarks && (
-                        <p className="text-gray-600 italic pt-1 border-t border-gray-200">
-                          "{doc.feedback.remarks}"
-                        </p>
-                      )}
-                    </div>
-                  )}
                 </div>
 
-                {/* Card Action */}
-                <div className="pt-2">
+                {/* Card Actions */}
+                <div className="flex items-center gap-2">
+                  <a
+                    href={doc.download_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    download={doc.file_name}
+                    className="flex-1 py-2.5 px-3 rounded-lg font-semibold text-xs transition cursor-pointer flex items-center justify-center gap-2 bg-primary text-white hover:bg-primary/90 shadow-2xs"
+                  >
+                    <BsDownload size={13} />
+                    <span>Download {doc.file_type.toUpperCase()}</span>
+                  </a>
+
                   <button
                     type="button"
-                    onClick={() => setActiveFeedbackModalDoc(doc)}
-                    className={`w-full py-2.5 px-4 rounded-lg font-semibold text-xs transition cursor-pointer flex items-center justify-center gap-2 ${
-                      hasFeedback
-                        ? "bg-secondary text-primary border border-primary/20 hover:bg-secondary/70"
-                        : "bg-primary text-white hover:bg-primary/90 shadow-2xs"
-                    }`}
+                    title="Delete document"
+                    onClick={() => setDocumentToDelete(doc)}
+                    className="p-2.5 rounded-lg border border-red-200 text-red-600 hover:bg-red-50 hover:border-red-300 transition cursor-pointer flex items-center justify-center shrink-0"
                   >
-                    <BsChatSquareText size={13} />
-                    <span>
-                      {hasFeedback ? "Update Feedback" : "Submit Feedback"}
-                    </span>
+                    <FiTrash2 size={14} />
                   </button>
                 </div>
               </div>
@@ -428,14 +387,46 @@ const DocumentLibrary: React.FC = () => {
         </div>
       )}
 
-      {/* Submit Feedback Modal */}
-      {activeFeedbackModalDoc && (
-        <SubmitFeedbackModal
-          document={activeFeedbackModalDoc}
-          onClose={() => setActiveFeedbackModalDoc(null)}
-          onSuccess={handleFeedbackSaved}
-        />
+      {/* Pagination Controls */}
+      {pagination && pagination.last_page > 1 && (
+        <div className="flex justify-center">
+          <PaginationControls
+            currentPage={currentPage}
+            totalPages={pagination.last_page}
+            totalItems={pagination.total}
+            itemsPerPage={itemsPerPage}
+            setCurrentPage={setCurrentPage}
+            setItemsPerPage={setItemsPerPage}
+          />
+        </div>
       )}
+
+      {/* Delete Confirmation Dialog */}
+      <ConfirmDialog
+        isOpen={Boolean(documentToDelete)}
+        isLoading={deleteMutation.isPending}
+        title="Delete Document"
+        message={
+          documentToDelete ? (
+            <span>
+              Are you sure you want to permanently delete{" "}
+              <strong className="text-gray-900">
+                "{documentToDelete.title || documentToDelete.file_name}"
+              </strong>
+              ? This file will be removed from your download library.
+            </span>
+          ) : (
+            "This action cannot be undone."
+          )
+        }
+        confirmText="Yes, Delete"
+        onCancel={() => {
+          if (!deleteMutation.isPending) {
+            setDocumentToDelete(null);
+          }
+        }}
+        onConfirm={handleConfirmDelete}
+      />
     </div>
   );
 };

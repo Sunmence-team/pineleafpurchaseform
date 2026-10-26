@@ -28,7 +28,7 @@ export const getNavItems = (branches: BranchItem[] = []): NavItem[] => [
     name: "Dashboard",
     icon: RxDashboard,
     path: "/dashboard/overview",
-    role: ["admin", "user"],
+    role: ["admin"],
   },
   {
     name: "Form Records",

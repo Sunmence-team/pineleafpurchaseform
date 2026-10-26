@@ -11,6 +11,7 @@ export const useExportDownload = () => {
     mutationFn: (payload: ExportDownloadPayload) => exportDownloadService(payload),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["downloaded-client-entries"] });
+      queryClient.invalidateQueries({ queryKey: ["document-library"] });
     },
   });
 };
