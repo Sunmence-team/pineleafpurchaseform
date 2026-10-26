@@ -147,8 +147,7 @@ const ViewFormEntry: React.FC<ViewFormEntryProps> = ({ endpointType }) => {
   const isIndividual =
     !client.purchase_type || client.purchase_type === "individual";
 
-  // Notes array from application details
-  const notesList: string[] = Array.isArray(client.notes) ? client.notes : [];
+  const notesList = client.notes || [];
 
   return (
     <div className="space-y-6 pb-12">
@@ -336,23 +335,20 @@ const ViewFormEntry: React.FC<ViewFormEntryProps> = ({ endpointType }) => {
               ) : (
                 <div className="space-y-2.5 max-h-[420px] overflow-y-auto styled-scrollbar pr-1">
                   {notesList.map((noteItem, index) => {
-                    const noteText =
-                      typeof noteItem === "string"
-                        ? noteItem
-                        : (noteItem as any)?.note || JSON.stringify(noteItem);
                     return (
                       <div
                         key={index}
-                        className="p-3.5 rounded-xl bg-secondary/70 border border-primary/10 text-xs text-gray-800 space-y-1 hover:border-primary/30 transition shadow-2xs"
+                        className="pb-2.5 bg-secondary/70 border-b last:border-b-0 border-b-primary/10 text-xs text-gray-800 space-y-1 transition"
                       >
-                        <div className="flex items-center justify-between text-[11px] text-gray-400 font-semibold mb-1">
-                          <span className="text-primary flex items-center gap-1">
-                            <BsCheckCircle size={10} />
-                            Note #{index + 1}
+                        <span className="text-primary text-[11px] mb-1 opacity-75">
+                            {noteItem.user_name}
+                            {" "}
+                            .
+                            {" "}
+                            {noteItem.human_time}
                           </span>
-                        </div>
                         <p className="whitespace-pre-wrap leading-relaxed text-gray-700">
-                          {noteText}
+                          {noteItem.note}
                         </p>
                       </div>
                     );

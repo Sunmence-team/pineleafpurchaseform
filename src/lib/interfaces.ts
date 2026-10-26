@@ -391,7 +391,15 @@ export interface ClientEntry {
   occupation?: string;
   referral_date?: string;
   referral_email?: string;
-  notes?: string[];
+  notes?: NoteProps[];
+}
+
+export interface NoteProps {
+  id: string | number;
+  note: string;
+  human_time: string;
+  user_name: string;
+  created_at: string;
 }
 
 export type ExportScope = "last_memory" | "all";
