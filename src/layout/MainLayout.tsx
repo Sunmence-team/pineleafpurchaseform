@@ -120,7 +120,7 @@ const MainLayout = ({ children, pageName }: LayoutProps) => {
         <Sidebar setIsOpen={setIsOpen} />
       </div>
       <div className={`lg:w-[80%] w-full overflow-hidden pt-4 pb-6`}>
-        <div className="md:px-6 px-4 hidden lg:flex gap-4 sticky top-0 z-10 items-center border-b border-primary/10">
+        <div className="md:px-6 px-4 gap-4 sticky top-0 z-10 items-center border-b border-primary/10">
           <button
             type="button"
             className="lg:hidden inline-block"
