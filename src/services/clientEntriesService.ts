@@ -27,7 +27,7 @@ export interface DownloadedEntriesResponse extends ClientsResponse {
   summary: {
     total_downloads: number;
     total_records_downloaded: number;
-    last_download: null;
+    last_download_date_time: null;
   };
 }
 

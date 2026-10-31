@@ -10,8 +10,8 @@ import {
 export const useProperty = (params: FetchPropertiesParams = {}) => {
   const queryParams: FetchPropertiesParams = {};
 
-  if (params.name && params.name.trim() !== "") {
-    queryParams.name = params.name.trim();
+  if (params.search && params.search.trim() !== "") {
+    queryParams.search = params.search.trim();
   }
   if (params.is_online && params.is_online !== "all") {
     queryParams.is_online = params.is_online;

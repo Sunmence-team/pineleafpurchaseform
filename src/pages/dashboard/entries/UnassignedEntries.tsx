@@ -1,13 +1,24 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { BiSearch } from "react-icons/bi";
+import { FaDownload } from "react-icons/fa";
+import { BsClockHistory, BsJournalCheck } from "react-icons/bs";
 import { toast } from "sonner";
 import ActionCell from "../../../components/ui/ActionCell";
+import ActionButton from "../../../components/ui/ActionButton";
 import { formatISODateToCustom } from "../../../helpers/formatterUtility";
-import type { ClientEntry, TableColumnProps } from "../../../lib/interfaces";
+import type {
+  ClientEntry,
+  ExportScope,
+  TableColumnProps,
+} from "../../../lib/interfaces";
 import ReusableTable from "../../../utilities/ReusableTable";
 import { getErrorMessage } from "../../../helpers/api";
 import { useClientEntries } from "../../../hooks/useClientEntries";
+import { useExportDownload } from "../../../hooks/useDownload";
+import DownloadFormatModal, {
+  type DownloadFormat,
+} from "../../../components/modals/DownloadFormatModal";
 
 const UnassignedEntries: React.FC = () => {
   const navigate = useNavigate();
@@ -16,6 +27,13 @@ const UnassignedEntries: React.FC = () => {
   const [debouncedSearchQuery, setDebouncedSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
+
+  // Download states
+  const [downloadModalOpen, setDownloadModalOpen] = useState(false);
+  const [selectedScope, setSelectedScope] = useState<ExportScope | null>(null);
+
+  const { mutate: exportDownload, isPending: isDownloading } =
+    useExportDownload();
 
   useEffect(() => {
     const handler = setTimeout(() => {
@@ -34,7 +52,7 @@ const UnassignedEntries: React.FC = () => {
     page: currentPage,
     per_page: itemsPerPage,
     search: debouncedSearchQuery,
-    barrister: false
+    barrister: false,
   });
 
   const clientEntries: ClientEntry[] = responseData?.data?.data || [];
@@ -46,6 +64,40 @@ const UnassignedEntries: React.FC = () => {
       toast.error(getErrorMessage(error, "Failed to fetch client entries."));
     }
   }, [error]);
+
+  const handleDownloadScopeSelect = (scope: ExportScope) => {
+    setSelectedScope(scope);
+    setDownloadModalOpen(true);
+  };
+
+  const handleExecuteDownload = (format: DownloadFormat) => {
+    if (!selectedScope) return;
+
+    exportDownload(
+      {
+        type: "all",
+        barrister: false,
+        scope: selectedScope,
+        format,
+      },
+      {
+        onSuccess: (data) => {
+          toast.success(
+            `Export initiated (${format.toUpperCase()})${
+              data?.records_count !== undefined
+                ? `: ${data.records_count} records`
+                : ""
+            }`,
+          );
+          setDownloadModalOpen(false);
+          setSelectedScope(null);
+        },
+        onError: (err) => {
+          toast.error(getErrorMessage(err, "Failed to download export."));
+        },
+      },
+    );
+  };
 
   const columns: TableColumnProps<ClientEntry>[] = [
     {
@@ -124,14 +176,36 @@ const UnassignedEntries: React.FC = () => {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div>
-        <h1 className="text-xl font-bold text-gray-900">
-          Unassigned Property Entries
-        </h1>
-        <p className="text-sm text-gray-500">
-          Purchase entries containing properties that currently do not have an
-          assigned barrister
-        </p>
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-xl font-bold text-gray-900">
+            Unassigned Property Entries
+          </h1>
+          <p className="text-sm text-gray-500">
+            Purchase entries containing properties that currently do not have an
+            assigned barrister
+          </p>
+        </div>
+        <div>
+          <ActionButton
+            text="Download"
+            icon={<FaDownload className="size-3.5" />}
+            loading={isDownloading}
+            loadingText="Exporting..."
+            items={[
+              {
+                label: "Continue from last download",
+                icon: <BsClockHistory className="size-3.5 text-primary" />,
+                action: () => handleDownloadScopeSelect("last_memory"),
+              },
+              {
+                label: "Download from all time",
+                icon: <BsJournalCheck className="size-3.5 text-primary" />,
+                action: () => handleDownloadScopeSelect("all"),
+              },
+            ]}
+          />
+        </div>
       </div>
 
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -165,6 +239,29 @@ const UnassignedEntries: React.FC = () => {
         setCurrentPage={setCurrentPage}
         setItemsPerPage={setItemsPerPage}
         getRowId={(item) => item.id}
+      />
+
+      {/* Format Selection Modal (CSV or PDF) */}
+      <DownloadFormatModal
+        isOpen={downloadModalOpen}
+        title={
+          selectedScope === "last_memory"
+            ? "Continue from Last Download"
+            : "Download From All Time"
+        }
+        subtitle={
+          selectedScope === "last_memory"
+            ? "Export only new unassigned records submitted since your previous download."
+            : "Export all historical unassigned form entries."
+        }
+        isLoading={isDownloading}
+        onClose={() => {
+          if (!isDownloading) {
+            setDownloadModalOpen(false);
+            setSelectedScope(null);
+          }
+        }}
+        onSelectFormat={handleExecuteDownload}
       />
     </div>
   );

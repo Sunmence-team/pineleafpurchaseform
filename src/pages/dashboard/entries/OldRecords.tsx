@@ -11,6 +11,7 @@ import { FaBars, FaX } from "react-icons/fa6";
 import { useOldClientEntries } from "../../../hooks/useClientEntries";
 import { toast } from "sonner";
 import { getErrorMessage } from "../../../helpers/api";
+import { legacyBranches } from "../../../lib/legacyBranches";
 
 const OldRecords: React.FC = () => {
   const navigate = useNavigate();
@@ -143,7 +144,12 @@ const OldRecords: React.FC = () => {
       label: "Branch",
       key: "branches",
       className: "px-3 py-2 text-xs text-gray-700 whitespace-nowrap",
-      render: (item) => <span>{item.branches ?? "-"}</span>,
+      render: (item) => {
+        const matchedBranch = legacyBranches.find((branch) => branch.keyWord === item.branches)
+        return (
+          <span>{matchedBranch.title ?? "-"}</span>
+        )
+      },
     },
     {
       label: "Property Name",

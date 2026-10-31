@@ -53,7 +53,7 @@ const Properties: React.FC = () => {
     isLoading,
     error,
   } = useProperty({
-    name: debouncedSearch,
+    search: debouncedSearch,
     page: currentPage,
     per_page: itemsPerPage,
     sort_direction: "desc",
@@ -62,10 +62,10 @@ const Properties: React.FC = () => {
 
   const properties: PropertyProp[] = propertiesResponse?.data?.data ?? [];
   const propertiesMeta = propertiesResponse?.data ?? [];
-  const totalItems = propertiesMeta?.total ?? 1;
   const totalPages = propertiesMeta?.last_page ?? 1;
   const stats = propertiesResponse?.stats;
-
+  const totalItems = (Number(stats?.no_of_online ?? 0) + Number(stats?.no_of_offline ?? 0)) || 0;
+  
   // Handle fetch error notification
   useEffect(() => {
     if (error) {
