@@ -40,6 +40,7 @@ import ViewRefund from "./pages/dashboard/hmanagement/refunds/ViewRefund";
 
 import Properties from "./pages/dashboard/properties/Properties";
 import DocumentLibrary from "./pages/dashboard/documents/DocumentLibrary";
+import ManageBarristers from "./pages/dashboard/ManageBarristers";
 
 import Settings from "./pages/dashboard/Settings";
 import DownloadedEntries from "./pages/dashboard/entries/DownloadedEntries";
@@ -84,6 +85,7 @@ function App() {
             <Route path="documents" element={<DocumentLibrary />} />
 
             <Route path="branch/:branch" element={<BranchBreakDown />} />
+            <Route path="manage/barristers" element={<ManageBarristers />} />
 
             {/* User Management */}
             <Route path="manage/users" element={<ManageUsers />} />

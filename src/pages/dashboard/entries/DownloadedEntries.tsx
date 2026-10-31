@@ -61,7 +61,7 @@ const DownloadedEntries: React.FC = () => {
     },
     {
       title: "Last Download",
-      value: stats?.last_download ? formatISODateToCustom(stats?.last_download ?? "") : "-",
+      value: stats?.last_download_date_time ? formatISODateToCustom(stats?.last_download_date_time ?? "") : "-",
       icon: null,
       subtitle: "",
     },

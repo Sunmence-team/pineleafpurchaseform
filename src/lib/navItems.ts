@@ -11,6 +11,7 @@ import {
   BsJournalText,
   BsJournalMedical,
   BsJournalCheck,
+  BsFillAwardFill,
 } from "react-icons/bs";
 import { useBranches } from "../hooks/useBranches";
 import type { BranchItem } from "./interfaces";
@@ -70,6 +71,12 @@ export const getNavItems = (branches: BranchItem[] = []): NavItem[] => [
     name: "Old Records",
     icon: BsJournalMedical,
     path: "/dashboard/old-records",
+    role: ["admin", "user"],
+  },
+  {
+    name: "Barristers",
+    icon: BsFillAwardFill,
+    path: "/dashboard/manage/barristers",
     role: ["admin", "user"],
   },
   {

@@ -1,16 +1,16 @@
 import React, { useState } from "react";
 import { BsHouses } from "react-icons/bs";
 import { FaEye } from "react-icons/fa";
-import AssignPropertiesModal from "../../../components/modals/AssignPropertiesModal";
-import BarristerEntriesModal from "../../../components/modals/BarristerEntriesModal";
-import ActionCell from "../../../components/ui/ActionCell";
-import { getErrorMessage } from "../../../helpers/api";
-import type { BarristerProp, TableColumnProps } from "../../../lib/interfaces";
-import ReusableTable from "../../../utilities/ReusableTable";
+import AssignPropertiesModal from "../../components/modals/AssignPropertiesModal";
+import BarristerEntriesModal from "../../components/modals/BarristerEntriesModal";
+import ActionCell from "../../components/ui/ActionCell";
+import { getErrorMessage } from "../../helpers/api";
+import type { BarristerProp, TableColumnProps } from "../../lib/interfaces";
+import ReusableTable from "../../utilities/ReusableTable";
 import {
   useBarristers,
   // useDeleteBarristersBatch,
-} from "../../../hooks/useBarristers";
+} from "../../hooks/useBarristers";
 // import { HiPlus } from "react-icons/hi2";
 // import { toast } from "sonner";
 // import ConfirmDialog from "../../../components/modals/ConfirmDialog";
@@ -34,11 +34,6 @@ const ManageBarristers: React.FC = () => {
   // const totalItems = data?.total ?? 1;
   // const totalPages = data?.last_page ?? 1;
 
-  // const deleteBatchMutation = useDeleteBarristersBatch();
-  // const deleting = deleteBatchMutation.isPending;
-
-  // const [deleteModal, setDeleteModal] = useState(false);
-
   const [assignModal, setAssignModal] = useState(false);
   const [entriesModal, setEntriesModal] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
@@ -49,32 +44,7 @@ const ManageBarristers: React.FC = () => {
   const [selectedBarristerIds, setSelectedBarristerIds] = useState<
     Array<number | string>
   >([]);
-  // const [deleteTargetIds, setDeleteTargetIds] = useState<
-  //   Array<number | string>
-  // >([]);
-
-  // Local assignment tracking trigger to force re-render on save
   const [assignmentVersion, setAssignmentVersion] = useState(0);
-
-  // const handleDeleteBarrister = async () => {
-  //   if (deleteTargetIds.length === 0) return;
-
-  //   try {
-  //     await deleteBatchMutation.mutateAsync(deleteTargetIds);
-
-  //     toast.success(
-  //       deleteTargetIds.length > 1
-  //         ? `${deleteTargetIds.length} barristers deleted successfully`
-  //         : "Barrister deleted successfully",
-  //     );
-  //     setDeleteModal(false);
-  //     setDeleteTargetIds([]);
-  //     setSelectedBarristerIds([]);
-  //     setSelectedBarrister(null);
-  //   } catch (err: unknown) {
-  //     toast.error(getErrorMessage(err, "Failed to delete barrister"));
-  //   }
-  // };
 
   const handleToggleRowSelection = (id: number | string) => {
     setSelectedBarristerIds((prev) =>
@@ -119,11 +89,11 @@ const ManageBarristers: React.FC = () => {
         </span>
       ),
     },
-    // {
-    //   label: "Phone Number",
-    //   key: "phone_number",
-    //   render: (row) => <span>{row.phone_number || row.phone || "-"}</span>,
-    // },
+    {
+      label: "Phone Number",
+      key: "phone_number",
+      render: (row) => <span>{row.phone_number || row.phone || "-"}</span>,
+    },
     {
       label: "Assigned Properties",
       key: "assigned_properties",

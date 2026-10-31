@@ -1,8 +1,7 @@
 import React, { useState } from "react";
 import { LuKeyRound } from "react-icons/lu";
-import { BsFillAwardFill, BsBarChartLine } from "react-icons/bs";
+import { BsFillAwardFill } from "react-icons/bs";
 import ChangePassword from "./settingstabs/ChangePassword";
-import ManageBarristers from "./settingstabs/ManageBarristers";
 import { useUser } from "../../hooks/useUser";
 
 interface TabsCategory {
@@ -18,19 +17,13 @@ const Settings: React.FC = () => {
 
   const tabs: TabsCategory[] = [
     { label: "Password", icon: LuKeyRound },
-    ...(isAdmin
-      ? [
-          { label: "Barristers", icon: BsFillAwardFill },
-        ]
-      : []),
+    ...(isAdmin ? [{ label: "Barristers", icon: BsFillAwardFill }] : []),
   ];
 
   const renderContent = () => {
     switch (activeTab) {
       case "Password":
         return <ChangePassword />;
-      case "Barristers":
-        return <ManageBarristers />;
       default:
         return null;
     }

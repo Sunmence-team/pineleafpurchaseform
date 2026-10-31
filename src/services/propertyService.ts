@@ -1,7 +1,7 @@
 import { api } from "../helpers/api";
 
 export interface FetchPropertiesParams {
-  name?: string;
+  search?: string;
   page?: number;
   per_page?: number;
   sort_direction?: string;

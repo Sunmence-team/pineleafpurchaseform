@@ -15,6 +15,10 @@ import { ExportFormats, ExportScope } from "../lib/interfaces";
  *     { type: "by_branch", branch: 6, scope: "last_memory" | "all" }
  * - By barrister:
  *     { type: "by_barrister", barrister_id: 2, scope: "last_memory" | "all" }
+ * - Unassigned entries (or general filtered entries):
+ *     { type: "all", barrister: false, scope: "last_memory" | "all", format: ExportFormats }
+ * - Offline entries:
+ *     { type: "all", is_online: 0, scope: "last_memory" | "all", format: ExportFormats }
  */
 export type ExportDownloadPayload =
   | {
@@ -23,7 +27,9 @@ export type ExportDownloadPayload =
       application_id: number | string;
     }
   | {
-      type?: never;
+      type?: "all";
+      barrister?: boolean;
+      is_online?: number | boolean;
       format?: ExportFormats;
       scope: ExportScope;
     }

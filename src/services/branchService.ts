@@ -20,8 +20,8 @@ export const fetchBranchesService = async (
   });
 
   const data = response.data;
-  if (Array.isArray(data?.data?.data)) {
-    return data.data.data;
+  if (Array.isArray(data?.data)) {
+    return data.data;
   }
   return [];
 };

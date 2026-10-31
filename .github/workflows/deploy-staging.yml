@@ -1,0 +1,47 @@
+name: (staging) Deploy Pineleaf Purchase Form via FTP
+
+on:
+  push:
+    branches:
+      - development
+  workflow_dispatch:
+
+concurrency:
+  group: staging-deployment
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: staging
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v6
+
+      - name: Setup Node
+        uses: actions/setup-node@v6
+        with:
+          node-version: "24"
+          cache: "npm"
+
+      - name: Install Dependencies (Clean)
+        run: npm ci
+
+      - name: Build Project
+        env:
+          VITE_API_BASE_URL: ${{ secrets.VITE_API_BASE_URL }}
+          VITE_COUNTRY_BASE_URL: ${{ secrets.VITE_COUNTRY_BASE_URL }}
+          VITE_HM_BASE_URL: ${{ secrets.VITE_HM_BASE_URL }}
+          VITE_HM_STORAGE_BASE_URL: ${{ secrets.VITE_HM_STORAGE_BASE_URL }}
+        run: npm run build
+
+      - name: Deploy to Hostinger FTP
+        uses: SamKirkland/FTP-Deploy-Action@v4.4.0
+        with:
+          server: ${{ secrets.FTP_SERVER }}
+          username: ${{ secrets.FTP_USERNAME }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          local-dir: dist/
+          server-dir: ${{ secrets.FTP_TARGET_DIR }}
+

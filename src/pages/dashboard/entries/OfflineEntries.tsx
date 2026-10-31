@@ -1,12 +1,22 @@
 import React, { useEffect, useState } from "react";
-import { FaSearch } from "react-icons/fa";
+import { FaSearch, FaDownload } from "react-icons/fa";
+import { BsClockHistory, BsJournalCheck } from "react-icons/bs";
 import "react-datepicker/dist/react-datepicker.css";
 import { useNavigate, useLocation } from "react-router-dom";
 import ReusableTable from "../../../utilities/ReusableTable";
 import ActionCell from "../../../components/ui/ActionCell";
-import type { ClientEntry, TableColumnProps } from "../../../lib/interfaces";
+import ActionButton from "../../../components/ui/ActionButton";
+import type {
+  ClientEntry,
+  ExportScope,
+  TableColumnProps,
+} from "../../../lib/interfaces";
 import { formatISODateToCustom } from "../../../helpers/formatterUtility";
 import { useClientEntries } from "../../../hooks/useClientEntries";
+import { useExportDownload } from "../../../hooks/useDownload";
+import DownloadFormatModal, {
+  type DownloadFormat,
+} from "../../../components/modals/DownloadFormatModal";
 import { toast } from "sonner";
 import { getErrorMessage } from "../../../helpers/api";
 
@@ -17,6 +27,13 @@ const OfflineEntries: React.FC = () => {
   const [debouncedSearchQuery, setDebouncedSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
+
+  // Download states
+  const [downloadModalOpen, setDownloadModalOpen] = useState(false);
+  const [selectedScope, setSelectedScope] = useState<ExportScope | null>(null);
+
+  const { mutate: exportDownload, isPending: isDownloading } =
+    useExportDownload();
 
   useEffect(() => {
     const handler = setTimeout(() => {
@@ -47,6 +64,40 @@ const OfflineEntries: React.FC = () => {
       toast.error(getErrorMessage(error, "Failed to fetch client entries."));
     }
   }, [error]);
+
+  const handleDownloadScopeSelect = (scope: ExportScope) => {
+    setSelectedScope(scope);
+    setDownloadModalOpen(true);
+  };
+
+  const handleExecuteDownload = (format: DownloadFormat) => {
+    if (!selectedScope) return;
+
+    exportDownload(
+      {
+        type: "all",
+        is_online: 0,
+        scope: selectedScope,
+        format,
+      },
+      {
+        onSuccess: (data) => {
+          toast.success(
+            `Export initiated (${format.toUpperCase()})${
+              data?.records_count !== undefined
+                ? `: ${data.records_count} records`
+                : ""
+            }`,
+          );
+          setDownloadModalOpen(false);
+          setSelectedScope(null);
+        },
+        onError: (err) => {
+          toast.error(getErrorMessage(err, "Failed to download export."));
+        },
+      },
+    );
+  };
 
   const columns: TableColumnProps<ClientEntry>[] = [
     {
@@ -125,13 +176,37 @@ const OfflineEntries: React.FC = () => {
 
   return (
     <div className="flex flex-col gap-6">
-      <div>
-        <h2 className="text-lg font-semibold">Offline Records</h2>
-        <p className="text-sm text-tableHeading">
-          Manage and view all entries filled to be worked on offline here.
-        </p>
+      {/* Header with Title and Download Button */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <h2 className="text-lg font-semibold">Offline Records</h2>
+          <p className="text-sm text-tableHeading">
+            Manage and view all entries filled to be worked on offline here.
+          </p>
+        </div>
+        <div>
+          <ActionButton
+            text="Download"
+            icon={<FaDownload className="size-3.5" />}
+            loading={isDownloading}
+            loadingText="Exporting..."
+            items={[
+              {
+                label: "Continue from last download",
+                icon: <BsClockHistory className="size-3.5 text-primary" />,
+                action: () => handleDownloadScopeSelect("last_memory"),
+              },
+              {
+                label: "Download from all time",
+                icon: <BsJournalCheck className="size-3.5 text-primary" />,
+                action: () => handleDownloadScopeSelect("all"),
+              },
+            ]}
+          />
+        </div>
       </div>
 
+      {/* Search */}
       <div className="max-w-md w-full bg-secondary border border-primary/10 rounded-lg relative flex gap-2 items-center h-[45px] px-4">
         <FaSearch className="w-4 h-4 md:w-5 md:h-5 opacity-50" />
         <input
@@ -143,6 +218,7 @@ const OfflineEntries: React.FC = () => {
         />
       </div>
 
+      {/* Table */}
       <ReusableTable
         columns={columns}
         data={clientEntries}
@@ -156,6 +232,29 @@ const OfflineEntries: React.FC = () => {
         setCurrentPage={setCurrentPage}
         setItemsPerPage={setItemsPerPage}
         getRowId={(item) => item.id}
+      />
+
+      {/* Format Selection Modal (CSV or PDF) */}
+      <DownloadFormatModal
+        isOpen={downloadModalOpen}
+        title={
+          selectedScope === "last_memory"
+            ? "Continue from Last Download"
+            : "Download From All Time"
+        }
+        subtitle={
+          selectedScope === "last_memory"
+            ? "Export only new offline records submitted since your previous download."
+            : "Export all historical offline form entries."
+        }
+        isLoading={isDownloading}
+        onClose={() => {
+          if (!isDownloading) {
+            setDownloadModalOpen(false);
+            setSelectedScope(null);
+          }
+        }}
+        onSelectFormat={handleExecuteDownload}
       />
     </div>
   );
