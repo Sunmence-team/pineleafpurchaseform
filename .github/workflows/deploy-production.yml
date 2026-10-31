@@ -1,13 +1,19 @@
-name: Deploy Pineleaf Purchase Form via FTP
+name: (prod) Deploy Pineleaf Purchase Form via FTP
 
 on:
   push:
     branches:
       - main
+  workflow_dispatch:
+
+concurrency:
+  group: production-deployment
+  cancel-in-progress: true
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    environment: production
 
     steps:
       - name: Checkout Repository
@@ -17,6 +23,7 @@ jobs:
         uses: actions/setup-node@v6
         with:
           node-version: '24'
+          cache: "npm"
 
       - name: Install Dependencies
         run: npm install
@@ -25,7 +32,6 @@ jobs:
         env:
           VITE_API_BASE_URL: ${{ secrets.VITE_API_BASE_URL }}
           VITE_COUNTRY_BASE_URL: ${{ secrets.VITE_COUNTRY_BASE_URL }}
-          VITE_PROPERTY_BASE_URL: ${{ secrets.VITE_PROPERTY_BASE_URL }}
           VITE_HM_BASE_URL: ${{ secrets.VITE_HM_BASE_URL }}
           VITE_HM_STORAGE_BASE_URL: ${{ secrets.VITE_HM_STORAGE_BASE_URL }}
         run: npm run build
@@ -37,4 +43,4 @@ jobs:
           username: ${{ secrets.FTP_USERNAME }}
           password: ${{ secrets.FTP_PASSWORD }}
           local-dir: dist/
-          server-dir: forms/
+          server-dir: ${{ secrets.FTP_TARGET_DIR }}
